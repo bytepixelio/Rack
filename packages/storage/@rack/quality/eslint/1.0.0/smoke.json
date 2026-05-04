@@ -1,0 +1,6 @@
+{
+  "text": {
+    ".eslintrc.js": { "contains": ["@typescript-eslint", "prettier"] },
+    ".lintstagedrc": { "contains": ["eslint --fix"] }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "node",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:runtime",
+  "priority": 1,
+  "description": "Node.js runtime base configuration with common .gitignore rules",
+  "tags": ["node", "runtime", "base"],
+  "files": [
+    {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    }
+  ]
+}

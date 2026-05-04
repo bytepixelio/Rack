@@ -1,0 +1,93 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { join } from 'node:path'
+import { writeFile, readFile } from 'node:fs/promises'
+import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
+
+const execFileMock = vi.fn()
+vi.mock('node:child_process', () => ({
+  execFile: (...args: unknown[]) => {
+    const cb = args[args.length - 1] as (
+      err: Error | null,
+      res?: { stdout: string; stderr: string }
+    ) => void
+    const result = execFileMock(...args.slice(0, -1))
+    if (result instanceof Error) cb(result)
+    else cb(null, { stdout: '', stderr: '' })
+  }
+}))
+
+import { pkg } from '../../src/lib/pkg.js'
+
+describe('pkg', () => {
+  let tmp: string
+  beforeEach(async () => {
+    tmp = await makeTmpDir('proj')
+    execFileMock.mockReset()
+  })
+  afterEach(async () => {
+    await cleanTmpDir(tmp)
+    vi.restoreAllMocks()
+  })
+
+  it('update creates package.json with defaults when missing', async () => {
+    await pkg.update(tmp, { dependencies: { a: '1.0.0' } })
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.name).toBe('proj'.length > 0 ? data.name : '')
+    expect(data.version).toBe('1.0.0')
+    expect(data.dependencies).toEqual({ a: '1.0.0' })
+  })
+
+  it('update merges new fields into an existing package.json', async () => {
+    await writeFile(
+      join(tmp, 'package.json'),
+      JSON.stringify({ name: 'app', version: '2.0.0', scripts: { dev: 'x' } })
+    )
+    await pkg.update(tmp, {
+      scripts: { build: 'y' },
+      dependencies: { a: '1.0.0' }
+    })
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data).toMatchObject({
+      name: 'app',
+      version: '2.0.0',
+      scripts: { dev: 'x', build: 'y' },
+      dependencies: { a: '1.0.0' }
+    })
+  })
+
+  it('update treats an unparseable package.json as empty and rewrites it', async () => {
+    await writeFile(join(tmp, 'package.json'), '{ corrupt')
+    await pkg.update(tmp, { scripts: { a: 'b' } })
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.scripts).toEqual({ a: 'b' })
+    expect(data.version).toBe('1.0.0')
+  })
+
+  it('update leaves existing fields alone when new ones are empty', async () => {
+    await pkg.update(tmp, {
+      dependencies: {},
+      devDependencies: {},
+      scripts: {}
+    })
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.dependencies).toBeUndefined()
+    expect(data.devDependencies).toBeUndefined()
+    expect(data.scripts).toBeUndefined()
+  })
+
+  it('install runs `npm install` in the target directory', async () => {
+    await pkg.install(tmp)
+    expect(execFileMock).toHaveBeenCalledWith('npm', ['install'], { cwd: tmp })
+  })
+
+  it('install propagates errors from npm subprocess', async () => {
+    execFileMock.mockReturnValueOnce(new Error('ENOENT'))
+    await expect(pkg.install(tmp)).rejects.toThrow('ENOENT')
+  })
+
+  it('update merges devDependencies into the output', async () => {
+    await pkg.update(tmp, { devDependencies: { d: '1' } })
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.devDependencies).toEqual({ d: '1' })
+  })
+})

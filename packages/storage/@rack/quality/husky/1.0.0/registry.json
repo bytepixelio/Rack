@@ -1,0 +1,16 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "husky",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:quality",
+  "priority": 6,
+  "description": "Husky Git hooks manager",
+  "tags": ["husky", "git-hooks", "code-quality"],
+  "devDependencies": {
+    "husky": "^8.0.3"
+  },
+  "scripts": {
+    "prepare": "husky install"
+  }
+}

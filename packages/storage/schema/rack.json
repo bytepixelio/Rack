@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://registry.rackjs.com/schemas/rack.json",
+  "title": "Rack Configuration",
+  "description": "Schema for a Rack project manifest (rack.json) — tracks installed registries and project settings",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "registryIdentifier": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
+          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+        },
+        {
+          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
+          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Project name"
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Active language variant for installed registries (e.g. js, ts)"
+    },
+    "template": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Preset used to initialize the project (e.g. presets/node)"
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/registryIdentifier" },
+      "description": "Installed registry identifiers"
+    }
+  },
+  "required": ["name"]
+}

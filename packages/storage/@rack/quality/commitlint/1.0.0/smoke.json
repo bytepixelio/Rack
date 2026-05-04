@@ -1,0 +1,13 @@
+{
+  "json": {
+    ".commitlintrc": {
+      "extends": { "contains": "@commitlint/config-conventional" }
+    },
+    ".czrc": {
+      "path": "node_modules/cz-customizable"
+    }
+  },
+  "text": {
+    ".husky/commit-msg": { "contains": ["commitlint"] }
+  }
+}

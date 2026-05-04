@@ -1,0 +1,68 @@
+{
+  "name": "rack",
+  "version": "1.0.0",
+  "description": "Based on the Registry architecture, scaffolds can be freely combined to quickly start projects",
+  "private": true,
+  "license": "MIT",
+  "author": "2046",
+  "homepage": "https://rackjs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bytepixelio/Rack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bytepixelio/Rack/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "commit": "npx git-cz",
+    "prepare": "husky install",
+    "preinstall": "npx only-allow pnpm",
+    "dev": "TURBO_LOG_VERBOSITY=0 turbo dev",
+    "test": "TURBO_LOG_VERBOSITY=0 turbo test",
+    "lint": "TURBO_LOG_VERBOSITY=0 turbo lint",
+    "build": "TURBO_LOG_VERBOSITY=0 turbo build",
+    "clean": "turbo clean && rm -rf node_modules",
+    "test:e2e": "TURBO_LOG_VERBOSITY=0 turbo test:e2e",
+    "docs": "TURBO_LOG_VERBOSITY=0 turbo docs:build && TURBO_LOG_VERBOSITY=0 turbo docs:preview",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "0.6.0",
+    "@changesets/cli": "2.31.0",
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-conventional": "19.8.1",
+    "@eslint/js": "9.33.0",
+    "@typescript-eslint/eslint-plugin": "8.39.0",
+    "@typescript-eslint/parser": "8.39.0",
+    "commitizen": "4.3.1",
+    "cz-customizable": "7.4.0",
+    "eslint": "9.33.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.4",
+    "globals": "16.3.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.1.5",
+    "only-allow": "1.2.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=22.10.0",
+    "pnpm": ">=10.8.0"
+  },
+  "packageManager": "pnpm@10.14.0",
+  "dependencies": {
+    "turbo": "2.6.0"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "commitlint",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:quality",
+  "priority": 6,
+  "description": "Commitlint and Commitizen configuration for conventional commits",
+  "tags": ["commitlint", "commitizen", "git", "code-quality"],
+  "registryDependencies": [
+    "@rack/quality/husky"
+  ],
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "commitizen": "^4.3.0",
+    "cz-customizable": "^7.0.0"
+  },
+  "scripts": {
+    "commit": "npx git-cz"
+  },
+  "files": [
+    {
+      "target": ".commitlintrc",
+      "type": "registry:config",
+      "path": "./templates/.commitlintrc"
+    },
+    {
+      "target": ".cz-config.js",
+      "type": "registry:config",
+      "path": "./templates/.cz-config.js"
+    },
+    {
+      "target": ".czrc",
+      "type": "registry:config",
+      "content": "{\n  \"path\": \"node_modules/cz-customizable\"\n}",
+      "mergeStrategy": {
+        "type": "builtin",
+        "strategy": "json"
+      }
+    },
+    {
+      "target": ".husky/commit-msg",
+      "type": "registry:script",
+      "path": "./templates/.husky/commit-msg",
+      "executable": true
+    }
+  ]
+}

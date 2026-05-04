@@ -1,0 +1,35 @@
+services:
+  registry-server:
+    build:
+      context: ../..
+      dockerfile: apps/registry-server/Dockerfile
+    ports:
+      - "${HOST_PORT:-18080}:8080"
+    volumes:
+      - storage-data:/data
+      - ./config/webhooks.json:/app/config/webhooks.json:ro
+      - ../../config/auth.json:/app/config/auth.json:ro
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - STORAGE_ROOT=/data
+      - SCHEMA_DIR=/app/schema
+      - AUTH_CONFIG_PATH=config/auth.json
+      - WEBHOOK_CONFIG_PATH=config/webhooks.json
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=production
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+volumes:
+  storage-data:

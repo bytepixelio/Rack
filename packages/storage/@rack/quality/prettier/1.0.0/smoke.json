@@ -1,0 +1,12 @@
+{
+  "json": {
+    ".prettierrc": {
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2
+    }
+  },
+  "text": {
+    ".lintstagedrc": { "contains": ["prettier --write"] }
+  }
+}

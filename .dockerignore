@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+
+apps/cli
+apps/docs
+apps/e2e
+apps/registry-server/tests
+apps/registry-server/docs
+apps/registry-server/vitest.config.ts

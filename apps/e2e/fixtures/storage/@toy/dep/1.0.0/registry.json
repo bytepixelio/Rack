@@ -1,0 +1,17 @@
+{
+  "name": "dep",
+  "namespace": "@toy",
+  "version": "1.0.0",
+  "type": "registry:quality",
+  "priority": 2,
+  "description": "Toy module declaring a registryDependencies chain",
+  "tags": ["toy"],
+  "registryDependencies": ["@toy/base"],
+  "files": [
+    {
+      "target": ".toy-dep",
+      "type": "registry:config",
+      "content": "dep=1\n"
+    }
+  ]
+}

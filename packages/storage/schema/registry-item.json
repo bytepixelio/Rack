@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://registry.rackjs.com/schemas/registry-item.json",
+  "title": "Registry Item Configuration",
+  "description": "Schema for a single registry item (registry.json) — the unit installed by `rk add`",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "registryIdentifier": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
+          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+        },
+        {
+          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
+          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+        }
+      ]
+    },
+    "fileType": {
+      "type": "string",
+      "enum": [
+        "registry:entry",
+        "registry:config",
+        "registry:lib",
+        "registry:test",
+        "registry:docs",
+        "registry:script",
+        "registry:asset"
+      ]
+    },
+    "mergeStrategyKind": {
+      "type": "string",
+      "enum": ["builtin", "custom"]
+    },
+    "mergeStrategyName": {
+      "type": "string",
+      "enum": ["json", "ignore", "env", "overwrite"]
+    },
+    "mergeStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "$ref": "#/$defs/mergeStrategyKind" },
+        "strategy": { "$ref": "#/$defs/mergeStrategyName" },
+        "script": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Plugin script path (used when type=custom)"
+        }
+      },
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": { "type": { "const": "builtin" } },
+          "required": ["strategy"]
+        },
+        {
+          "properties": { "type": { "const": "custom" } },
+          "required": ["script"]
+        }
+      ]
+    },
+    "dependencyMap": {
+      "type": "object",
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "registryFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Destination path in the project (relative to project root)"
+        },
+        "type": { "$ref": "#/$defs/fileType" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Template path on the registry server (alternative to content)"
+        },
+        "content": {
+          "type": "string",
+          "description": "Inline file content (alternative to path)"
+        },
+        "executable": {
+          "type": "boolean",
+          "description": "Whether the file should be executable (chmod +x)"
+        },
+        "mergeStrategy": { "$ref": "#/$defs/mergeStrategy" }
+      },
+      "required": ["target", "type"],
+      "anyOf": [
+        { "required": ["path"] },
+        { "required": ["content"] }
+      ]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Registry item name (kebab-case)"
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^@[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Owner namespace, prefixed with @"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "registry:runtime",
+        "registry:framework",
+        "registry:build",
+        "registry:feature",
+        "registry:testing",
+        "registry:quality"
+      ],
+      "description": "Registry category"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "description": "Semantic version (semver)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable summary"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Free-form keywords for discovery"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Install order at the same dependency level (lower runs earlier)"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name and (optionally) contact"
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier (e.g. MIT, Apache-2.0)"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Project homepage URL"
+    },
+    "repository": {
+      "type": "string",
+      "description": "Repository URL or shorthand (e.g. github:owner/repo)"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/registryIdentifier" },
+      "description": "Registries that must NOT be installed alongside this one"
+    },
+    "registryDependencies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/registryIdentifier" },
+      "description": "Registries that must be installed before this one"
+    },
+    "dependencies": {
+      "$ref": "#/$defs/dependencyMap",
+      "description": "Runtime npm dependencies to merge into package.json"
+    },
+    "devDependencies": {
+      "$ref": "#/$defs/dependencyMap",
+      "description": "Dev npm dependencies to merge into package.json"
+    },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/registryFile" },
+      "description": "Files to materialize in the project"
+    },
+    "scripts": {
+      "$ref": "#/$defs/dependencyMap",
+      "description": "Scripts to merge into package.json"
+    },
+    "envVars": {
+      "type": "object",
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": { "type": "string" },
+      "description": "Environment variables to record (values may be empty placeholders)"
+    },
+    "languages": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dependencies": { "$ref": "#/$defs/dependencyMap" },
+          "devDependencies": { "$ref": "#/$defs/dependencyMap" },
+          "files": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/registryFile" }
+          }
+        }
+      },
+      "description": "Per-language overlays (e.g. js, ts) that extend or override top-level fields"
+    },
+    "defaultLanguage": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Language key from `languages` to use when none is specified"
+    }
+  },
+  "required": ["name", "namespace", "type", "version", "priority"]
+}

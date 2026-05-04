@@ -1,0 +1,72 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+/node_modules
+
+# pnpm
+.pnpm-store/
+.pnpm-debug.log*
+
+# Output directories (monorepo structure)
+/dist
+/apps/*/dist
+/packages/*/dist
+
+# Lock files (non-pnpm)
+package-lock.json
+yarn.lock
+
+# Optional npm cache directory
+.npm
+
+# -- VSCode --
+jsconfig.json
+
+# -- IDEA --
+/.idea
+
+## File-based project format:
+*.ipr
+*.iws
+*.iml
+
+# -- OS X --
+.DS_Store
+
+# -- ESLint --
+.eslintcache
+
+# -- Jest --
+/coverage
+
+# Build artifacts
+*.tsbuildinfo
+
+# Generated schema copies for CLI (created during prepublish)
+/apps/cli/src/core/schema/*.json
+
+# -- Backups --
+backups/
+
+# -- Turbo --
+.turbo
+
+# -- testing --
+.vitest
+/coverage
+coverage/
+
+
+# -- docs --
+/apps/docs/.vitepress/cache
+/apps/docs/.vitepress/dist

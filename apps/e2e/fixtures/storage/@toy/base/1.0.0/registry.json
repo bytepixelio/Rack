@@ -1,0 +1,16 @@
+{
+  "name": "base",
+  "namespace": "@toy",
+  "version": "1.0.0",
+  "type": "registry:runtime",
+  "priority": 1,
+  "description": "Toy base module for pipeline tests",
+  "tags": ["toy"],
+  "files": [
+    {
+      "target": ".toy-base",
+      "type": "registry:config",
+      "content": "base=1\n"
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+name: Deploy Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/registry-worker/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-worker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @rack/registry-worker typecheck
+
+      - run: pnpm --filter @rack/registry-worker test
+
+      - name: Deploy to Cloudflare
+        working-directory: apps/registry-worker
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Post-deploy health check
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused https://registry.rackjs.com/health
+
+  post-deploy-smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @rack/registry-server build
+      - run: pnpm --filter rackjs-cli build
+
+      - name: Clean up prior smoke fixture in R2
+        run: |
+          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/e2e-upload-smoke/" \
+            --recursive \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
+      - name: Start r2-mode registry-server
+        working-directory: apps/registry-server
+        run: |
+          nohup node dist/server.js > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+          for i in {1..15}; do
+            if curl -sf http://localhost:8080/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to come up within 15s"
+          cat /tmp/server.log
+          exit 1
+        env:
+          PORT: 8080
+          STORAGE_BACKEND: r2
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          ADMIN_TOKEN: ci-admin-token
+
+      - name: Run upload roundtrip
+        run: pnpm --filter @rack/e2e test:e2e -- tests/uploads.test.ts
+        env:
+          RACK_REGISTRY_URL: https://registry.rackjs.com
+          RACK_SERVER_URL: http://localhost:8080
+          RACK_ADMIN_TOKEN: ci-admin-token
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) 2>/dev/null || true
+          fi
+
+      - name: Clean up smoke fixture in R2
+        if: always()
+        run: |
+          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/e2e-upload-smoke/" \
+            --recursive \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
+      - name: Dump server logs on failure
+        if: failure()
+        run: cat /tmp/server.log || true

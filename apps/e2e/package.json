@@ -1,0 +1,24 @@
+{
+  "name": "@rack/e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for the Rack CLI + registry server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "vitest run",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "rackjs-cli": "workspace:*",
+    "@rack/registry-server": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.17",
+    "execa": "9.5.2",
+    "typescript": "5.9.2",
+    "vitest": "2.1.4"
+  },
+  "engines": {
+    "node": ">=22.10.0"
+  }
+}

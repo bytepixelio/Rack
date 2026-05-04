@@ -1,0 +1,27 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "typescript",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:runtime",
+  "priority": 1,
+  "description": "TypeScript runtime with entry file and execution scripts",
+  "tags": ["typescript", "runtime", "language"],
+  "registryDependencies": [
+    "@rack/runtimes/node",
+    "@rack/build/typescript"
+  ],
+  "devDependencies": {
+    "tsx": "^3.13.0"
+  },
+  "scripts": {
+    "start": "npx tsx ./src/index.ts"
+  },
+  "files": [
+    {
+      "target": "src/index.ts",
+      "type": "registry:entry",
+      "path": "./templates/src/index.ts"
+    }
+  ]
+}

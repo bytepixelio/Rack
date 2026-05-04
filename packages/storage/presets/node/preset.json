@@ -1,0 +1,17 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/preset.json",
+  "name": "node",
+  "version": "1.0.0",
+  "description": "Node.js project with TypeScript support and comprehensive development tooling",
+  "tags": ["node", "typescript"],
+  "registries": [
+    "runtimes/node",
+    "runtimes/typescript",
+    "build/typescript",
+    "quality/husky",
+    "quality/prettier",
+    "quality/eslint",
+    "quality/lint-staged",
+    "quality/commitlint"
+  ]
+}

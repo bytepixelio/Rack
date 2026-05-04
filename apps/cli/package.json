@@ -1,0 +1,63 @@
+{
+  "name": "rackjs-cli",
+  "version": "1.0.1",
+  "description": "Rack CLI tool",
+  "type": "module",
+  "license": "MIT",
+  "author": "2046",
+  "homepage": "https://rackjs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bytepixelio/Rack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bytepixelio/Rack/issues"
+  },
+  "keywords": [
+    "scaffold",
+    "registry",
+    "cli",
+    "rack",
+    "monorepo"
+  ],
+  "bin": {
+    "rk": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint": "tsc --noEmit",
+    "dev": "tsx ./src/bin.ts",
+    "start": "node --import tsx/esm ./src/bin.ts",
+    "test": "vitest run --coverage --silent",
+    "prepublishOnly": "pnpm run build && pnpm run lint && pnpm run test"
+  },
+  "dependencies": {
+    "axios": "1.13.2",
+    "axios-retry": "4.5.0",
+    "chalk": "5.6.2",
+    "commander": "14.0.2",
+    "lodash-es": "4.17.21",
+    "lru-cache": "11.2.4",
+    "ora": "8.1.1",
+    "prompts": "2.4.2",
+    "semver": "7.7.3"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "4.17.12",
+    "@types/node": "20.19.17",
+    "@types/prompts": "2.4.9",
+    "@types/semver": "^7.5.0",
+    "@vitest/coverage-v8": "2.1.4",
+    "axios-mock-adapter": "2.1.0",
+    "tsup": "8.5.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.2",
+    "vitest": "2.1.4"
+  },
+  "engines": {
+    "node": ">=22.10.0"
+  }
+}

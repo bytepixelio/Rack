@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://registry.rackjs.com/schemas/preset.json",
+  "title": "Preset Configuration",
+  "description": "Schema for a preset (preset.json) — a curated bundle of registries installed together",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "registryIdentifier": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
+          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+        },
+        {
+          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
+          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Preset name (kebab-case)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "description": "Semantic version (semver)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable summary"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name and (optionally) contact"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Free-form keywords for discovery"
+    },
+    "registries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/registryIdentifier" },
+      "description": "Registries to install (in declared order)"
+    }
+  },
+  "required": ["name", "version", "registries"]
+}

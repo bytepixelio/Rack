@@ -1,0 +1,16 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "e2e-upload-smoke",
+  "namespace": "@rack",
+  "version": "0.0.0",
+  "type": "registry:feature",
+  "priority": 0,
+  "description": "E2E upload smoke fixture. Uploaded by apps/e2e/tests/uploads.test.ts to exercise the POST /registries surface. Not intended for `rk add`.",
+  "files": [
+    {
+      "target": ".e2e-upload-smoke",
+      "type": "registry:config",
+      "content": "e2e upload smoke fixture\n"
+    }
+  ]
+}

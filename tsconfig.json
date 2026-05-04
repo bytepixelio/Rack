@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["ESNext"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "importHelpers": true,
+    "removeComments": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [],
+  "references": [
+    {
+      "path": "./apps/cli"
+    },
+    {
+      "path": "./apps/registry-server"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "text": {
+    ".gitignore": { "contains": ["node_modules"] }
+  }
+}
