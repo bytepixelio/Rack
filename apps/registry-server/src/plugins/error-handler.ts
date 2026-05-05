@@ -24,10 +24,11 @@ async function errorHandlerPlugin(app: FastifyInstance): Promise<void> {
     }
 
     // Fastify built-in errors (validation, 404, etc.) or unexpected errors
-    const statusCode = (error as { statusCode?: number }).statusCode ?? 500
-    const code = (error as { code?: string }).code ?? 'INTERNAL_SERVER_ERROR'
+    const e = error as { statusCode?: number; code?: string; message?: string }
+    const statusCode = e.statusCode ?? 500
+    const code = e.code ?? 'INTERNAL_SERVER_ERROR'
 
-    return reply.status(statusCode).send({ code, message: error.message })
+    return reply.status(statusCode).send({ code, message: e.message })
   })
 }
 
