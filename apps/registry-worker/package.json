@@ -13,7 +13,7 @@
     "@rack/auth-core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250410.0",
+    "@cloudflare/workers-types": "^4.20260505.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.1",
     "wrangler": "^4.87.0"

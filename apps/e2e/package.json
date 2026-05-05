@@ -9,12 +9,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "rackjs-cli": "workspace:*",
-    "@rack/registry-server": "workspace:*"
+    "@rack/registry-server": "workspace:*",
+    "rackjs-cli": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "20.19.17",
-    "execa": "9.5.2",
+    "execa": "9.6.1",
     "typescript": "5.9.2",
     "vitest": "2.1.4"
   },
