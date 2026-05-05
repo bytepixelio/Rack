@@ -52,8 +52,8 @@
     "@types/semver": "^7.5.0",
     "@vitest/coverage-v8": "2.1.4",
     "axios-mock-adapter": "2.1.0",
-    "tsup": "8.5.0",
-    "tsx": "4.20.6",
+    "tsup": "8.5.1",
+    "tsx": "4.21.0",
     "typescript": "5.9.2",
     "vitest": "2.1.4"
   },
