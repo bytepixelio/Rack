@@ -23,3 +23,5 @@ updates:
       - dependency-name: picomatch         # via @changesets -> fast-glob
       - dependency-name: fast-xml-parser   # via @aws-sdk/client-s3
       - dependency-name: follow-redirects  # via axios
+      - dependency-name: lodash            # via commitizen/cz-customizable
+      - dependency-name: brace-expansion   # via @typescript-eslint -> minimatch
