@@ -1,0 +1,18 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    # Transitive deps where the advisory's "lowest non-vulnerable version"
+    # is gated by a major bump in a parent we don't control. Without these
+    # ignores Dependabot retries each one on every push and produces
+    # `security_update_not_possible` failure runs as background noise.
+    ignore:
+      - dependency-name: vite              # via vitest
+      - dependency-name: postcss           # via vitest -> vite
+      - dependency-name: picomatch         # via @changesets -> fast-glob
+      - dependency-name: fast-xml-parser   # via @aws-sdk/client-s3
+      - dependency-name: follow-redirects  # via axios
