@@ -43,6 +43,9 @@ jsconfig.json
 # -- OS X --
 .DS_Store
 
+# -- Claude Code --
+.claude/settings.local.json
+
 # -- ESLint --
 .eslintcache
 
