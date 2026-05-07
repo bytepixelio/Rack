@@ -8,6 +8,7 @@
     "build/rollup",
     "runtimes/node",
     "runtimes/node-library",
+    "build/typescript",
     "quality/vitest",
     "quality/husky",
     "quality/prettier",
