@@ -6,9 +6,9 @@
   "type": "registry:build",
   "priority": 3,
   "description": "TypeScript compiler configuration for Node.js projects",
-  "tags": ["typescript", "build", "compiler"],
+  "tags": ["build", "compiler", "typescript"],
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^5.9.2"
   },
   "scripts": {
     "build": "npx tsc --outDir ./dist"

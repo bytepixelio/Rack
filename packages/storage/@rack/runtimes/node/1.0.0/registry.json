@@ -6,7 +6,7 @@
   "type": "registry:runtime",
   "priority": 1,
   "description": "Node.js runtime base configuration with common .gitignore rules",
-  "tags": ["node", "runtime", "base"],
+  "tags": ["node", "base", "runtime"],
   "files": [
     {
       "target": ".gitignore",
