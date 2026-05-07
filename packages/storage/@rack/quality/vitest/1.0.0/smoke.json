@@ -1,0 +1,15 @@
+{
+  "files": {
+    "exist": ["vitest.config.ts"]
+  },
+  "json": {
+    "package.json": {
+      "scripts.test": { "contains": "vitest" },
+      "devDependencies.vitest": { "exists": true },
+      "devDependencies.@vitest/coverage-v8": { "exists": true }
+    }
+  },
+  "text": {
+    "vitest.config.ts": { "contains": ["coverage", "defineConfig"] }
+  }
+}

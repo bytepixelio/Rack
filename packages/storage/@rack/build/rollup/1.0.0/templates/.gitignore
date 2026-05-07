@@ -1,0 +1,6 @@
+# Output directories
+/dist
+/types
+
+# -- TypeScript --
+*.tsbuildinfo

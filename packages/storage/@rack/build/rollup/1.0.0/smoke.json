@@ -1,0 +1,20 @@
+{
+  "files": {
+    "exist": [".browserslistrc", "rollup.config.mjs", "babel.config.json"]
+  },
+  "json": {
+    "package.json": {
+      "scripts.build": { "contains": "rollup" },
+      "devDependencies.rollup": { "exists": true },
+      "devDependencies.@babel/preset-env": { "exists": true },
+      "dependencies.@babel/runtime-corejs3": { "exists": true }
+    },
+    "tsconfig.json": {
+      "compilerOptions.declaration": true,
+      "compilerOptions.declarationDir": "types"
+    }
+  },
+  "text": {
+    "rollup.config.mjs": { "contains": ["defineConfig", "rollup-plugin-typescript2"] }
+  }
+}
