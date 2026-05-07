@@ -66,7 +66,9 @@ describe('every preset scaffolds via rk init --ci', () => {
             `[${preset.id}] unknown member registry: ${entry} (resolved to ${id})`
           )
         }
-        await verifyBaseline(material, projectDir)
+        await verifyBaseline(material, projectDir, {
+          allowScriptOverride: true
+        })
 
         const smoke = await loadSmoke(
           path.join(material.dir, 'smoke.json')
