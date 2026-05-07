@@ -1,13 +1,13 @@
 {
   "$schema": "https://registry.rackjs.com/schemas/preset.json",
-  "name": "node-library",
+  "name": "node-package",
   "version": "1.0.0",
-  "description": "Publishable Node library scaffold: Rollup dual CJS/ESM build, Vitest tests, ESLint + Prettier, Husky + commitlint",
+  "description": "Publishable npm package scaffold: Rollup dual CJS/ESM build, Vitest tests, ESLint + Prettier, Husky + commitlint",
   "tags": ["node", "rollup", "vitest", "library", "typescript"],
   "registries": [
     "build/rollup",
     "runtimes/node",
-    "runtimes/node-library",
+    "runtimes/node-package",
     "build/typescript",
     "quality/vitest",
     "quality/husky",

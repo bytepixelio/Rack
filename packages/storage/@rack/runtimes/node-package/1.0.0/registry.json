@@ -1,11 +1,11 @@
 {
   "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
-  "name": "node-library",
+  "name": "node-package",
   "namespace": "@rack",
   "version": "1.0.0",
   "type": "registry:runtime",
   "priority": 2,
-  "description": "Node library scaffold: ESM + CJS dual exports, library-shape package.json, src entry, sample test, .npmignore",
+  "description": "Node package scaffold: ESM + CJS dual exports, library-shape package.json, src entry, sample test, .npmignore",
   "tags": ["node", "library", "package", "scaffold"],
   "registryDependencies": [
     "@rack/runtimes/node"
