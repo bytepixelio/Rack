@@ -30,7 +30,7 @@ describe('every @rack/* registry is installable via rk add', () => {
   it.each(materials)('$id@$version', async (material) => {
     const ws = await createWorkspace(server.url)
     try {
-      const result = await runCli(['add', material.id], {
+      const result = await runCli(['add', `${material.id}@${material.version}`], {
         cwd: ws.cwd,
         home: ws.home
       })

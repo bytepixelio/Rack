@@ -1,17 +1,17 @@
 {
-  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "$schema": "https://rackjs.com/schema/registry-item.json",
   "name": "lint-staged",
   "namespace": "@rack",
   "version": "1.0.0",
   "type": "registry:quality",
   "priority": 6,
   "description": "Lint-staged integration for Git pre-commit hooks",
-  "tags": ["git-hooks", "lint-staged", "code-quality"],
+  "tags": ["lint-staged", "git-hooks", "code-quality"],
   "registryDependencies": [
     "@rack/quality/husky"
   ],
   "devDependencies": {
-    "lint-staged": "^17.0.2"
+    "lint-staged": "^14.0.1"
   },
   "files": [
     {

@@ -1,14 +1,14 @@
 {
-  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "$schema": "https://rackjs.com/schema/registry-item.json",
   "name": "typescript",
   "namespace": "@rack",
   "version": "1.0.0",
   "type": "registry:build",
   "priority": 3,
   "description": "TypeScript compiler configuration for Node.js projects",
-  "tags": ["build", "compiler", "typescript"],
+  "tags": ["typescript", "build", "compiler"],
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "build": "npx tsc --outDir ./dist"
