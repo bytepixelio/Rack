@@ -3,10 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -35,6 +37,7 @@ jobs:
       - run: pnpm test:e2e
 
       - name: Authenticate npm
+        if: github.event_name == 'push'
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> "$HOME/.npmrc"
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
@@ -42,6 +45,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create release PR or publish
+        if: github.event_name == 'push'
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
