@@ -1,0 +1,28 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "typescript",
+  "namespace": "@rack",
+  "version": "1.0.1",
+  "type": "registry:build",
+  "priority": 3,
+  "description": "TypeScript compiler configuration for Node.js projects",
+  "tags": ["build", "compiler", "typescript"],
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "build": "npx tsc --outDir ./dist"
+  },
+  "files": [
+    {
+      "target": "tsconfig.json",
+      "type": "registry:config",
+      "path": "./templates/tsconfig.json"
+    },
+    {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    }
+  ]
+}

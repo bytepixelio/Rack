@@ -1,0 +1,32 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "prettier",
+  "namespace": "@rack",
+  "version": "1.0.1",
+  "type": "registry:quality",
+  "priority": 6,
+  "description": "Prettier code formatter configuration",
+  "tags": ["prettier", "formatting", "code-quality"],
+  "registryDependencies": [
+    "@rack/quality/lint-staged"
+  ],
+  "devDependencies": {
+    "prettier": "^3.8.3"
+  },
+  "files": [
+    {
+      "target": ".prettierrc",
+      "type": "registry:config",
+      "content": "{\n  \"tabWidth\": 2,\n  \"semi\": false,\n  \"singleQuote\": true,\n  \"trailingComma\": \"none\"\n}"
+    },
+    {
+      "target": ".lintstagedrc",
+      "type": "registry:config",
+      "path": "./templates/.lintstagedrc",
+      "mergeStrategy": {
+        "type": "builtin",
+        "strategy": "json"
+      }
+    }
+  ]
+}
