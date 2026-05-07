@@ -59,7 +59,7 @@ jobs:
 
       - name: Clean up prior smoke fixture in R2
         run: |
-          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/e2e-upload-smoke/" \
+          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/features/e2e-upload-smoke/" \
             --recursive \
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
         env:
@@ -109,7 +109,7 @@ jobs:
       - name: Clean up smoke fixture in R2
         if: always()
         run: |
-          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/e2e-upload-smoke/" \
+          aws s3 rm "s3://${R2_BUCKET_NAME}/@rack/features/e2e-upload-smoke/" \
             --recursive \
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
         env:
