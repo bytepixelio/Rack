@@ -1,5 +1,5 @@
 {
-  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "$schema": "https://rackjs.com/schema/registry-item.json",
   "name": "prettier",
   "namespace": "@rack",
   "version": "1.0.0",
@@ -11,7 +11,7 @@
     "@rack/quality/lint-staged"
   ],
   "devDependencies": {
-    "prettier": "^3.8.3"
+    "prettier": "^3.0.3"
   },
   "files": [
     {

@@ -1,20 +1,20 @@
 {
-  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "$schema": "https://rackjs.com/schema/registry-item.json",
   "name": "commitlint",
   "namespace": "@rack",
   "version": "1.0.0",
   "type": "registry:quality",
   "priority": 6,
   "description": "Commitlint and Commitizen configuration for conventional commits",
-  "tags": ["git", "commitlint", "commitizen", "code-quality"],
+  "tags": ["commitlint", "commitizen", "git", "code-quality"],
   "registryDependencies": [
     "@rack/quality/husky"
   ],
   "devDependencies": {
-    "@commitlint/cli": "^20.5.3",
-    "@commitlint/config-conventional": "^20.5.3",
-    "commitizen": "^4.3.1",
-    "cz-customizable": "^7.5.4"
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "commitizen": "^4.3.0",
+    "cz-customizable": "^7.0.0"
   },
   "scripts": {
     "commit": "npx git-cz"
@@ -26,9 +26,9 @@
       "path": "./templates/.commitlintrc"
     },
     {
-      "target": ".cz-config.cjs",
+      "target": ".cz-config.js",
       "type": "registry:config",
-      "path": "./templates/.cz-config.cjs"
+      "path": "./templates/.cz-config.js"
     },
     {
       "target": ".czrc",

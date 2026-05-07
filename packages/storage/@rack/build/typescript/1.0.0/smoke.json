@@ -7,7 +7,8 @@
       "compilerOptions.strict": true
     },
     "package.json": {
-      "devDependencies.typescript": { "exists": true }
+      "devDependencies.typescript": { "exists": true },
+      "scripts.build": { "contains": "tsc" }
     }
   }
 }
