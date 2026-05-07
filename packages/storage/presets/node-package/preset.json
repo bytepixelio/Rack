@@ -1,0 +1,19 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/preset.json",
+  "name": "node-package",
+  "version": "1.0.0",
+  "description": "Publishable npm package scaffold: Rollup dual CJS/ESM build, Vitest tests, ESLint + Prettier, Husky + commitlint",
+  "tags": ["node", "rollup", "vitest", "library", "typescript"],
+  "registries": [
+    "build/rollup",
+    "runtimes/node",
+    "runtimes/node-package",
+    "build/typescript",
+    "quality/vitest",
+    "quality/husky",
+    "quality/prettier",
+    "quality/eslint",
+    "quality/lint-staged",
+    "quality/commitlint"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "vitest",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:testing",
+  "priority": 5,
+  "description": "Vitest test runner with v8 coverage — native ESM/TypeScript support",
+  "tags": ["vitest", "testing", "coverage"],
+  "devDependencies": {
+    "vitest": "^3.2.1",
+    "@vitest/coverage-v8": "^3.2.1"
+  },
+  "scripts": {
+    "test": "npx vitest run --coverage"
+  },
+  "files": [
+    {
+      "target": "vitest.config.ts",
+      "type": "registry:config",
+      "path": "./templates/vitest.config.ts"
+    },
+    {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    }
+  ]
+}

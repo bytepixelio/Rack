@@ -6,15 +6,15 @@
   "type": "registry:quality",
   "priority": 6,
   "description": "Commitlint and Commitizen configuration for conventional commits",
-  "tags": ["commitlint", "commitizen", "git", "code-quality"],
+  "tags": ["git", "commitlint", "commitizen", "code-quality"],
   "registryDependencies": [
     "@rack/quality/husky"
   ],
   "devDependencies": {
-    "@commitlint/cli": "^17.7.1",
-    "@commitlint/config-conventional": "^17.7.0",
-    "commitizen": "^4.3.0",
-    "cz-customizable": "^7.0.0"
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "commitizen": "^4.3.1",
+    "cz-customizable": "^7.5.4"
   },
   "scripts": {
     "commit": "npx git-cz"
@@ -26,9 +26,9 @@
       "path": "./templates/.commitlintrc"
     },
     {
-      "target": ".cz-config.js",
+      "target": ".cz-config.cjs",
       "type": "registry:config",
-      "path": "./templates/.cz-config.js"
+      "path": "./templates/.cz-config.cjs"
     },
     {
       "target": ".czrc",

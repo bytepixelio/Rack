@@ -1,0 +1,35 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "node-package",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:runtime",
+  "priority": 2,
+  "description": "Node package scaffold: ESM + CJS dual exports, library-shape package.json, src entry, sample test, .npmignore",
+  "tags": ["node", "library", "package", "scaffold"],
+  "registryDependencies": [
+    "@rack/runtimes/node"
+  ],
+  "files": [
+    {
+      "target": "src/index.ts",
+      "type": "registry:entry",
+      "path": "./templates/src/index.ts"
+    },
+    {
+      "target": "test/hello.test.ts",
+      "type": "registry:test",
+      "path": "./templates/test/hello.test.ts"
+    },
+    {
+      "target": ".npmignore",
+      "type": "registry:config",
+      "path": "./templates/.npmignore"
+    },
+    {
+      "target": "package.json",
+      "type": "registry:config",
+      "path": "./templates/package.json"
+    }
+  ]
+}

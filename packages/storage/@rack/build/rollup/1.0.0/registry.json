@@ -1,0 +1,61 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "rollup",
+  "namespace": "@rack",
+  "version": "1.0.0",
+  "type": "registry:build",
+  "priority": 4,
+  "description": "Rollup bundler for publishable Node libraries: dual CJS/ESM output, Babel + corejs runtime, TypeScript declarations",
+  "tags": ["babel", "build", "rollup", "bundler", "library"],
+  "registryDependencies": [
+    "@rack/build/typescript"
+  ],
+  "dependencies": {
+    "@babel/runtime": "^7.29.2",
+    "@babel/runtime-corejs3": "^7.29.2"
+  },
+  "devDependencies": {
+    "tslib": "^2.8.1",
+    "rollup": "^4.60.3",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-babel": "^7.0.0",
+    "rollup-plugin-delete": "^3.0.2",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "rollup-plugin-typescript2": "^0.37.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup-plugin-node-externals": "^9.0.1",
+    "@babel/plugin-transform-runtime": "^7.29.0"
+  },
+  "scripts": {
+    "build": "npx rollup -c ./rollup.config.mjs"
+  },
+  "files": [
+    {
+      "target": "rollup.config.mjs",
+      "type": "registry:config",
+      "path": "./templates/rollup.config.mjs"
+    },
+    {
+      "target": "babel.config.json",
+      "type": "registry:config",
+      "path": "./templates/babel.config.json"
+    },
+    {
+      "target": ".browserslistrc",
+      "type": "registry:config",
+      "path": "./templates/.browserslistrc"
+    },
+    {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    },
+    {
+      "target": "tsconfig.json",
+      "type": "registry:config",
+      "path": "./templates/tsconfig.json"
+    }
+  ]
+}

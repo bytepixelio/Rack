@@ -8,9 +8,9 @@
   "description": "Husky Git hooks manager",
   "tags": ["husky", "git-hooks", "code-quality"],
   "devDependencies": {
-    "husky": "^8.0.3"
+    "husky": "^9.1.7"
   },
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky"
   }
 }

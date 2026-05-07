@@ -12,17 +12,19 @@
     "@rack/quality/lint-staged"
   ],
   "devDependencies": {
-    "eslint": "^8.50.0",
-    "@typescript-eslint/eslint-plugin": "^6.7.2",
-    "@typescript-eslint/parser": "^6.7.2",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.0"
+    "globals": "^15.14.0",
+    "eslint": "^9.33.0",
+    "@eslint/js": "^9.33.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-config-prettier": "^10.1.8",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.2"
   },
   "files": [
     {
-      "target": ".eslintrc.js",
+      "target": "eslint.config.js",
       "type": "registry:config",
-      "path": "./templates/.eslintrc.js"
+      "path": "./templates/eslint.config.js"
     },
     {
       "target": ".lintstagedrc",

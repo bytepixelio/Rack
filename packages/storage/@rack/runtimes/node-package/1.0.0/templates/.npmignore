@@ -1,0 +1,30 @@
+# -- Lint config --
+.husky
+.lintstagedrc
+
+# -- Commit lint config --
+.czrc
+.cz-config.cjs
+.commitlintrc
+
+# -- ESlint config --
+eslint.config.js
+
+# -- Prettier config --
+.prettierrc
+
+# -- Build config --
+rollup.config.mjs
+babel.config.json
+
+# -- Test config --
+/test
+/coverage
+vitest.config.ts
+
+# -- TypeScript config --
+tsconfig.json
+
+# -- Misc config --
+.browserslistrc
+.vscode
