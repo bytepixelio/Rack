@@ -1,0 +1,44 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "eslint",
+  "namespace": "@rack",
+  "version": "1.0.1",
+  "type": "registry:quality",
+  "priority": 6,
+  "description": "ESLint configuration with TypeScript and Prettier support",
+  "tags": ["eslint", "linting", "code-quality"],
+  "registryDependencies": [
+    "@rack/quality/prettier",
+    "@rack/quality/lint-staged"
+  ],
+  "devDependencies": {
+    "globals": "^15.14.0",
+    "eslint": "^9.33.0",
+    "@eslint/js": "^9.33.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-config-prettier": "^10.1.8",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.2"
+  },
+  "files": [
+    {
+      "target": "eslint.config.js",
+      "type": "registry:config",
+      "path": "./templates/eslint.config.js"
+    },
+    {
+      "target": ".lintstagedrc",
+      "type": "registry:config",
+      "path": "./templates/.lintstagedrc",
+      "mergeStrategy": {
+        "type": "builtin",
+        "strategy": "json"
+      }
+    },
+    {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    }
+  ]
+}

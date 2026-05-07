@@ -1,0 +1,5 @@
+{
+  "text": {
+    ".husky/pre-commit": { "contains": ["lint-staged"] }
+  }
+}
