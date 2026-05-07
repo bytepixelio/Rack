@@ -54,7 +54,7 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
         tempExtractDir = await upload.extractTarGz(tempTarPath)
 
         // 6. Parse metadata
-        const { namespace, name, version } =
+        const { namespace, name, version, segments } =
           await upload.parsePackageInfo(tempExtractDir)
 
         // 7. Validate namespace
@@ -89,7 +89,7 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
         await upload.validateSchema(tempExtractDir)
 
         // 10. Install (atomic rename + versions.json update)
-        await upload.install(tempExtractDir, namespace, name, version)
+        await upload.install(tempExtractDir, namespace, name, version, segments)
         tempExtractDir = undefined // Ownership transferred
 
         // 11. Clean up temp tar
@@ -104,7 +104,7 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
           name,
           version,
           namespace,
-          path: `${namespace}/${name}/${version}`,
+          path: `${namespace}/${segments.join('/')}/${version}`,
           message: 'Registry uploaded successfully'
         })
       } catch (error) {

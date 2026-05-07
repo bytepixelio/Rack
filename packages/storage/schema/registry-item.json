@@ -115,6 +115,11 @@
       "pattern": "^@[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "Owner namespace, prefixed with @"
     },
+    "path": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+      "description": "Optional storage segment path under namespace (e.g. \"quality/husky\"). Last segment must equal `name`. When absent, install path falls back to `type` mapping (registry:runtime → runtimes/, registry:build → build/, registry:quality → quality/) or `name` for unmapped types."
+    },
     "type": {
       "type": "string",
       "enum": [
