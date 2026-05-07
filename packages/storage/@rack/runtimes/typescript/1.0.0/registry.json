@@ -6,13 +6,13 @@
   "type": "registry:runtime",
   "priority": 1,
   "description": "TypeScript runtime with entry file and execution scripts",
-  "tags": ["typescript", "runtime", "language"],
+  "tags": ["runtime", "language", "typescript"],
   "registryDependencies": [
     "@rack/runtimes/node",
     "@rack/build/typescript"
   ],
   "devDependencies": {
-    "tsx": "^3.13.0"
+    "tsx": "^4.21.0"
   },
   "scripts": {
     "start": "npx tsx ./src/index.ts"

@@ -25,7 +25,11 @@ interface PackageJson {
  *
  * 1. Every `files[].target` exists on disk
  * 2. Every `dependencies` / `devDependencies` key is present in `package.json`
- * 3. Every `scripts` entry was merged verbatim into `package.json`
+ * 3. Every declared `scripts` entry is reflected in `package.json`. By
+ *    default the value must match verbatim (single-material installs have
+ *    no override path); pass `allowScriptOverride: true` for preset-level
+ *    composition where a downstream registry may legitimately overwrite
+ *    the value, and only presence is required.
  *
  * Throws on the first failure with a message that identifies the material
  * and the specific field. Callers get vitest integration automatically
@@ -33,10 +37,12 @@ interface PackageJson {
  *
  * @param material    - Material record from {@link discoverRegistries}
  * @param projectDir  - Absolute path to the installed project root
+ * @param options.allowScriptOverride - Treat `scripts` as presence-only
  */
 export async function verifyBaseline(
   material: Material,
-  projectDir: string
+  projectDir: string,
+  options: { allowScriptOverride?: boolean } = {}
 ): Promise<void> {
   const manifest = JSON.parse(
     await readFile(material.registryJsonPath, 'utf8')
@@ -71,9 +77,15 @@ export async function verifyBaseline(
     }
 
     for (const [name, cmd] of Object.entries(manifest.scripts ?? {})) {
-      if (pkg.scripts?.[name] !== cmd) {
+      const actual = pkg.scripts?.[name]
+      if (actual === undefined) {
         throw new Error(
-          `[${material.id}] expected package.json.scripts.${name} = ${JSON.stringify(cmd)}, got ${JSON.stringify(pkg.scripts?.[name])}`
+          `[${material.id}] expected package.json.scripts.${name} to be present`
+        )
+      }
+      if (!options.allowScriptOverride && actual !== cmd) {
+        throw new Error(
+          `[${material.id}] expected package.json.scripts.${name} = ${JSON.stringify(cmd)}, got ${JSON.stringify(actual)}`
         )
       }
     }
