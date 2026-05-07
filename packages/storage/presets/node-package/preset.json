@@ -9,7 +9,7 @@
     "runtimes/node",
     "runtimes/node-package",
     "build/typescript",
-    "quality/vitest",
+    "testing/vitest",
     "quality/husky",
     "quality/prettier",
     "quality/eslint",

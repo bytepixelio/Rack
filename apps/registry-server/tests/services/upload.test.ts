@@ -185,7 +185,25 @@ describe('UploadService', () => {
     expect(info.segments).toEqual(['runtimes', 'node'])
   })
 
-  it('should fall back to flat segments for unmapped types', async () => {
+  it('should derive segments from registry:framework type', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-framework')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'vue',
+        version: '1.0.0',
+        type: 'registry:framework'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['frameworks', 'vue'])
+  })
+
+  it('should derive segments from registry:feature type', async () => {
     const upload = createUpload()
     const extractDir = join(tempDir, 'typed-feature')
     await mkdir(extractDir, { recursive: true })
@@ -193,9 +211,45 @@ describe('UploadService', () => {
       join(extractDir, 'registry.json'),
       JSON.stringify({
         namespace: '@rack',
-        name: 'foo',
+        name: 'vue-router',
         version: '1.0.0',
         type: 'registry:feature'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['features', 'vue-router'])
+  })
+
+  it('should derive segments from registry:testing type', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-testing')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'vitest',
+        version: '1.0.0',
+        type: 'registry:testing'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['testing', 'vitest'])
+  })
+
+  it('should fall back to flat segments for unrecognized types', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-unknown')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'foo',
+        version: '1.0.0',
+        type: 'registry:custom-tool'
       })
     )
 
@@ -211,15 +265,15 @@ describe('UploadService', () => {
       join(extractDir, 'registry.json'),
       JSON.stringify({
         namespace: '@rack',
-        name: 'vitest',
+        name: 'foo',
         version: '1.0.0',
-        type: 'registry:testing',
-        path: 'quality/vitest'
+        type: 'registry:feature',
+        path: 'legacy/foo'
       })
     )
 
     const info = await upload.parsePackageInfo(extractDir)
-    expect(info.segments).toEqual(['quality', 'vitest'])
+    expect(info.segments).toEqual(['legacy', 'foo'])
   })
 
   it('should reject path whose last segment differs from name', async () => {
