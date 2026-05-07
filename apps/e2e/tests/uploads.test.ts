@@ -55,7 +55,7 @@ describe.skipIf(skipSuite)('POST /registries upload surface', () => {
   }
 
   // The caller guarantees a clean target: local runs use a fresh tmpdir;
-  // the deploy-worker smoke job deletes @rack/e2e-upload-smoke/ in R2
+  // the deploy-worker smoke job deletes @rack/features/e2e-upload-smoke/ in R2
   // before starting the server.
   it('admin token → 201', async () => {
     const status = await upload(`Bearer ${server.adminToken!}`)
@@ -82,7 +82,7 @@ describe.skipIf(skipSuite)('POST /registries upload surface', () => {
 
   it('uploaded version shows up in /versions via the read URL', async () => {
     const res = await fetch(
-      `${server.url}/registries/@rack/e2e-upload-smoke/versions`,
+      `${server.url}/registries/@rack/features/e2e-upload-smoke/versions`,
       { headers: { 'Cache-Control': 'no-cache' } }
     )
     expect(res.status).toBe(200)

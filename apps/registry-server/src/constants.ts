@@ -84,14 +84,18 @@ export const SEMVER_PATTERN = /^\d+\.\d+\.\d+/
 /**
  * Map a registry.json `type` to the storage segment that lives under
  * `<namespace>/`. Used at upload time to place a module under the same
- * category subdirectory the read path serves it from.
+ * category subdirectory the read path serves it from. Mirrors the
+ * 6-category taxonomy documented in `apps/docs/{en,zh}/guide/registry.md`.
  *
- * Types not in this map (registry:feature, registry:framework, registry:testing)
- * fall back to a flat `<namespace>/<name>/` layout. To override either
- * behavior, set an explicit `path` field in registry.json.
+ * To override the type-derived placement (e.g. for a registry whose
+ * semantic role differs from its storage location), set an explicit
+ * `path` field in registry.json.
  */
 export const CATEGORY_BY_TYPE: Record<string, string> = {
   'registry:runtime': 'runtimes',
+  'registry:framework': 'frameworks',
   'registry:build': 'build',
+  'registry:feature': 'features',
+  'registry:testing': 'testing',
   'registry:quality': 'quality'
 }
