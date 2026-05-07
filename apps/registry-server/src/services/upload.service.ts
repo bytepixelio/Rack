@@ -17,7 +17,7 @@ import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
 import { createHash, randomUUID } from 'crypto'
 import { createReadStream, createWriteStream } from 'fs'
-import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
+import { ALLOWED_UPLOAD_MIMETYPES, CATEGORY_BY_TYPE } from '../constants.js'
 import {
   ConflictError,
   ForbiddenError,
@@ -142,21 +142,27 @@ export class UploadService {
   }
 
   /**
-   * Parse namespace, name, and version from an extracted package.
+   * Parse namespace, name, version, and storage segments from an extracted
+   * package.
    *
-   * Expects a `registry.json` at the root of the extracted directory
-   * with separate `namespace` (e.g. `@rack`), `name` (slug), and
-   * `version` fields. Full format validation runs later via the schema
-   * validator; this step only enforces presence and type.
+   * `segments` is the path under `<namespace>/` where the module installs
+   * (and is later read from). Resolution order:
+   *
+   * 1. Explicit `path` field in registry.json — split on `/`. The last
+   *    segment must equal `name`.
+   * 2. `CATEGORY_BY_TYPE[type]` exists → `[category, name]` (e.g.
+   *    `registry:quality` → `["quality", "husky"]`).
+   * 3. Fallback → `[name]` (flat layout, matches the legacy behavior).
    *
    * @param extractedDir - Path to the extracted package
-   * @returns Parsed metadata
-   * @throws {ValidationError} On missing fields or invalid types
+   * @returns Parsed metadata + install segments
+   * @throws {ValidationError} On missing fields or path/name mismatch
    */
   async parsePackageInfo(extractedDir: string): Promise<{
     name: string
     version: string
     namespace: string
+    segments: string[]
   }> {
     let raw: string
     try {
@@ -183,10 +189,30 @@ export class UploadService {
     const namespace = data.namespace as string
     const name = data.name as string
     const version = data.version as string
+    const type = typeof data.type === 'string' ? data.type : undefined
+    const explicitPath = typeof data.path === 'string' ? data.path : undefined
 
-    this.logger.info({ namespace, name, version }, 'Package info parsed')
+    let segments: string[]
+    if (explicitPath) {
+      segments = explicitPath.split('/').filter(Boolean)
+      if (segments.length === 0 || segments[segments.length - 1] !== name) {
+        throw new ValidationError(
+          'UPLOAD_FAILED',
+          `path "${explicitPath}" must end with name "${name}"`
+        )
+      }
+    } else if (type && CATEGORY_BY_TYPE[type]) {
+      segments = [CATEGORY_BY_TYPE[type], name]
+    } else {
+      segments = [name]
+    }
 
-    return { namespace, name, version }
+    this.logger.info(
+      { namespace, name, version, segments },
+      'Package info parsed'
+    )
+
+    return { namespace, name, version, segments }
   }
 
   /**
@@ -223,25 +249,32 @@ export class UploadService {
    * Otherwise, atomically renames the extracted directory on local disk.
    * In both cases, regenerates versions.json afterward.
    *
+   * `segments` is the path under `<namespace>/` (e.g. `["quality", "husky"]`).
+   * When omitted, falls back to `[name]` for backward compatibility.
+   *
    * @param extractedDir - Path to the extracted package
    * @param namespace - e.g. `@rack`
-   * @param name - e.g. `node`
+   * @param name - Leaf identifier, e.g. `husky` (used in error messages)
    * @param version - e.g. `1.0.0`
+   * @param segments - Storage segments under namespace, defaults to `[name]`
    * @throws {ConflictError} When the version already exists
    */
   async install(
     extractedDir: string,
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments?: string[]
   ): Promise<void> {
+    const segs = segments ?? [name]
+
     if (this.r2) {
-      await this.installToR2(extractedDir, namespace, name, version)
+      await this.installToR2(extractedDir, namespace, name, version, segs)
     } else {
-      await this.installToLocal(extractedDir, namespace, name, version)
+      await this.installToLocal(extractedDir, namespace, name, version, segs)
     }
 
-    await this.regenerateVersions(namespace, name, version)
+    await this.regenerateVersions(namespace, name, version, segs)
   }
 
   /** Install to local filesystem via atomic rename. */
@@ -249,9 +282,10 @@ export class UploadService {
     extractedDir: string,
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments: string[]
   ): Promise<void> {
-    const targetDir = join(this.storageRoot, namespace, name, version)
+    const targetDir = join(this.storageRoot, namespace, ...segments, version)
 
     if (await this.storage.exists(targetDir)) {
       throw new ConflictError(
@@ -270,9 +304,10 @@ export class UploadService {
     extractedDir: string,
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments: string[]
   ): Promise<void> {
-    const keyPrefix = `${namespace}/${name}/${version}`
+    const keyPrefix = `${namespace}/${segments.join('/')}/${version}`
 
     if (await this.r2!.exists(`${keyPrefix}/registry.json`)) {
       throw new ConflictError(
@@ -323,13 +358,14 @@ export class UploadService {
   private async regenerateVersions(
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments: string[]
   ): Promise<void> {
     try {
       if (this.r2) {
-        await this.regenerateVersionsR2(namespace, name, version)
+        await this.regenerateVersionsR2(namespace, name, version, segments)
       } else {
-        await this.regenerateVersionsLocal(namespace, name, version)
+        await this.regenerateVersionsLocal(namespace, name, version, segments)
       }
     } catch (error) {
       this.logger.warn(
@@ -342,9 +378,10 @@ export class UploadService {
   private async regenerateVersionsLocal(
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments: string[]
   ): Promise<void> {
-    const registryDir = join(this.storageRoot, namespace, name)
+    const registryDir = join(this.storageRoot, namespace, ...segments)
     const found = await this.storage.findVersions(registryDir)
     const all = Array.from(new Set([version, ...found]))
     const sorted = this.storage.sortVersionsDescending(all)
@@ -363,9 +400,10 @@ export class UploadService {
   private async regenerateVersionsR2(
     namespace: string,
     name: string,
-    version: string
+    version: string,
+    segments: string[]
   ): Promise<void> {
-    const registryPrefix = `${namespace}/${name}`
+    const registryPrefix = `${namespace}/${segments.join('/')}`
     const found = await this.r2!.findVersions(registryPrefix)
     const all = Array.from(new Set([version, ...found]))
     const sorted = this.storage.sortVersionsDescending(all)
