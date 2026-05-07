@@ -131,7 +131,7 @@ describe('UploadService', () => {
 
   // ─── parsePackageInfo ────────────────────────────────────────────────────
 
-  it('should parse valid package info', async () => {
+  it('should parse valid package info with flat fallback segments', async () => {
     const upload = createUpload()
     const extractDir = join(tempDir, 'extracted')
     await mkdir(extractDir, { recursive: true })
@@ -141,7 +141,104 @@ describe('UploadService', () => {
     )
 
     const info = await upload.parsePackageInfo(extractDir)
-    expect(info).toEqual({ namespace: '@rack', name: 'node', version: '1.0.0' })
+    expect(info).toEqual({
+      namespace: '@rack',
+      name: 'node',
+      version: '1.0.0',
+      segments: ['node']
+    })
+  })
+
+  it('should derive segments from registry:quality type', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-quality')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'husky',
+        version: '1.0.0',
+        type: 'registry:quality'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['quality', 'husky'])
+  })
+
+  it('should derive segments from registry:runtime type', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-runtime')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'node',
+        version: '1.0.0',
+        type: 'registry:runtime'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['runtimes', 'node'])
+  })
+
+  it('should fall back to flat segments for unmapped types', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'typed-feature')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'foo',
+        version: '1.0.0',
+        type: 'registry:feature'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['foo'])
+  })
+
+  it('should honor explicit path field over type mapping', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'with-path')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'vitest',
+        version: '1.0.0',
+        type: 'registry:testing',
+        path: 'quality/vitest'
+      })
+    )
+
+    const info = await upload.parsePackageInfo(extractDir)
+    expect(info.segments).toEqual(['quality', 'vitest'])
+  })
+
+  it('should reject path whose last segment differs from name', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'bad-path')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(
+      join(extractDir, 'registry.json'),
+      JSON.stringify({
+        namespace: '@rack',
+        name: 'husky',
+        version: '1.0.0',
+        path: 'quality/wrong-leaf'
+      })
+    )
+
+    await expect(upload.parsePackageInfo(extractDir)).rejects.toThrow(
+      'path "quality/wrong-leaf" must end with name "husky"'
+    )
   })
 
   it('should throw when registry.json is missing', async () => {
@@ -397,5 +494,57 @@ describe('UploadService', () => {
         join(tempDir, '@rack', 'node', '1.0.0', 'registry.json')
       )
     ).toBe(true)
+  })
+
+  // ─── Multi-segment install ───────────────────────────────────────────────
+
+  it('should install to local under multi-segment path', async () => {
+    const upload = createUpload()
+
+    const extractDir = join(tempDir, 'extract-multi-local')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    await upload.install(extractDir, '@rack', 'husky', '1.0.0', [
+      'quality',
+      'husky'
+    ])
+
+    expect(
+      await storage.exists(
+        join(tempDir, '@rack', 'quality', 'husky', '1.0.0', 'registry.json')
+      )
+    ).toBe(true)
+
+    const versionsRaw = await readFile(
+      join(tempDir, '@rack', 'quality', 'husky', 'versions.json'),
+      'utf-8'
+    )
+    const { versions } = JSON.parse(versionsRaw)
+    expect(versions).toContain('1.0.0')
+  })
+
+  it('should install to R2 under multi-segment key prefix', async () => {
+    const r2 = createMockR2()
+    const upload = createUpload({ r2 })
+
+    const extractDir = join(tempDir, 'extract-multi-r2')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    await upload.install(extractDir, '@rack', 'husky', '1.0.0', [
+      'quality',
+      'husky'
+    ])
+
+    expect(r2.uploadDirectory).toHaveBeenCalledWith(
+      extractDir,
+      '@rack/quality/husky/1.0.0'
+    )
+    expect(r2.findVersions).toHaveBeenCalledWith('@rack/quality/husky')
+    expect(r2.writeFile).toHaveBeenCalledWith(
+      '@rack/quality/husky/versions.json',
+      expect.stringContaining('1.0.0')
+    )
   })
 })
