@@ -27,8 +27,20 @@ describe('Namespace routes', () => {
   beforeAll(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'ns-test-'))
     await mkdir(join(tempDir, '@rack', 'node', '1.0.0'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'node', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
     await mkdir(join(tempDir, '@rack', 'vue', '2.0.0'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'vue', 'versions.json'),
+      '{"versions":["2.0.0"]}'
+    )
     await mkdir(join(tempDir, '@company', 'lib', '1.0.0'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@company', 'lib', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
     await writeFile(join(tempDir, '.healthcheck'), '')
 
     app = await buildApp(createConfig(tempDir))

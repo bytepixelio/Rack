@@ -76,10 +76,4 @@ describe('RegistryService', () => {
     expect(path).toContain('@rack/node/1.0.0/src/index.ts')
   })
 
-  // ─── getRegistryDir ──────────────────────────────────────────────────────
-
-  it('should return correct registry directory', () => {
-    const dir = registry.getRegistryDir('@rack', 'node')
-    expect(dir).toContain('@rack/node')
-  })
 })

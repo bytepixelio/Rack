@@ -1,8 +1,8 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { StorageService } from '../../src/services/storage.service.js'
+import { chmod, mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
 
 describe('StorageService', () => {
   let tempDir: string
@@ -57,16 +57,65 @@ describe('StorageService', () => {
 
   // ─── findRegistries ──────────────────────────────────────────────────────
 
-  it('should find registries with semver subdirectories', async () => {
+  // The new contract: a directory is a registry iff it contains a
+  // `versions.json`. Mirrors the worker's `*/versions.json` prefix scan
+  // so multi-segment registries (e.g. `@rack/quality/husky`) are
+  // discoverable — the old depth-1 algorithm couldn't see them.
+
+  it('should find single-segment registries via versions.json', async () => {
     await mkdir(join(tempDir, '@rack', 'node', '1.0.0'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'node', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
     await mkdir(join(tempDir, '@rack', 'vue', '2.0.0'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'vue', 'versions.json'),
+      '{"versions":["2.0.0"]}'
+    )
     await mkdir(join(tempDir, '@rack', 'empty'), { recursive: true })
 
     const registries = await storage.findRegistries('@rack')
     expect(registries).toEqual(['node', 'vue'])
   })
 
-  it('should exclude directories without semver subdirectories', async () => {
+  it('should find multi-segment registries (regression for #40 follow-up)', async () => {
+    await mkdir(join(tempDir, '@rack', 'quality', 'husky', '1.0.0'), {
+      recursive: true
+    })
+    await writeFile(
+      join(tempDir, '@rack', 'quality', 'husky', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
+    await mkdir(join(tempDir, '@rack', 'runtimes', 'node', '1.0.0'), {
+      recursive: true
+    })
+    await writeFile(
+      join(tempDir, '@rack', 'runtimes', 'node', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
+
+    const registries = await storage.findRegistries('@rack')
+    expect(registries).toEqual(['quality/husky', 'runtimes/node'])
+  })
+
+  it('should mix single- and multi-segment registries', async () => {
+    await mkdir(join(tempDir, '@rack', 'node'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'node', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
+    await mkdir(join(tempDir, '@rack', 'quality', 'husky'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'quality', 'husky', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
+
+    const registries = await storage.findRegistries('@rack')
+    expect(registries).toEqual(['node', 'quality/husky'])
+  })
+
+  it('should exclude directories without versions.json', async () => {
     await mkdir(join(tempDir, '@rack', 'docs', 'latest'), { recursive: true })
 
     const registries = await storage.findRegistries('@rack')
@@ -75,6 +124,23 @@ describe('StorageService', () => {
 
   it('should throw when namespace does not exist', async () => {
     await expect(storage.findRegistries('@nonexistent')).rejects.toThrow()
+  })
+
+  it('should swallow per-entry readdir failures and return what it could see', async () => {
+    await mkdir(join(tempDir, '@rack', 'good'), { recursive: true })
+    await writeFile(
+      join(tempDir, '@rack', 'good', 'versions.json'),
+      '{"versions":["1.0.0"]}'
+    )
+    const blocked = join(tempDir, '@rack', 'unreadable')
+    await mkdir(blocked, { recursive: true })
+    await chmod(blocked, 0o000)
+    try {
+      const registries = await storage.findRegistries('@rack')
+      expect(registries).toEqual(['good'])
+    } finally {
+      await chmod(blocked, 0o755)
+    }
   })
 
   // ─── findVersions ───────────────────────────────────────────────────────
