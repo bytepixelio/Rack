@@ -4,6 +4,9 @@
   },
   "json": {
     "package.json": {
+      "type": "module",
+      "main": "./dist/index.cjs",
+      "types": "./types/index.d.ts",
       "scripts.build": { "contains": "rollup" },
       "devDependencies.rollup": { "exists": true },
       "devDependencies.@babel/preset-env": { "exists": true },
