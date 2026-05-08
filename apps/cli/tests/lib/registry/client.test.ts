@@ -252,9 +252,16 @@ describe('registry/client fetchFile', () => {
     )
   })
 
-  it('rejects parent-relative paths (../)', async () => {
-    await expect(registry.fetchFile(registryUrl, '../evil')).rejects.toThrow(
-      /not supported/
+  it.each([
+    ['../evil', 'leading ../'],
+    ['./../evil', './ then ../'],
+    ['a/../../evil', 'mid-path traversal'],
+    ['%2e%2e/evil', 'encoded ../'],
+    ['a/%2e%2e/evil', 'encoded mid-path traversal'],
+    ['/etc/passwd', 'absolute path']
+  ])('rejects unsafe file path: %s (%s)', async (path) => {
+    await expect(registry.fetchFile(registryUrl, path)).rejects.toThrow(
+      /Unsafe file path/
     )
   })
 

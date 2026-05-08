@@ -7,18 +7,30 @@ import {
 } from '../src/constants.js'
 
 describe('SEMVER_PATTERN', () => {
-  it.each([['1.0.0'], ['2.3.1'], ['10.20.30'], ['1.0.0-beta'], ['2.3.1+build']])(
-    'matches %s',(v) => {
-      expect(SEMVER_PATTERN.test(v)).toBe(true)
-    }
-  )
+  it.each([
+    ['1.0.0'],
+    ['2.3.1'],
+    ['10.20.30'],
+    ['1.0.0-beta'],
+    ['1.0.0-beta.1'],
+    ['2.3.1+build'],
+    ['1.0.0-rc.1+build.42']
+  ])('matches %s', (v) => {
+    expect(SEMVER_PATTERN.test(v)).toBe(true)
+  })
 
-  it.each([['1'], ['1.0'], ['latest'], ['v1.0.0'], ['']])(
-    'does not match %s',
-    (v) => {
-      expect(SEMVER_PATTERN.test(v)).toBe(false)
-    }
-  )
+  it.each([
+    ['1'],
+    ['1.0'],
+    ['latest'],
+    ['v1.0.0'],
+    [''],
+    ['1.0.0evil'],
+    ['1.0.0-beta!'],
+    ['1.0.0+build/extra']
+  ])('does not match %s', (v) => {
+    expect(SEMVER_PATTERN.test(v)).toBe(false)
+  })
 })
 
 describe('CATEGORY_BY_TYPE', () => {

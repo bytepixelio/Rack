@@ -264,23 +264,32 @@ function buildRegistryUrl(parsed: ParsedNamespace, baseUrl: string): string {
  *
  * Files are served under `/files/` on the registry server; this helper
  * injects that segment so callers can work with bare relative paths.
+ * Rejects absolute paths, `.`/`..` segments, and encoded dot segments
+ * to prevent URL normalization from escaping the `/files/` scope.
  *
  * @param registryUrl - Registry item URL (e.g. `https://.../@rack/vue/1.0.0`)
  * @param filePath - Relative path (e.g. `'./templates/app.vue'`)
  * @returns Absolute file URL
- * @throws {Error} If the path uses `../` (not supported)
+ * @throws {Error} If the path contains traversal segments or is absolute
  */
 function resolveFileUrl(registryUrl: string, filePath: string): string {
-  if (filePath.startsWith('../')) {
-    throw new Error(
-      `Relative parent paths (../) are not supported: ${filePath}`
-    )
+  const decoded = decodeURIComponent(filePath)
+
+  if (/^[/\\]/.test(decoded)) {
+    throw new Error(`Unsafe file path: ${filePath}`)
+  }
+
+  const normalized = decoded.startsWith('./') ? decoded.slice(2) : decoded
+  const segments = normalized.split('/')
+
+  for (const seg of segments) {
+    if (seg === '' || seg === '.' || seg === '..') {
+      throw new Error(`Unsafe file path: ${filePath}`)
+    }
   }
 
   const base = stripTrailingSlash(registryUrl)
-  const resolved = filePath.startsWith('./') ? filePath.slice(2) : filePath
-
-  return `${base}/files/${resolved}`
+  return `${base}/files/${normalized}`
 }
 
 /**
