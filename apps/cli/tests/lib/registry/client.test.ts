@@ -258,7 +258,10 @@ describe('registry/client fetchFile', () => {
     ['a/../../evil', 'mid-path traversal'],
     ['%2e%2e/evil', 'encoded ../'],
     ['a/%2e%2e/evil', 'encoded mid-path traversal'],
-    ['/etc/passwd', 'absolute path']
+    ['/etc/passwd', 'absolute path'],
+    ['templates\\..\\registry.json', 'backslash traversal'],
+    ['templates%5c..%5cregistry.json', 'encoded backslash traversal'],
+    ['templates%5C..%5Cregistry.json', 'uppercase encoded backslash']
   ])('rejects unsafe file path: %s (%s)', async (path) => {
     await expect(registry.fetchFile(registryUrl, path)).rejects.toThrow(
       /Unsafe file path/
