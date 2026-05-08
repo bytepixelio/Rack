@@ -296,6 +296,17 @@ describe('UploadService', () => {
     )
   })
 
+  it('should throw ValidationError when registry.json is not valid JSON', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'bad-json')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'registry.json'), '{ "name": "x", }')
+
+    await expect(upload.parsePackageInfo(dir)).rejects.toThrow(
+      'registry.json is not valid JSON'
+    )
+  })
+
   it('should throw when registry.json is missing', async () => {
     const upload = createUpload()
     const emptyDir = join(tempDir, 'empty')

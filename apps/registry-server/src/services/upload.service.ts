@@ -175,7 +175,15 @@ export class UploadService {
       )
     }
 
-    const data = JSON.parse(raw) as Record<string, unknown>
+    let data: Record<string, unknown>
+    try {
+      data = JSON.parse(raw) as Record<string, unknown>
+    } catch {
+      throw new ValidationError(
+        'UPLOAD_FAILED',
+        'registry.json is not valid JSON'
+      )
+    }
 
     for (const field of ['namespace', 'name', 'version'] as const) {
       const value = data[field]
