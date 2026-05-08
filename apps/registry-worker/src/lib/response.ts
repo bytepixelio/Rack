@@ -2,13 +2,13 @@
  * HTTP response helpers.
  */
 
-import { CACHE } from './constants.js'
+import { CACHE_HEADERS } from '@rack/registry-core'
 
-/** Return a JSON response. Defaults to `no-store` — pass a CACHE tier for cacheable responses. */
+/** Return a JSON response. Defaults to `no-store` — pass a `CACHE_HEADERS` tier for cacheable responses. */
 export function json(
   data: unknown,
   status = 200,
-  cacheControl: string = CACHE.none
+  cacheControl: string = CACHE_HEADERS.none
 ): Response {
   return new Response(JSON.stringify(data), {
     status,
