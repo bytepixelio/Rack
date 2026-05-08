@@ -15,10 +15,10 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.has('@public')).toBe(false)
   })
 
-  it('registers an anonymous namespace when value is null', () => {
-    const config = parseAuthConfig({ '@ns': null })
-    expect(config.allowedNamespaces.has('@ns')).toBe(true)
-    expect(config.tokens.has('@ns')).toBe(false)
+  it('throws when namespace value is null', () => {
+    expect(() => parseAuthConfig({ '@ns': null })).toThrow(
+      'must map to an array'
+    )
   })
 
   it('registers a namespace with tokens', () => {
@@ -69,12 +69,12 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.get('@priv')?.size).toBe(1)
   })
 
-  it('skips entries missing a token string', () => {
-    const config = parseAuthConfig({
-      '@priv': [{ publish: true }, { token: '', publish: true }]
-    })
-    expect(config.tokens.has('@priv')).toBe(false)
-    expect(config.allowedNamespaces.has('@priv')).toBe(true)
+  it('throws when all token entries lack a valid token string', () => {
+    expect(() =>
+      parseAuthConfig({
+        '@priv': [{ publish: true }, { token: '', publish: true }]
+      })
+    ).toThrow('none contain a valid "token" string')
   })
 
   it('ignores non-string mark fields', () => {
@@ -84,10 +84,16 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.get('@priv')?.get('abc')?.mark).toBeUndefined()
   })
 
-  it('treats non-array namespace values as anonymous', () => {
-    const config = parseAuthConfig({ '@priv': 'not-an-array' as never })
-    expect(config.allowedNamespaces.has('@priv')).toBe(true)
-    expect(config.tokens.has('@priv')).toBe(false)
+  it('throws when namespace value is not an array', () => {
+    expect(() =>
+      parseAuthConfig({ '@priv': 'not-an-array' as never })
+    ).toThrow('must map to an array')
+  })
+
+  it('throws when all entries are non-object', () => {
+    expect(() => parseAuthConfig({ '@priv': [null, 42, 'x'] })).toThrow(
+      'none contain a valid "token" string'
+    )
   })
 
   it('throws when the top-level value is not an object', () => {

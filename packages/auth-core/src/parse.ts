@@ -36,9 +36,15 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
   const tokens = new Map<string, Map<string, TokenRecord>>()
 
   for (const [namespace, rawTokens] of Object.entries(config)) {
+    if (!Array.isArray(rawTokens)) {
+      throw new Error(
+        `Namespace "${namespace}" must map to an array of token entries`
+      )
+    }
+
     allowedNamespaces.add(namespace)
 
-    if (!Array.isArray(rawTokens) || rawTokens.length === 0) continue
+    if (rawTokens.length === 0) continue
 
     const tokenMap = new Map<string, TokenRecord>()
 
@@ -55,7 +61,13 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
       })
     }
 
-    if (tokenMap.size > 0) tokens.set(namespace, tokenMap)
+    if (tokenMap.size === 0) {
+      throw new Error(
+        `Namespace "${namespace}" has token entries but none contain a valid "token" string`
+      )
+    }
+
+    tokens.set(namespace, tokenMap)
   }
 
   return { tokens, allowedNamespaces }
