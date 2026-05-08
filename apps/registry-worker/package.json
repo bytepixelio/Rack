@@ -10,7 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@rack/auth-core": "workspace:*"
+    "@rack/auth-core": "workspace:*",
+    "@rack/registry-core": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260507.1",

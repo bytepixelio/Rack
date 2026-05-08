@@ -1,5 +1,7 @@
-import { CACHE } from '../lib/constants.js'
+import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 import { json, badRequest } from '../lib/response.js'
+
+import type { RegistryStore } from '@rack/registry-core'
 
 /** GET /namespaces */
 export async function handleNamespaces(bucket: R2Bucket): Promise<Response> {
@@ -8,7 +10,7 @@ export async function handleNamespaces(bucket: R2Bucket): Promise<Response> {
     .map((p) => p.replace(/\/$/, ''))
     .filter((p) => p.startsWith('@'))
     .sort()
-  return json({ namespaces }, 200, CACHE.short)
+  return json({ namespaces }, 200, CACHE_HEADERS.short)
 }
 
 /** GET /namespaces/:namespace/registries */
@@ -20,21 +22,24 @@ export async function handleNamespaceRegistries(
     return badRequest('INVALID_NAMESPACE', 'Namespace must start with @')
   }
 
-  const prefix = `${namespace}/`
-  const listed = await bucket.list({ prefix, delimiter: '' })
+  const registries = await listRegistries(toRegistryStore(bucket), namespace)
 
-  const registryPaths = new Set<string>()
-  for (const obj of listed.objects) {
-    if (obj.key.endsWith('/versions.json')) {
-      const relative = obj.key.slice(prefix.length)
-      const registryPath = relative.slice(0, -'/versions.json'.length)
-      if (registryPath) registryPaths.add(registryPath)
+  return json({ namespace, registries }, 200, CACHE_HEADERS.short)
+}
+
+/**
+ * Adapter that turns an R2 bucket into a `RegistryStore` — yields every
+ * key under `prefix`, paginating through `bucket.list` if necessary.
+ */
+function toRegistryStore(bucket: R2Bucket): RegistryStore {
+  return {
+    walk: async function* (prefix: string): AsyncIterable<string> {
+      let cursor: string | undefined
+      do {
+        const page = await bucket.list({ prefix, cursor })
+        for (const obj of page.objects) yield obj.key
+        cursor = page.truncated ? page.cursor : undefined
+      } while (cursor)
     }
   }
-
-  return json(
-    { namespace, registries: [...registryPaths].sort() },
-    200,
-    CACHE.short
-  )
 }

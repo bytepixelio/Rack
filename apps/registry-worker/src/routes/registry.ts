@@ -1,5 +1,10 @@
-import { CACHE } from '../lib/constants.js'
-import { parseRegistryUrl } from '../lib/parser.js'
+import {
+  CACHE_HEADERS,
+  buildFileKey,
+  buildRegistryKey,
+  buildVersionsKey,
+  parseRegistryUrl
+} from '@rack/registry-core'
 import { enforceNamespaceAccess } from '../lib/auth.js'
 import {
   mimeType,
@@ -22,54 +27,56 @@ export async function handleRegistry(
     return badRequest('INVALID_PATH', 'Invalid registry resource path')
   }
 
-  const { type, namespace, segments, version, filePath } = parsed
+  const { type, locator } = parsed
 
   const authError = await enforceNamespaceAccess(
     bucket,
     adminToken,
     request,
-    namespace
+    locator.namespace
   )
   if (authError) return authError
 
-  const segmentPath = segments.join('/')
-
   switch (type) {
     case 'versions': {
-      const key = `${namespace}/${segmentPath}/versions.json`
-      const obj = await bucket.get(key)
+      const obj = await bucket.get(buildVersionsKey(locator))
       if (!obj) return notFound('NOT_FOUND', 'No versions available')
-      return streamObject(obj, 'application/json', CACHE.short)
+      return streamObject(obj, 'application/json', CACHE_HEADERS.short)
     }
 
     case 'versioned': {
-      const key = `${namespace}/${segmentPath}/${version}/registry.json`
-      const obj = await bucket.get(key)
+      const obj = await bucket.get(
+        buildRegistryKey({ ...locator, version: locator.version! })
+      )
       if (!obj) return notFound('NOT_FOUND', 'Registry version not found')
-      return streamObject(obj, 'application/json', CACHE.immutable)
+      return streamObject(obj, 'application/json', CACHE_HEADERS.immutable)
     }
 
     case 'latest': {
-      const versionsKey = `${namespace}/${segmentPath}/versions.json`
       const versionsData = await readJSON<{ versions?: string[] }>(
         bucket,
-        versionsKey
+        buildVersionsKey(locator)
       )
       if (!versionsData?.versions?.length) {
         return notFound('NOT_FOUND', 'No versions available')
       }
-      const latestVersion = versionsData.versions[0]
-      const key = `${namespace}/${segmentPath}/${latestVersion}/registry.json`
-      const obj = await bucket.get(key)
+      const obj = await bucket.get(
+        buildRegistryKey({ ...locator, version: versionsData.versions[0] })
+      )
       if (!obj) return notFound('NOT_FOUND', 'Latest registry not found')
-      return streamObject(obj, 'application/json', CACHE.short)
+      return streamObject(obj, 'application/json', CACHE_HEADERS.short)
     }
 
     case 'file': {
-      const key = `${namespace}/${segmentPath}/${version}/${filePath}`
-      const obj = await bucket.get(key)
+      const obj = await bucket.get(
+        buildFileKey({
+          ...locator,
+          version: locator.version!,
+          filePath: locator.filePath!
+        })
+      )
       if (!obj) return notFound('NOT_FOUND', 'File not found')
-      return streamObject(obj, mimeType(filePath!), CACHE.immutable)
+      return streamObject(obj, mimeType(locator.filePath!), CACHE_HEADERS.immutable)
     }
   }
 }
