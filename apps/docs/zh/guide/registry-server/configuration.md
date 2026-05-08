@@ -151,7 +151,7 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 
 | 设置                  | 值         | 说明                                           |
 | --------------------- | ---------- | ---------------------------------------------- |
-| Cache-Control max-age | `60` 秒    | 所有响应的 `Cache-Control: public, max-age=60` |
+| Cache-Control         | 按路由分层 | 详见[运维文档 - 响应缓存](./operations.md#响应缓存) |
 | 压缩                  | 始终启用   | 支持 `gzip`, `deflate`, `br` 编码              |
 | 速率限制最大请求数    | `1200` 次  | 每个时间窗口的最大请求数                       |
 | 速率限制时间窗口      | `1 minute` | 速率限制的时间窗口                             |
