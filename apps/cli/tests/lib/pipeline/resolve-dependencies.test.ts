@@ -44,6 +44,31 @@ describe('pipeline/resolve-dependencies', () => {
     expect(fetchItemMock).not.toHaveBeenCalled()
   })
 
+  it('deduplicates dependencies with different identifier forms', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/utils']
+    })
+    const b = createItem({
+      identifier: '@rack/b',
+      registryDependencies: ['utils@1.0.0']
+    })
+    const utils = createItem({ identifier: '@rack/utils' })
+    fetchItemMock.mockResolvedValue(utils)
+
+    const got = await resolveRegistryDependencies(
+      [a, b],
+      'ts',
+      createMockLogger()
+    )
+    expect(fetchItemMock).toHaveBeenCalledTimes(1)
+    expect(got.map((i) => i.identifier)).toEqual([
+      '@rack/a',
+      '@rack/b',
+      '@rack/utils'
+    ])
+  })
+
   it('forwards the language option to registry.fetchItem', async () => {
     const a = createItem({ identifier: 'a', registryDependencies: ['b'] })
     const b = createItem({ identifier: 'b' })
