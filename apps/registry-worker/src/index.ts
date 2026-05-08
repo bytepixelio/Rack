@@ -47,12 +47,17 @@ export default {
     }
 
     if (pathname === '/namespaces') {
-      return handleNamespaces(env.BUCKET)
+      return handleNamespaces(env.BUCKET, env.ADMIN_TOKEN, request)
     }
 
     const nsMatch = pathname.match(/^\/namespaces\/([^/]+)\/registries$/)
     if (nsMatch) {
-      return handleNamespaceRegistries(env.BUCKET, nsMatch[1])
+      return handleNamespaceRegistries(
+        env.BUCKET,
+        env.ADMIN_TOKEN,
+        request,
+        nsMatch[1]
+      )
     }
 
     if (pathname.startsWith('/registries/')) {
