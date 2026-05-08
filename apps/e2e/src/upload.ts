@@ -3,7 +3,7 @@ import { execa } from 'execa'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { rm, mkdtemp, readFile } from 'node:fs/promises'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURE_DIR = path.resolve(HERE, '../fixtures/upload-fixture')
@@ -19,10 +19,10 @@ export interface UploadPackage {
 }
 
 export interface UploadOptions {
-  serverUrl: string
   checksum: string
-  packagePath: string
+  serverUrl: string
   authHeader?: string
+  packagePath: string
 }
 
 /**
@@ -60,9 +60,9 @@ async function buildPackage(fixtureDir: string): Promise<UploadPackage> {
   const checksum = createHash('sha256').update(buf).digest('hex')
 
   return {
-    path: pkgPath,
     checksum,
-    cleanup: () => rm(dir, { recursive: true, force: true })
+    path: pkgPath,
+    cleanup: () => rm(dir, { force: true, recursive: true })
   }
 }
 
@@ -84,9 +84,9 @@ export async function uploadPackage(opts: UploadOptions): Promise<number> {
   if (opts.authHeader) headers['Authorization'] = opts.authHeader
 
   const res = await fetch(`${opts.serverUrl}/registries`, {
-    method: 'POST',
+    headers,
     body: form,
-    headers
+    method: 'POST'
   })
 
   return res.status

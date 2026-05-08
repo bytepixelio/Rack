@@ -1,10 +1,3 @@
-import {
-  CACHE_HEADERS,
-  buildFileKey,
-  buildRegistryKey,
-  buildVersionsKey,
-  parseRegistryUrl
-} from '@rack/registry-core'
 import { enforceNamespaceAccess } from '../lib/auth.js'
 import {
   mimeType,
@@ -13,6 +6,13 @@ import {
   badRequest,
   streamObject
 } from '../lib/response.js'
+import {
+  buildFileKey,
+  CACHE_HEADERS,
+  buildRegistryKey,
+  buildVersionsKey,
+  parseRegistryUrl
+} from '@rack/registry-core'
 
 /** GET /registries/* */
 export async function handleRegistry(
