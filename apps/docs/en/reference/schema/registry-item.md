@@ -151,6 +151,25 @@ aside: false
 | `registry:testing`   | Testing tool   | 5                    |
 | `registry:quality`   | Quality tool   | 6                    |
 
+### `path`
+
+- **Type**: `string`
+- **Required**: No
+- **Format**: lowercase kebab segments joined by `/` (e.g. `quality/husky`)
+- **Description**: Optional storage segment path under the namespace. Overrides the default placement derived from `type`. The last segment **must equal** `name`, otherwise upload fails with `UPLOAD_FAILED`. Use this when a registry's semantic role differs from its storage location (rare). When absent, the server derives the segment from `type` — see [Storage Path Resolution](/guide/registry-server/publishing#storage-path-resolution).
+
+```json
+{
+  "namespace": "@rack",
+  "name": "husky",
+  "path": "quality/husky"
+}
+```
+
+::: warning Distinct from `files[].path`
+The top-level `path` controls where the **registry itself** is stored. The `path` inside a `files[]` entry points to a **template source file** (e.g. `./templates/.gitignore`). Same key name, different concepts.
+:::
+
 ### `version`
 
 - **Type**: `string`

@@ -54,6 +54,30 @@ my-registry/
 Using the `$schema` field provides IntelliSense and validation in your editor.
 :::
 
+## Storage Path Resolution
+
+When a registry uploads, the server places it at `<namespace>/<segments>/<version>/` under storage. The `<segments>` are derived in this order:
+
+1. **Explicit `path` field** in `registry.json` — split on `/`. The last segment must equal `name`, otherwise the upload is rejected with `UPLOAD_FAILED`. See [`path` field reference](/reference/schema/registry-item#path).
+2. **`type` field** — when `path` is absent, mapped via:
+
+   | `type`               | Segment       |
+   | -------------------- | ------------- |
+   | `registry:runtime`   | `runtimes/`   |
+   | `registry:framework` | `frameworks/` |
+   | `registry:build`     | `build/`      |
+   | `registry:feature`   | `features/`   |
+   | `registry:testing`   | `testing/`    |
+   | `registry:quality`   | `quality/`    |
+
+3. **Fallback** — `type` not in the table → flat `<namespace>/<name>/`.
+
+Example: a registry with `name: "my-tool"`, `type: "registry:feature"`, namespace `@company` is stored at `@company/features/my-tool/<version>/`. The resolved path is reflected in the success response, the canonical read URL `GET /registries/<namespace>/<segments>/<version>`, and webhook payloads.
+
+::: tip When to set `path` explicitly
+Set `path` only when the storage location should differ from the type-derived default — for example, classifying a `registry:feature` under a framework folder (`"path": "frameworks/vue/router"`). For most registries, `type` alone is enough.
+:::
+
 ## Package Registry
 
 Package the registry in tar.gz format.
@@ -148,9 +172,11 @@ The server validates the MIME type of the uploaded file. The following values ar
   "namespace": "@company",
   "name": "my-tool",
   "version": "1.0.0",
-  "path": "@company/my-tool/1.0.0"
+  "path": "@company/features/my-tool/1.0.0"
 }
 ```
+
+The `path` segments are derived from the registry's `type` (or explicit top-level `path`) — see [Storage Path Resolution](#storage-path-resolution).
 
 ### Common Errors
 
@@ -323,7 +349,7 @@ When a registry is successfully uploaded, webhook notifications are triggered (i
   "namespace": "@company",
   "name": "my-tool",
   "version": "1.0.0",
-  "path": "@company/my-tool/1.0.0"
+  "path": "@company/features/my-tool/1.0.0"
 }
 ```
 
@@ -339,17 +365,17 @@ When a registry is successfully uploaded, webhook notifications are triggered (i
 Verify that the registry is available after publishing:
 
 ```bash
-# View version list
-curl https://registry.company.com/registries/@company/my-tool/versions
+# View version list (use the resolved storage path — `features/` for registry:feature)
+curl https://registry.company.com/registries/@company/features/my-tool/versions
 
 # Expected output
 # {"versions":["1.0.0"]}
 
 # Get latest registry configuration
-curl https://registry.company.com/registries/@company/my-tool
+curl https://registry.company.com/registries/@company/features/my-tool
 
 # Get specific version
-curl https://registry.company.com/registries/@company/my-tool/1.0.0
+curl https://registry.company.com/registries/@company/features/my-tool/1.0.0
 ```
 
 Test using CLI:

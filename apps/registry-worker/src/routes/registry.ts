@@ -76,7 +76,11 @@ export async function handleRegistry(
         })
       )
       if (!obj) return notFound('NOT_FOUND', 'File not found')
-      return streamObject(obj, mimeType(locator.filePath!), CACHE_HEADERS.immutable)
+      return streamObject(
+        obj,
+        mimeType(locator.filePath!),
+        CACHE_HEADERS.immutable
+      )
     }
   }
 }
