@@ -116,6 +116,36 @@ describe('registry/client fetchItem', () => {
     expect(item.dependencies).toEqual({ j: '1' })
   })
 
+  it('applies language override from identifier suffix (:lang)', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        files: [{ path: 'tailwind.config.ts' }],
+        languages: {
+          js: { files: [{ path: 'tailwind.config.js' }] }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue:js')
+    expect(item.files).toEqual([{ path: 'tailwind.config.js' }])
+  })
+
+  it('prefers explicit options.language over identifier suffix', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        languages: {
+          ts: { dependencies: { t: '1' } },
+          js: { dependencies: { j: '1' } }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue:js', { language: 'ts' })
+    expect(item.dependencies).toEqual({ t: '1' })
+  })
+
   it('throws when the registry item is missing required fields', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({ data: { name: 'vue' } })
