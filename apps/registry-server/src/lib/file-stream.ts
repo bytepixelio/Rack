@@ -47,6 +47,14 @@ export interface StreamFileOptions {
   /** Fastify request object */
   request: FastifyRequest
 
+  /**
+   * Optional `Cache-Control` header to set on the response. When omitted,
+   * the value already on the reply (e.g. from a global plugin) is left
+   * untouched. Pass one of the tiers from
+   * `@rack/registry-core`'s `CACHE_HEADERS`.
+   */
+  cacheControl?: string
+
   /** Optional logger for error reporting */
   logger?: FastifyBaseLogger
 }
@@ -73,7 +81,8 @@ export interface StreamFileOptions {
 export async function streamFileResponse(
   options: StreamFileOptions
 ): Promise<void> {
-  const { request, reply, filePath, contentType, logger } = options
+  const { request, reply, filePath, contentType, cacheControl, logger } =
+    options
 
   let fileStats: Awaited<ReturnType<typeof stat>>
 
@@ -86,11 +95,10 @@ export async function streamFileResponse(
   // Set response headers
   reply.type(contentType)
   reply.header('Content-Length', fileStats.size)
+  if (cacheControl) reply.header('Cache-Control', cacheControl)
 
-  if (typeof reply.etag === 'function') {
-    const etag = `${fileStats.mtime.getTime().toString(16)}-${fileStats.size.toString(16)}`
-    reply.etag(etag)
-  }
+  const etag = `"${fileStats.mtime.getTime().toString(16)}-${fileStats.size.toString(16)}"`
+  reply.header('ETag', etag)
 
   // HEAD — return headers only
   if (request.method === 'HEAD') {

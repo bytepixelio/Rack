@@ -5,6 +5,7 @@
  * `GET /namespaces/:namespace/registries`  — List registries in a namespace
  */
 
+import { CACHE_HEADERS } from '@rack/registry-core'
 import { ValidationError, NotFoundError } from '../lib/errors.js'
 
 import type { FastifyInstance } from 'fastify'
@@ -19,6 +20,7 @@ export default async function namespaceRoute(
 ): Promise<void> {
   app.get('/namespaces', async (_request, reply) => {
     const namespaces = await app.storageService.findNamespaces()
+    reply.header('Cache-Control', CACHE_HEADERS.short)
     return reply.send({ namespaces })
   })
 
@@ -36,6 +38,7 @@ export default async function namespaceRoute(
 
       try {
         const registries = await app.storageService.findRegistries(namespace)
+        reply.header('Cache-Control', CACHE_HEADERS.short)
         return reply.send({ namespace, registries })
       } catch (error) {
         const fsError = error as { code?: string }

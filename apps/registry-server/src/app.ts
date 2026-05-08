@@ -6,14 +6,9 @@
  */
 
 import Fastify from 'fastify'
-import caching from '@fastify/caching'
 import compress from '@fastify/compress'
 import multipart from '@fastify/multipart'
-import {
-  CACHE_MAX_AGE,
-  MAX_UPLOAD_SIZE,
-  COMPRESSION_ENCODINGS
-} from './constants.js'
+import { MAX_UPLOAD_SIZE, COMPRESSION_ENCODINGS } from './constants.js'
 
 // Plugins
 import metricsPlugin from './plugins/metrics.js'
@@ -74,11 +69,6 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   await app.register(compress, {
     global: true,
     encodings: [...COMPRESSION_ENCODINGS]
-  })
-
-  await app.register(caching, {
-    expiresIn: CACHE_MAX_AGE,
-    privacy: caching.privacy.PUBLIC
   })
 
   await app.register(multipart, {

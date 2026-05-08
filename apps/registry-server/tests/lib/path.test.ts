@@ -1,114 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import {
   resolveFilePath,
-  parseRegistryUrl,
   resolvePresetPath,
   resolveSchemaPath,
   resolveRegistryPath,
   resolveVersionsPath
 } from '../../src/lib/path.js'
 
-describe('parseRegistryUrl', () => {
-  it('should parse versions path', () => {
-    const result = parseRegistryUrl('/@rack/node/versions')
-    expect(result).toEqual({
-      type: 'versions',
-      path: { namespace: '@rack', segments: ['node'] }
-    })
-  })
-
-  it('should parse nested versions path', () => {
-    const result = parseRegistryUrl('/@rack/runtimes/node/versions')
-    expect(result).toEqual({
-      type: 'versions',
-      path: { namespace: '@rack', segments: ['runtimes', 'node'] }
-    })
-  })
-
-  it('should parse latest path', () => {
-    const result = parseRegistryUrl('/@rack/node')
-    expect(result).toEqual({
-      type: 'latest',
-      path: { namespace: '@rack', segments: ['node'] }
-    })
-  })
-
-  it('should parse nested latest path', () => {
-    const result = parseRegistryUrl('/@rack/runtimes/node')
-    expect(result).toEqual({
-      type: 'latest',
-      path: { namespace: '@rack', segments: ['runtimes', 'node'] }
-    })
-  })
-
-  it('should parse versioned path', () => {
-    const result = parseRegistryUrl('/@rack/node/1.0.0')
-    expect(result).toEqual({
-      type: 'versioned',
-      path: { namespace: '@rack', segments: ['node'], version: '1.0.0' }
-    })
-  })
-
-  it('should parse file path', () => {
-    const result = parseRegistryUrl('/@rack/node/1.0.0/files/src/index.ts')
-    expect(result).toEqual({
-      type: 'file',
-      path: {
-        namespace: '@rack',
-        segments: ['node'],
-        version: '1.0.0',
-        filePath: 'src/index.ts'
-      }
-    })
-  })
-
-  it('should parse nested file path', () => {
-    const result = parseRegistryUrl(
-      '/@rack/runtimes/node/2.0.0/files/tsconfig.json'
-    )
-    expect(result).toEqual({
-      type: 'file',
-      path: {
-        namespace: '@rack',
-        segments: ['runtimes', 'node'],
-        version: '2.0.0',
-        filePath: 'tsconfig.json'
-      }
-    })
-  })
-
-  it('should return null for namespace only', () => {
-    expect(parseRegistryUrl('/@rack')).toBeNull()
-  })
-
-  it('should return null for empty path', () => {
-    expect(parseRegistryUrl('/')).toBeNull()
-  })
-
-  it('should return null when namespace lacks @ prefix', () => {
-    expect(parseRegistryUrl('/rack/node')).toBeNull()
-  })
-
-  it('should return null when version follows namespace directly', () => {
-    expect(parseRegistryUrl('/@rack/1.0.0')).toBeNull()
-  })
-
-  it('should treat /@rack/versions as latest for registry named "versions"', () => {
-    const result = parseRegistryUrl('/@rack/versions')
-    expect(result).toEqual({
-      type: 'latest',
-      path: { namespace: '@rack', segments: ['versions'] }
-    })
-  })
-
-  it('should return null when segment after version is not files', () => {
-    expect(parseRegistryUrl('/@rack/node/1.0.0/other/file.ts')).toBeNull()
-  })
-
-  it('should return null when files segment has no file path', () => {
-    expect(parseRegistryUrl('/@rack/node/1.0.0/files')).toBeNull()
-  })
-})
+// `parseRegistryUrl` itself is exhaustively covered in
+// `packages/registry-core/tests/parser.test.ts`. Server-side path tests
+// only exercise the absolute-path resolvers + traversal guard.
 
 describe('resolveRegistryPath', () => {
   it('should resolve versioned registry path', () => {
