@@ -3,10 +3,19 @@
  *
  * `GET /namespaces`                        — List all namespaces
  * `GET /namespaces/:namespace/registries`  — List registries in a namespace
+ *
+ * Both routes are auth-aware: token-gated namespaces are hidden from
+ * unauthenticated callers so that namespace names and registry lists
+ * are not leaked to anyone who cannot access them.
  */
 
 import { CACHE_HEADERS } from '@rack/registry-core'
-import { ValidationError, NotFoundError } from '../lib/errors.js'
+import {
+  AppError,
+  NotFoundError,
+  ForbiddenError,
+  ValidationError
+} from '../lib/errors.js'
 
 import type { FastifyInstance } from 'fastify'
 
@@ -18,8 +27,18 @@ import type { FastifyInstance } from 'fastify'
 export default async function namespaceRoute(
   app: FastifyInstance
 ): Promise<void> {
-  app.get('/namespaces', async (_request, reply) => {
-    const namespaces = await app.storageService.findNamespaces()
+  app.get('/namespaces', async (request, reply) => {
+    const all = await app.storageService.findNamespaces()
+
+    // Admin token bypasses per-namespace filtering
+    const namespaces = request.isAdminToken()
+      ? all
+      : all.filter((ns) => {
+          if (!app.authService.isNamespaceAllowed(ns)) return false
+          if (app.authService.isNamespaceAnonymous(ns)) return true
+          return request.verifyNamespaceAccess(ns).allowed
+        })
+
     reply.header('Cache-Control', CACHE_HEADERS.short)
     return reply.send({ namespaces })
   })
@@ -36,6 +55,24 @@ export default async function namespaceRoute(
         )
       }
 
+      // 1. Namespace whitelist check
+      if (!app.authService.isNamespaceAllowed(namespace)) {
+        throw new ForbiddenError('FORBIDDEN_NAMESPACE', 'Namespace not allowed')
+      }
+
+      // 2. Auth check (admin token is handled inside verifyNamespaceAccess)
+      if (!request.isAdminToken()) {
+        const authResult = request.verifyNamespaceAccess(namespace)
+        if (!authResult.allowed && authResult.error) {
+          throw new AppError(
+            authResult.error.code,
+            authResult.error.message,
+            authResult.error.statusCode
+          )
+        }
+      }
+
+      // 3. List registries
       try {
         const registries = await app.storageService.findRegistries(namespace)
         reply.header('Cache-Control', CACHE_HEADERS.short)

@@ -1,26 +1,87 @@
+/**
+ * Namespace discovery routes (Worker).
+ *
+ * Both routes are auth-aware: token-gated namespaces are hidden from
+ * unauthenticated callers so that namespace names and registry lists
+ * are not leaked to anyone who cannot access them.
+ */
+
+import { enforceNamespaceAccess } from '../lib/auth.js'
 import { json, badRequest, notFound } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
+import {
+  extractToken,
+  verifyAccess,
+  parseAuthConfig,
+  isNamespaceAllowed,
+  isNamespaceAnonymous
+} from '@rack/auth-core'
 
 import type { RegistryStore } from '@rack/registry-core'
 
+// ─── Internal ──────────────────────────────────────────────────────────────
+
+/**
+ * Load auth config from R2. Intentionally does not share the module-level
+ * cache in `../lib/auth.ts` — that cache is keyed to `enforceNamespaceAccess`
+ * and its TTL contract. A one-off parse here is acceptable for listing.
+ */
+async function loadAuthConfig(bucket: R2Bucket) {
+  const obj = await bucket.get('.auth/auth.json')
+  return parseAuthConfig(obj ? await obj.json<unknown>() : {})
+}
+
+// ─── Public API ────────────────────────────────────────────────────────────
+
 /** GET /namespaces */
-export async function handleNamespaces(bucket: R2Bucket): Promise<Response> {
+export async function handleNamespaces(
+  bucket: R2Bucket,
+  adminToken: string | undefined,
+  request: Request
+): Promise<Response> {
   const listed = await bucket.list({ delimiter: '/' })
-  const namespaces = (listed.delimitedPrefixes ?? [])
+  const all = (listed.delimitedPrefixes ?? [])
     .map((p) => p.replace(/\/$/, ''))
     .filter((p) => p.startsWith('@'))
     .sort()
+
+  const config = await loadAuthConfig(bucket)
+  const token = extractToken(
+    request.headers.get('authorization'),
+    request.headers.get('x-registry-token')
+  )
+  const isAdmin = !!(adminToken && token === adminToken)
+
+  const namespaces = isAdmin
+    ? all
+    : all.filter((ns) => {
+        if (!isNamespaceAllowed(config, ns)) return false
+        if (isNamespaceAnonymous(config, ns)) return true
+        return verifyAccess(config, ns, token).allowed
+      })
+
   return json({ namespaces }, 200, CACHE_HEADERS.short)
 }
 
 /** GET /namespaces/:namespace/registries */
 export async function handleNamespaceRegistries(
   bucket: R2Bucket,
+  adminToken: string | undefined,
+  request: Request,
   namespace: string
 ): Promise<Response> {
   if (!namespace.startsWith('@')) {
     return badRequest('INVALID_NAMESPACE', 'Namespace must start with @')
   }
+
+  // Auth check (reuses the same flow as /registries/**)
+  const authError = await enforceNamespaceAccess(
+    bucket,
+    adminToken,
+    request,
+    namespace
+  )
+  if (authError) return authError
 
   const probe = await bucket.list({ prefix: `${namespace}/`, limit: 1 })
   if (probe.objects.length === 0) {
