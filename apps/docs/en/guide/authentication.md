@@ -148,6 +148,29 @@ Configuration for @company:
 
 > The current version of `rk config get/list` does not mask tokens or sensitive headers — make sure the terminal output and `~/.rackrc` are only accessible to trusted users.
 
+## Namespace Discovery
+
+Authentication also affects namespace discovery endpoints. Token-gated namespaces are hidden from unauthenticated callers so that namespace names and registry lists are not leaked.
+
+| Endpoint                          | Behavior                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| `GET /namespaces`                 | Returns only namespaces the caller can access; gated namespaces are omitted |
+| `GET /namespaces/:ns/registries`  | Requires valid token for non-anonymous namespaces; returns 401/403 otherwise |
+
+```bash
+# Anonymous — only sees public namespaces
+curl https://registry.company.com/namespaces
+# { "namespaces": ["@rack", "@public"] }
+
+# Authenticated — also sees gated namespaces
+curl -H "Authorization: Bearer <token>" https://registry.company.com/namespaces
+# { "namespaces": ["@rack", "@public", "@company"] }
+```
+
+::: tip Admin Token
+When an admin token is provided, `GET /namespaces` returns all namespaces without filtering.
+:::
+
 ## Troubleshooting
 
 ### Authentication Failure
