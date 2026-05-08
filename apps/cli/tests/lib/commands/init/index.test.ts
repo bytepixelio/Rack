@@ -93,6 +93,31 @@ describe('init command', () => {
     expect(gitInitMock).toHaveBeenCalled()
   })
 
+  it('persists all applied registries (including dependencies) to rack.json', async () => {
+    const { readFile } = await import('node:fs/promises')
+    initProjectMock.mockResolvedValue({
+      targetDir: '',
+      appliedRegistries: ['@rack/vue', '@rack/postcss'],
+      items: [],
+      initialRegistries: ['@rack/vue'],
+      fileChanges: [],
+      dependencies: {},
+      devDependencies: {},
+      scripts: {}
+    })
+    await runCommand(registerInitCommand, [
+      'init',
+      '-t',
+      '@rack/vue',
+      '-n',
+      'demo'
+    ])
+    const manifest = JSON.parse(
+      await readFile(join(tmp, 'demo', 'rack.json'), 'utf8')
+    )
+    expect(manifest.items).toEqual(['@rack/vue', '@rack/postcss'])
+  })
+
   it('skips install when --skip-install is set', async () => {
     await runCommand(registerInitCommand, [
       'init',

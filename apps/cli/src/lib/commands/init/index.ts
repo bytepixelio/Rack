@@ -89,7 +89,7 @@ export function registerInitCommand(program: Command): void {
 
         const manifest = rackJson.generate({
           template,
-          items: pipelineResult.initialRegistries,
+          items: pipelineResult.appliedRegistries,
           name: projectName || path.basename(targetDir)
         })
         await writeJSON(path.join(targetDir, 'rack.json'), manifest)
