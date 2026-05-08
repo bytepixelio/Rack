@@ -275,7 +275,7 @@ function buildRegistryUrl(parsed: ParsedNamespace, baseUrl: string): string {
 function resolveFileUrl(registryUrl: string, filePath: string): string {
   const decoded = decodeURIComponent(filePath)
 
-  if (/^[/\\]/.test(decoded)) {
+  if (decoded.startsWith('/') || decoded.includes('\\')) {
     throw new Error(`Unsafe file path: ${filePath}`)
   }
 
