@@ -6,6 +6,7 @@
  * filesystem directly.
  */
 
+import semver from 'semver'
 import { join, relative, sep } from 'path'
 import { listRegistries, SEMVER_PATTERN } from '@rack/registry-core'
 import {
@@ -245,16 +246,6 @@ export class StorageService {
    * // → ['2.1.0', '1.0.0', '0.9.0']
    */
   sortVersionsDescending(versions: string[]): string[] {
-    return [...versions].sort((a, b) => {
-      const pa = a.split('.').map(Number)
-      const pb = b.split('.').map(Number)
-
-      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const diff = (pb[i] ?? 0) - (pa[i] ?? 0)
-        if (diff !== 0) return diff
-      }
-
-      return 0
-    })
+    return [...versions].sort(semver.rcompare)
   }
 }

@@ -184,14 +184,37 @@ describe('StorageService', () => {
     expect(sorted).toEqual(['1.0.0', '1.0.0'])
   })
 
-  it('should handle versions with different segment counts', () => {
-    const sorted = storage.sortVersionsDescending(['1.0', '1.0.1'])
-    expect(sorted).toEqual(['1.0.1', '1.0'])
+  it('should sort prerelease below its stable version', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0-beta',
+      '1.0.0',
+      '0.9.0'
+    ])
+    expect(sorted).toEqual(['1.0.0', '1.0.0-beta', '0.9.0'])
   })
 
-  it('should handle versions where b has fewer segments than a', () => {
-    const sorted = storage.sortVersionsDescending(['1.0.1', '1.0'])
-    expect(sorted).toEqual(['1.0.1', '1.0'])
+  it('should sort multiple prerelease identifiers correctly', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0-beta.1',
+      '1.0.0-rc.1',
+      '1.0.0',
+      '1.0.0-alpha'
+    ])
+    expect(sorted).toEqual([
+      '1.0.0',
+      '1.0.0-rc.1',
+      '1.0.0-beta.1',
+      '1.0.0-alpha'
+    ])
+  })
+
+  it('should ignore build metadata for ordering', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0+build.1',
+      '1.0.0+build.2'
+    ])
+    expect(sorted[0]).toMatch(/^1\.0\.0\+build\.\d$/)
+    expect(sorted[1]).toMatch(/^1\.0\.0\+build\.\d$/)
   })
 
   it('should not mutate original array', () => {
