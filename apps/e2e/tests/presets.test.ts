@@ -70,9 +70,7 @@ describe('every preset scaffolds via rk init --ci', () => {
           allowScriptOverride: true
         })
 
-        const smoke = await loadSmoke(
-          path.join(material.dir, 'smoke.json')
-        )
+        const smoke = await loadSmoke(path.join(material.dir, 'smoke.json'))
         if (smoke) await applySmoke(smoke, projectDir, `${preset.id} → ${id}`)
       }
     } finally {

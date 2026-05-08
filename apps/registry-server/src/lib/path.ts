@@ -136,4 +136,7 @@ export function resolveSchemaPath(schemaDir: string, fileName: string): string {
 
 // Re-export the shared parser so callers don't dual-import.
 export { parseRegistryUrl } from '@rack/registry-core'
-export type { ParsedRegistryUrl, RegistryResourceType } from '@rack/registry-core'
+export type {
+  ParsedRegistryUrl,
+  RegistryResourceType
+} from '@rack/registry-core'

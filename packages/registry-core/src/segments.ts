@@ -40,9 +40,7 @@ export function deriveSegments(input: RegistryManifestPathInput): string[] {
   if (input.path) {
     const segments = input.path.split('/').filter(Boolean)
     if (segments.length === 0 || segments[segments.length - 1] !== input.name) {
-      throw new Error(
-        `path "${input.path}" must end with name "${input.name}"`
-      )
+      throw new Error(`path "${input.path}" must end with name "${input.name}"`)
     }
     return segments
   }

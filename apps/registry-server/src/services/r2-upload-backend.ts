@@ -6,8 +6,8 @@
  */
 
 import { join } from 'path'
-import { SEMVER_PATTERN } from '@rack/registry-core'
 import { readdir, readFile } from 'fs/promises'
+import { SEMVER_PATTERN } from '@rack/registry-core'
 import {
   S3Client,
   PutObjectCommand,

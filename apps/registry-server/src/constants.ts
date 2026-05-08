@@ -13,8 +13,8 @@ export const MAX_UPLOAD_SIZE = 100 * 1024 * 1024
 /** MIME types accepted for tar.gz package uploads. */
 export const ALLOWED_UPLOAD_MIMETYPES = new Set([
   'application/gzip',
-  'application/x-gzip',
   'application/x-tar',
+  'application/x-gzip',
   'application/x-compressed',
   'application/octet-stream'
 ])
@@ -55,13 +55,9 @@ export const HISTOGRAM_BUCKETS = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
 
 /** HTTP headers that should be redacted in request logs. */
 export const SENSITIVE_HEADERS = [
-  'authorization',
   'cookie',
   'set-cookie',
+  'authorization',
   'x-registry-token',
   'proxy-authorization'
 ]
-
-// Protocol-level constants (SEMVER_PATTERN, CATEGORY_BY_TYPE, SCHEMA_FILES,
-// CACHE_HEADERS) live in `@rack/registry-core` so the worker observes the
-// same values. Import them from there at the consuming site.
