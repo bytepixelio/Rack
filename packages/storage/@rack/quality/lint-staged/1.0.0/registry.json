@@ -6,12 +6,12 @@
   "type": "registry:quality",
   "priority": 6,
   "description": "Lint-staged integration for Git pre-commit hooks",
-  "tags": ["lint-staged", "git-hooks", "code-quality"],
+  "tags": ["git-hooks", "lint-staged", "code-quality"],
   "registryDependencies": [
     "@rack/quality/husky"
   ],
   "devDependencies": {
-    "lint-staged": "^14.0.1"
+    "lint-staged": "^17.0.2"
   },
   "files": [
     {
