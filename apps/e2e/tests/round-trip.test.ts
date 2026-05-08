@@ -15,10 +15,10 @@
 
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { rm, mkdtemp } from 'node:fs/promises'
 import { startServer } from '../src/server.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { buildCategorizedUploadPackage } from '../src/upload.js'
+import { it, expect, describe, afterAll, beforeAll } from 'vitest'
 
 import type { TestServer } from '../src/server.js'
 import type { UploadPackage } from '../src/upload.js'
@@ -53,14 +53,14 @@ describe.skipIf(isRemote)(
     afterAll(async () => {
       await pkg.cleanup()
       await server.close()
-      await rm(storageDir, { recursive: true, force: true })
+      await rm(storageDir, { force: true, recursive: true })
     })
 
     it('POST /registries → 201 with canonical multi-segment path', async () => {
       const res = await fetch(`${server.url}/registries`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${server.adminToken!}` },
-        body: await buildForm(pkg)
+        body: await buildForm(pkg),
+        headers: { Authorization: `Bearer ${server.adminToken!}` }
       })
 
       expect(res.status).toBe(201)

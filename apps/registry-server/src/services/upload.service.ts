@@ -16,9 +16,9 @@ import { join, dirname } from 'path'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
 import { createHash, randomUUID } from 'crypto'
+import { deriveSegments } from '@rack/registry-core'
 import { createReadStream, createWriteStream } from 'fs'
 import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
-import { deriveSegments } from '@rack/registry-core'
 import {
   ConflictError,
   ForbiddenError,
@@ -201,11 +201,11 @@ export class UploadService {
     }
 
     this.logger.info(
-      { namespace, name, version, segments },
+      { name, version, segments, namespace },
       'Package info parsed'
     )
 
-    return { namespace, name, version, segments }
+    return { name, version, segments, namespace }
   }
 
   /**
@@ -326,11 +326,11 @@ export class UploadService {
     segments: string[]
   ): void {
     try {
-      const data = { namespace, name, version, segments }
+      const data = { name, version, segments, namespace }
       this.webhook.emitEvent('uploaded', data)
       this.webhook.emitEvent('version.created', data)
       this.logger.info(
-        { namespace, name, version, segments },
+        { name, version, segments, namespace },
         'Webhook events emitted'
       )
     } catch (error) {
@@ -371,7 +371,7 @@ export class UploadService {
       }
     } catch (error) {
       this.logger.warn(
-        { error, namespace, name },
+        { name, error, namespace },
         'Failed to regenerate versions.json'
       )
     }
@@ -394,7 +394,7 @@ export class UploadService {
     )
 
     this.logger.info(
-      { namespace, name, versions: sorted },
+      { name, namespace, versions: sorted },
       'versions.json regenerated (local)'
     )
   }
@@ -416,7 +416,7 @@ export class UploadService {
     )
 
     this.logger.info(
-      { namespace, name, versions: sorted },
+      { name, namespace, versions: sorted },
       'versions.json regenerated (R2)'
     )
   }

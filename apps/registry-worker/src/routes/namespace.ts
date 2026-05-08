@@ -1,5 +1,5 @@
-import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 import { json, badRequest } from '../lib/response.js'
+import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 
 import type { RegistryStore } from '@rack/registry-core'
 

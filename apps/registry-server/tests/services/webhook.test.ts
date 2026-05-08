@@ -1,32 +1,33 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, writeFile, rm, mkdir } from 'fs/promises'
-import type { FastifyBaseLogger } from 'fastify'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
 import { WebhookService } from '../../src/services/webhook.service.js'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
+
+import type { FastifyBaseLogger } from 'fastify'
 
 function createMockLogger(): FastifyBaseLogger {
   return {
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn(),
     debug: vi.fn(),
+    error: vi.fn(),
     fatal: vi.fn(),
     trace: vi.fn(),
-    child: vi.fn().mockReturnThis(),
+    silent: vi.fn(),
     level: 'silent',
-    silent: vi.fn()
+    child: vi.fn().mockReturnThis()
   } as unknown as FastifyBaseLogger
 }
 
 const VALID_CONFIG = {
   webhooks: [
     {
-      url: 'https://example.com/hook',
-      secret: 'test-secret',
-      events: ['uploaded', 'version.created'],
       enabled: true,
-      description: 'Test hook'
+      secret: 'test-secret',
+      description: 'Test hook',
+      url: 'https://example.com/hook',
+      events: ['uploaded', 'version.created']
     }
   ]
 }
@@ -46,7 +47,7 @@ describe('WebhookService', () => {
   afterEach(async () => {
     vi.useRealTimers()
     globalThis.fetch = originalFetch
-    await rm(tempDir, { recursive: true, force: true })
+    await rm(tempDir, { force: true, recursive: true })
   })
 
   // ─── load ────────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ describe('WebhookService', () => {
     await writeFile(
       filePath,
       JSON.stringify({
-        webhooks: [{ secret: 's', events: [], enabled: true }]
+        webhooks: [{ events: [], secret: 's', enabled: true }]
       })
     )
 
@@ -96,7 +97,7 @@ describe('WebhookService', () => {
     await writeFile(
       filePath,
       JSON.stringify({
-        webhooks: [{ url: 'http://x', events: [], enabled: true }]
+        webhooks: [{ events: [], enabled: true, url: 'http://x' }]
       })
     )
 
@@ -110,7 +111,7 @@ describe('WebhookService', () => {
       filePath,
       JSON.stringify({
         webhooks: [
-          { url: 'http://x', secret: 's', events: 'uploaded', enabled: true }
+          { secret: 's', enabled: true, url: 'http://x', events: 'uploaded' }
         ]
       })
     )
@@ -124,7 +125,7 @@ describe('WebhookService', () => {
     await writeFile(
       filePath,
       JSON.stringify({
-        webhooks: [{ url: 'http://x', secret: 's', events: [], enabled: 'yes' }]
+        webhooks: [{ events: [], secret: 's', enabled: 'yes', url: 'http://x' }]
       })
     )
 
@@ -141,10 +142,10 @@ describe('WebhookService', () => {
       JSON.stringify({
         webhooks: [
           {
-            url: 'http://x',
             secret: 's',
-            events: ['version.created'],
-            enabled: true
+            enabled: true,
+            url: 'http://x',
+            events: ['version.created']
           }
         ]
       })
@@ -154,9 +155,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -173,10 +174,10 @@ describe('WebhookService', () => {
       JSON.stringify({
         webhooks: [
           {
-            url: 'http://x',
             secret: 's',
-            events: ['uploaded'],
-            enabled: false
+            enabled: false,
+            url: 'http://x',
+            events: ['uploaded']
           }
         ]
       })
@@ -186,9 +187,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -208,9 +209,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -232,9 +233,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(1)
@@ -262,9 +263,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -289,9 +290,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(3000)
@@ -316,9 +317,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -362,15 +363,15 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     service.emitEvent('version.created', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -386,10 +387,10 @@ describe('WebhookService', () => {
       JSON.stringify({
         webhooks: [
           {
-            url: 'https://example.com/hook',
+            enabled: true,
             secret: 'secret',
-            events: ['uploaded', 'version.created'],
-            enabled: true
+            url: 'https://example.com/hook',
+            events: ['uploaded', 'version.created']
           }
         ]
       })
@@ -412,15 +413,15 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     service.emitEvent('version.created', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -436,10 +437,10 @@ describe('WebhookService', () => {
       JSON.stringify({
         webhooks: [
           {
-            url: 'https://example.com/hook',
+            enabled: true,
             secret: 'secret',
-            events: ['uploaded', 'version.created'],
-            enabled: true
+            url: 'https://example.com/hook',
+            events: ['uploaded', 'version.created']
           }
         ]
       })
@@ -462,17 +463,17 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(100)
 
     service.emitEvent('version.created', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(3000)
@@ -496,9 +497,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
 
@@ -539,9 +540,9 @@ describe('WebhookService', () => {
     await service.load()
 
     service.emitEvent('uploaded', {
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(1)

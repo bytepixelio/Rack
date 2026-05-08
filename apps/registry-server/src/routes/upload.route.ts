@@ -4,9 +4,9 @@
  * `POST /registries` — Upload a tar.gz package with checksum verification.
  */
 
-import { AppError, ValidationError, ForbiddenError } from '../lib/errors.js'
+import { AppError, ForbiddenError, ValidationError } from '../lib/errors.js'
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyReply, FastifyRequest, FastifyInstance } from 'fastify'
 
 /**
  * Register the upload route.
@@ -54,7 +54,7 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
         tempExtractDir = await upload.extractTarGz(tempTarPath)
 
         // 6. Parse metadata
-        const { namespace, name, version, segments } =
+        const { name, version, segments, namespace } =
           await upload.parsePackageInfo(tempExtractDir)
 
         // 7. Validate namespace
@@ -104,8 +104,8 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
           name,
           version,
           namespace,
-          path: `${namespace}/${segments.join('/')}/${version}`,
-          message: 'Registry uploaded successfully'
+          message: 'Registry uploaded successfully',
+          path: `${namespace}/${segments.join('/')}/${version}`
         })
       } catch (error) {
         // Clean up on failure
