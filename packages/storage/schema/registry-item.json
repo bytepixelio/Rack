@@ -81,8 +81,8 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^(?!.*(?:^|/)(?:\\.\\.|\\.%2[eE]|%2[eE]\\.|%2[eE]%2[eE])(?:/|$))(?!(?:\\.|%2[eE])$)(?!.*/(?:\\.|%2[eE])(?:/|$))(?![/\\\\])(?!.*%2[fF])(?!.*\\\\)(?!.*%5[cC])",
-          "description": "Template path on the registry server (alternative to content). Must not contain . or .. segments (including percent-encoded forms), backslashes, or start with /. Leading ./ prefix is allowed."
+          "pattern": "^(?!.*%(?![0-9a-fA-F]{2}))(?!.*(?:^|/)(?:\\.\\.|\\.%2[eE]|%2[eE]\\.|%2[eE]%2[eE])(?:/|$))(?!(?:\\.|%2[eE])$)(?!.*/(?:\\.|%2[eE])(?:/|$))(?![/\\\\])(?!.*%2[fF])(?!.*\\\\)(?!.*%5[cC])",
+          "description": "Template path on the registry server (alternative to content). Must not contain . or .. segments (including percent-encoded forms), backslashes, or start with /. Leading ./ prefix is allowed. Percent signs must be followed by two hex digits."
         },
         "content": {
           "type": "string",
