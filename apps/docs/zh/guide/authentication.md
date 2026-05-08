@@ -148,6 +148,29 @@ Configuration for @company:
 
 > 当前版本的 `rk config get/list` 不会对 Token 或敏感请求头做掩码, 请确保终端输出与 `~/.rackrc` 仅由可信用户访问。
 
+## 命名空间发现
+
+认证同样影响命名空间发现接口。需要 Token 的命名空间对未认证调用者不可见, 避免泄露命名空间名称和 Registry 列表。
+
+| 端点                              | 行为                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| `GET /namespaces`                 | 仅返回调用者有权访问的命名空间; 受保护的命名空间不会出现在列表中       |
+| `GET /namespaces/:ns/registries`  | 非匿名命名空间需要有效 Token; 否则返回 401/403                         |
+
+```bash
+# 匿名访问 — 只能看到公开命名空间
+curl https://registry.company.com/namespaces
+# { "namespaces": ["@rack", "@public"] }
+
+# 认证访问 — 可以看到受保护的命名空间
+curl -H "Authorization: Bearer <token>" https://registry.company.com/namespaces
+# { "namespaces": ["@rack", "@public", "@company"] }
+```
+
+::: tip Admin Token
+使用 Admin Token 时, `GET /namespaces` 返回所有命名空间, 不做过滤。
+:::
+
 ## 故障排查
 
 ### 认证失败

@@ -165,8 +165,9 @@ Rate limits are applied **per client IP**. When deploying behind a reverse proxy
 
 The authentication configuration file (repo-root `config/auth.json`, shared with the [Cloudflare Worker](https://github.com/bytepixelio/Rack/blob/main/apps/registry-worker/README.md)) is the single source of truth for namespace access:
 
-- A namespace must exist as a top-level key; namespaces missing from `auth.json` always return 403 Forbidden.
-- An empty array `[]` or `null` value → anonymous read access (uploads still rejected unless using an admin token).
+- A namespace must exist as a top-level key; namespaces missing from `auth.json` always return 403 Forbidden and are hidden from `GET /namespaces` listings.
+- An empty array `[]` or `null` value → anonymous read access (uploads still rejected unless using an admin token). These namespaces are visible to everyone in discovery endpoints.
+- Token-gated namespaces (non-empty token array) are only visible in `GET /namespaces` to callers who provide a valid token (or admin token).
 - Each object in the array represents a token with the following fields:
 
 | Field       | Type    | Required | Description                                       |

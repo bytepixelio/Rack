@@ -98,6 +98,16 @@ describe('rack-json', () => {
     expect(got.items).toEqual(['a', 'b'])
   })
 
+  it('update deduplicates by canonical identity across shorthand and full forms', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['@rack/quality/husky'] })
+    )
+    await rackJson.update(tmp, ['quality/husky', '@rack/vue'])
+    const got = await rackJson.read(tmp)
+    expect(got.items).toEqual(['@rack/quality/husky', '@rack/vue'])
+  })
+
   it('update handles a rack.json without items field', async () => {
     await writeFile(join(tmp, 'rack.json'), JSON.stringify({ name: 'x' }))
     await rackJson.update(tmp, ['a'])

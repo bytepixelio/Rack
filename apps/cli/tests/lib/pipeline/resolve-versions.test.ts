@@ -79,6 +79,24 @@ describe('pipeline/resolve-versions resolveDependencies', () => {
     expect(res.conflicts[0].strategy).toBe('priority')
   })
 
+  it('falls back to priority when some versions are non-semver', () => {
+    const items = [
+      createItem({
+        identifier: 'a',
+        priority: 1,
+        dependencies: { x: 'latest' }
+      }),
+      createItem({
+        identifier: 'b',
+        priority: 2,
+        dependencies: { x: '^1.0.0' }
+      })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('latest')
+    expect(res.conflicts[0].strategy).toBe('priority')
+  })
+
   it('falls back to priority when no ranges are valid semver', () => {
     const items = [
       createItem({
