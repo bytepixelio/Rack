@@ -1,5 +1,0 @@
-{
-  "text": {
-    "src/index.ts": { "contains": ["TypeScript"] }
-  }
-}
