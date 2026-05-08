@@ -2,6 +2,7 @@
   "type": "module",
   "main": "./dist/index.cjs",
   "types": "./types/index.d.ts",
+  "files": ["dist", "types"],
   "exports": {
     ".": {
       "import": "./dist/index.js",

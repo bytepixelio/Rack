@@ -33,14 +33,19 @@
   },
   "files": [
     {
-      "target": "rollup.config.mjs",
+      "target": ".gitignore",
       "type": "registry:config",
-      "path": "./templates/rollup.config.mjs"
+      "path": "./templates/.gitignore"
     },
     {
-      "target": "babel.config.json",
+      "target": "package.json",
       "type": "registry:config",
-      "path": "./templates/babel.config.json"
+      "path": "./templates/package.json"
+    },
+    {
+      "target": "tsconfig.json",
+      "type": "registry:config",
+      "path": "./templates/tsconfig.json"
     },
     {
       "target": ".browserslistrc",
@@ -48,14 +53,14 @@
       "path": "./templates/.browserslistrc"
     },
     {
-      "target": ".gitignore",
+      "target": "babel.config.json",
       "type": "registry:config",
-      "path": "./templates/.gitignore"
+      "path": "./templates/babel.config.json"
     },
     {
-      "target": "tsconfig.json",
+      "target": "rollup.config.mjs",
       "type": "registry:config",
-      "path": "./templates/tsconfig.json"
+      "path": "./templates/rollup.config.mjs"
     }
   ]
 }
