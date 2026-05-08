@@ -1,4 +1,4 @@
-import { json, badRequest } from '../lib/response.js'
+import { json, badRequest, notFound } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 
 import type { RegistryStore } from '@rack/registry-core'
@@ -20,6 +20,11 @@ export async function handleNamespaceRegistries(
 ): Promise<Response> {
   if (!namespace.startsWith('@')) {
     return badRequest('INVALID_NAMESPACE', 'Namespace must start with @')
+  }
+
+  const probe = await bucket.list({ prefix: `${namespace}/`, limit: 1 })
+  if (probe.objects.length === 0) {
+    return notFound('NAMESPACE_NOT_FOUND', `Namespace ${namespace} not found`)
   }
 
   const registries = await listRegistries(toRegistryStore(bucket), namespace)
