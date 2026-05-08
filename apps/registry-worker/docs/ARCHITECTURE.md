@@ -121,7 +121,7 @@ Auth gating is applied to `/registries/*` and listing endpoints (`/namespaces`, 
 
 ## URL → R2 key mapping
 
-`lib/parser.ts:parseRegistryUrl` is the single place URL conventions are decoded. It returns one of four `RegistryResourceType` values; the route then maps each to an R2 key. The mapping is intentionally identical to `registry-server/src/lib/path.ts`.
+`@rack/registry-core`'s `parseRegistryUrl` is the single place URL conventions are decoded. It returns one of four `RegistryResourceType` values; the route then maps each to an R2 key. The mapping is intentionally identical to `registry-server/src/lib/path.ts`.
 
 | Type        | URL example                         | R2 key                                    | Cache tier  |
 | ----------- | ----------------------------------- | ----------------------------------------- | ----------- |
@@ -133,7 +133,7 @@ Auth gating is applied to `/registries/*` and listing endpoints (`/namespaces`, 
 Parsing rules:
 
 - The first segment must start with `@` — anything else is `null` (returns `400 INVALID_PATH`)
-- A segment matching `^\d+\.\d+\.\d+` (the `SEMVER_RE` constant) is treated as the version pivot
+- A segment matching `SEMVER_PATTERN` (defined in `@rack/registry-core`) is treated as the version pivot
 - Segments before the version pivot become the registry path; segments after `files/` become the file path
 - A trailing `/versions` (with no version pivot) yields the version-list resource
 - No version pivot at all → `latest` (the route reads `versions.json[0]` for the registry's HEAD)
@@ -216,7 +216,7 @@ Implementation lives in `lib/auth.ts`. Three points worth calling out:
 
 ## Cache strategy
 
-Defined in `lib/constants.ts:CACHE`. Each route picks one tier explicitly:
+Defined in `@rack/registry-core`'s `CACHE_HEADERS`. Each route picks one tier explicitly:
 
 | Tier        | Value                                 | Used for                       | Why                                                                                |
 | ----------- | ------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------- |
@@ -263,17 +263,18 @@ If those invariants break (e.g. a partial upload), reads return `404 NOT_FOUND`.
 
 Three things must stay in lockstep with `apps/registry-server`. Drift causes silent inconsistencies — the Worker would happily serve content the server would have rejected, or vice versa.
 
-| Thing                          | Worker file               | Server file                       |
-| ------------------------------ | ------------------------- | --------------------------------- |
-| URL → resource type parsing    | `lib/parser.ts`           | `src/lib/path.ts`                 |
-| URL → R2 key mapping           | `routes/registry.ts`      | `src/services/storage.service.ts` |
-| Auth model (parse + verify)    | `lib/auth.ts` (delegates) | `src/services/auth.service.ts` (delegates) |
-| Schema whitelist               | `lib/constants.ts`        | `src/routes/schema.route.ts`      |
-| Allowed methods (`GET`/`HEAD`) | `index.ts` 405            | server defaults                   |
+| Thing                          | Shared package / Worker file   | Server file                                |
+| ------------------------------ | ------------------------------ | ------------------------------------------ |
+| URL → resource type parsing    | `@rack/registry-core` parser   | `src/lib/path.ts`                          |
+| URL → R2 key mapping           | `routes/registry.ts`           | `src/services/storage.service.ts`          |
+| Auth model (parse + verify)    | `@rack/auth-core`              | `src/services/auth.service.ts` (delegates) |
+| Schema whitelist               | `@rack/registry-core` constants | `src/routes/schema.route.ts`              |
+| Cache tiers                    | `@rack/registry-core` constants | `@rack/registry-core` constants           |
+| Allowed methods (`GET`/`HEAD`) | `index.ts` 405                 | server defaults                            |
 
-`@rack/auth-core` deliberately exists to make the auth coupling structural — neither side can drift unilaterally without breaking shared tests in `packages/auth-core/tests/`.
+`@rack/auth-core` and `@rack/registry-core` deliberately exist to make these couplings structural — neither side can drift unilaterally without breaking shared tests in the respective `packages/*/tests/` directories.
 
-The other couplings are by-convention. If you change one, change the other and update both test suites (`tests/lib/parser.test.ts` here mirrors `tests/lib/path.test.ts` on the server side).
+The remaining couplings (R2 key mapping, allowed methods) are by-convention. If you change one, change the other and update both test suites.
 
 ## Edge runtime constraints
 

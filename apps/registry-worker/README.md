@@ -60,7 +60,7 @@ pnpm --filter @rack/registry-worker deploy   # wrangler deploy
 | `GET/HEAD` | `/registries/@ns/name/:version`         | `{ns}/{name}/{version}/registry.json`            | `max-age=31536000, immutable` |
 | `GET/HEAD` | `/registries/@ns/name/:version/files/*` | `{ns}/{name}/{version}/{filePath}`               | `max-age=31536000, immutable` |
 
-Errors return `{ code, message }` JSON with `no-store`. Allowed schema files are whitelisted in `src/lib/constants.ts` (`rack.json`, `preset.json`, `registry-item.json`). Cache tiers are picked per route — see [ARCHITECTURE.md#cache-strategy](./docs/ARCHITECTURE.md#cache-strategy) for the rationale.
+Errors return `{ code, message }` JSON with `no-store`. Allowed schema files are whitelisted in `@rack/registry-core` (`rack.json`, `preset.json`, `registry-item.json`). Cache tiers are picked per route — see [ARCHITECTURE.md#cache-strategy](./docs/ARCHITECTURE.md#cache-strategy) for the rationale.
 
 ## Deployment
 
@@ -96,8 +96,6 @@ src/
 ├── index.ts             # Router — dispatches by URL pathname
 ├── lib/
 │   ├── auth.ts          # Loads .auth/auth.json from R2, delegates to @rack/auth-core
-│   ├── constants.ts     # Cache tiers, SemVer regex, schema whitelist
-│   ├── parser.ts        # /registries/* URL → { type, namespace, version, ... }
 │   └── response.ts      # json / streamObject / mimeType / readJSON
 └── routes/
     ├── health.ts
@@ -106,5 +104,7 @@ src/
     ├── schema.ts
     └── registry.ts
 ```
+
+Protocol-level constants (cache tiers, SemVer pattern, schema whitelist) and URL parsing live in the shared [`@rack/registry-core`](../../packages/registry-core) package.
 
 Tests mirror `src/` under `tests/`, with a shared `tests/helpers/mock-bucket.ts` fake of the `R2Bucket` API.
