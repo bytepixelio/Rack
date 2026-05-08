@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { readFile, writeFile, stat } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../helpers/tmp.js'
 import { createItem, createMockLogger } from '../../helpers/mocks.js'
+import { PathTraversalError } from '../../../src/lib/utils/errors.js'
 
 vi.mock('../../../src/lib/registry/client.js', () => ({
   registry: { fetchFile: vi.fn(), fetchBinaryFile: vi.fn() }
@@ -143,5 +144,47 @@ describe('pipeline/apply', () => {
       createMockLogger()
     )
     expect(changes).toEqual([])
+  })
+
+  it('rejects target with ".." that escapes the project directory', async () => {
+    const item = createItem({
+      files: [{ type: 'config', target: '../outside.txt', content: 'evil' }]
+    })
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toThrow(PathTraversalError)
+  })
+
+  it('rejects absolute target paths', async () => {
+    const item = createItem({
+      files: [{ type: 'config', target: '/etc/passwd', content: 'evil' }]
+    })
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toThrow(PathTraversalError)
+  })
+
+  it('rejects deeply nested ".." traversal', async () => {
+    const item = createItem({
+      files: [
+        {
+          type: 'config',
+          target: 'a/b/../../../../etc/passwd',
+          content: 'evil'
+        }
+      ]
+    })
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toThrow(PathTraversalError)
+  })
+
+  it('allows nested subdirectory targets', async () => {
+    const item = createItem({
+      files: [{ type: 'config', target: 'sub/dir/file.txt', content: 'ok' }]
+    })
+    const changes = await applyFiles([item], tmp, 'ts', createMockLogger())
+    expect(changes[0].type).toBe('created')
+    expect(await readFile(join(tmp, 'sub/dir/file.txt'), 'utf8')).toBe('ok\n')
   })
 })
