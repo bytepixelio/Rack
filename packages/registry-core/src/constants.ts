@@ -8,8 +8,9 @@
 
 // ─── Public API ──────────────────────────────────────────────────────
 
-/** SemVer version prefix pattern (e.g. `1.0.0`, `2.3.1-beta`). */
-export const SEMVER_PATTERN = /^\d+\.\d+\.\d+/
+/** SemVer version pattern (e.g. `1.0.0`, `2.3.1-beta`, `1.0.0+build.42`). */
+export const SEMVER_PATTERN =
+  /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
 
 /**
  * Map a registry.json `type` to the storage segment under `<namespace>/`.
