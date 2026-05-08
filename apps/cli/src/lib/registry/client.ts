@@ -89,7 +89,7 @@ async function fetchItem(
     const registryUrl = parsed.version ? url : `${url}/${item.version}`
 
     return {
-      ...applyLanguageOverrides(item, options.language),
+      ...applyLanguageOverrides(item, options.language ?? parsed.language),
       identifier,
       registryUrl
     }
