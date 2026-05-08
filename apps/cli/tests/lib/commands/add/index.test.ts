@@ -82,6 +82,16 @@ describe('add command', () => {
     expect(updateMock).not.toHaveBeenCalled()
   })
 
+  it('detects already-installed registry even when using shorthand identifier', async () => {
+    readOrCreateMock.mockResolvedValue({
+      items: ['@rack/quality/husky'],
+      language: 'ts'
+    })
+    await runCommand(registerAddCommand, ['add', 'quality/husky'])
+    expect(addRegistryMock).not.toHaveBeenCalled()
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+
   it('exits with error when addRegistry rejects', async () => {
     readOrCreateMock.mockResolvedValue({ items: [], language: 'ts' })
     addRegistryMock.mockRejectedValue(new Error('boom'))
