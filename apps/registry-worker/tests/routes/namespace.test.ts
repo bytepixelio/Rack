@@ -47,6 +47,15 @@ describe('GET /namespaces/:namespace/registries', () => {
     expect(body.registries).toEqual(['quality/eslint', 'runtimes/node'])
   })
 
+  it('should return 404 for non-existent namespace', async () => {
+    const bucket = createMockBucket({})
+    const res = await handleNamespaceRegistries(bucket, '@nonexistent')
+
+    expect(res.status).toBe(404)
+    const body = (await res.json()) as { code: string }
+    expect(body.code).toBe('NAMESPACE_NOT_FOUND')
+  })
+
   it('should return 400 for namespace without @', async () => {
     const bucket = createMockBucket({})
     const res = await handleNamespaceRegistries(bucket, 'rack')
