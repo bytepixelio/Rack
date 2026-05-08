@@ -1,12 +1,13 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createHash } from 'crypto'
-import type { FastifyBaseLogger } from 'fastify'
 import { AuthService } from '../../src/services/auth.service.js'
 import { UploadService } from '../../src/services/upload.service.js'
-import { mkdtemp, mkdir, writeFile, rm, readFile } from 'fs/promises'
+import { rm, mkdir, mkdtemp, readFile, writeFile } from 'fs/promises'
 import { StorageService } from '../../src/services/storage.service.js'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
+
+import type { FastifyBaseLogger } from 'fastify'
 import type { WebhookService } from '../../src/services/webhook.service.js'
 import type { R2UploadBackend } from '../../src/services/r2-upload-backend.js'
 import type { SchemaValidatorService } from '../../src/services/schema-validator.service.js'
@@ -15,20 +16,20 @@ function createMockLogger(): FastifyBaseLogger {
   return {
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn(),
     debug: vi.fn(),
+    error: vi.fn(),
     fatal: vi.fn(),
     trace: vi.fn(),
-    child: vi.fn().mockReturnThis(),
+    silent: vi.fn(),
     level: 'silent',
-    silent: vi.fn()
+    child: vi.fn().mockReturnThis()
   } as unknown as FastifyBaseLogger
 }
 
 function createMockWebhook(): WebhookService {
   return {
-    emitEvent: vi.fn(),
-    load: vi.fn()
+    load: vi.fn(),
+    emitEvent: vi.fn()
   } as unknown as WebhookService
 }
 
@@ -52,15 +53,15 @@ describe('UploadService', () => {
   })
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true })
+    await rm(tempDir, { force: true, recursive: true })
   })
 
   function createMockAuth(namespaces: string[] = ['@rack']) {
     const allowed = new Set(namespaces)
     return {
       load: vi.fn(),
-      isNamespaceAllowed: vi.fn((ns: string) => allowed.has(ns)),
       isNamespaceAnonymous: vi.fn(() => true),
+      isNamespaceAllowed: vi.fn((ns: string) => allowed.has(ns)),
       verifyAccess: vi.fn(() => ({ allowed: true, reason: 'anonymous' }))
     } as unknown as AuthService
   }
@@ -68,18 +69,18 @@ describe('UploadService', () => {
   function createMockR2(): R2UploadBackend {
     return {
       exists: vi.fn().mockResolvedValue(false),
-      uploadDirectory: vi.fn().mockResolvedValue(undefined),
+      findVersions: vi.fn().mockResolvedValue([]),
       writeFile: vi.fn().mockResolvedValue(undefined),
-      findVersions: vi.fn().mockResolvedValue([])
+      uploadDirectory: vi.fn().mockResolvedValue(undefined)
     } as unknown as R2UploadBackend
   }
 
   function createUpload(
     opts: {
-      namespaces?: string[]
-      validator?: SchemaValidatorService
-      webhook?: WebhookService
       r2?: R2UploadBackend
+      namespaces?: string[]
+      webhook?: WebhookService
+      validator?: SchemaValidatorService
     } = {}
   ) {
     return new UploadService(
@@ -137,15 +138,15 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
     await writeFile(
       join(extractDir, 'registry.json'),
-      JSON.stringify({ namespace: '@rack', name: 'node', version: '1.0.0' })
+      JSON.stringify({ name: 'node', version: '1.0.0', namespace: '@rack' })
     )
 
     const info = await upload.parsePackageInfo(extractDir)
     expect(info).toEqual({
-      namespace: '@rack',
       name: 'node',
       version: '1.0.0',
-      segments: ['node']
+      segments: ['node'],
+      namespace: '@rack'
     })
   })
 
@@ -156,9 +157,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'husky',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:quality'
       })
     )
@@ -174,9 +175,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'node',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:runtime'
       })
     )
@@ -192,9 +193,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'vue',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:framework'
       })
     )
@@ -210,9 +211,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'vue-router',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:feature'
       })
     )
@@ -228,9 +229,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'vitest',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:testing'
       })
     )
@@ -246,9 +247,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'foo',
         version: '1.0.0',
+        namespace: '@rack',
         type: 'registry:custom-tool'
       })
     )
@@ -264,11 +265,11 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'foo',
         version: '1.0.0',
-        type: 'registry:feature',
-        path: 'legacy/foo'
+        namespace: '@rack',
+        path: 'legacy/foo',
+        type: 'registry:feature'
       })
     )
 
@@ -283,9 +284,9 @@ describe('UploadService', () => {
     await writeFile(
       join(extractDir, 'registry.json'),
       JSON.stringify({
-        namespace: '@rack',
         name: 'husky',
         version: '1.0.0',
+        namespace: '@rack',
         path: 'quality/wrong-leaf'
       })
     )
@@ -325,7 +326,7 @@ describe('UploadService', () => {
     await mkdir(dir, { recursive: true })
     await writeFile(
       join(dir, 'registry.json'),
-      JSON.stringify({ namespace: '@rack', version: '1.0.0' })
+      JSON.stringify({ version: '1.0.0', namespace: '@rack' })
     )
 
     await expect(upload.parsePackageInfo(dir)).rejects.toThrow(
@@ -339,7 +340,7 @@ describe('UploadService', () => {
     await mkdir(dir, { recursive: true })
     await writeFile(
       join(dir, 'registry.json'),
-      JSON.stringify({ namespace: '@rack', name: 'node' })
+      JSON.stringify({ name: 'node', namespace: '@rack' })
     )
 
     await expect(upload.parsePackageInfo(dir)).rejects.toThrow(
@@ -397,7 +398,7 @@ describe('UploadService', () => {
     await upload.install(extractDir, '@rack', 'node', '3.0.0', ['node'])
 
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ namespace: '@rack', name: 'node' }),
+      expect.objectContaining({ name: 'node', namespace: '@rack' }),
       'Failed to regenerate versions.json'
     )
     vi.mocked(storage.findVersions).mockRestore()
@@ -465,15 +466,15 @@ describe('UploadService', () => {
 
     expect(webhook.emitEvent).toHaveBeenCalledTimes(2)
     expect(webhook.emitEvent).toHaveBeenCalledWith('uploaded', {
-      namespace: '@rack',
       name: 'husky',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['quality', 'husky']
     })
     expect(webhook.emitEvent).toHaveBeenCalledWith('version.created', {
-      namespace: '@rack',
       name: 'husky',
       version: '1.0.0',
+      namespace: '@rack',
       segments: ['quality', 'husky']
     })
   })
