@@ -273,7 +273,12 @@ function buildRegistryUrl(parsed: ParsedNamespace, baseUrl: string): string {
  * @throws {Error} If the path contains traversal segments or is absolute
  */
 function resolveFileUrl(registryUrl: string, filePath: string): string {
-  const decoded = decodeURIComponent(filePath)
+  let decoded: string
+  try {
+    decoded = decodeURIComponent(filePath)
+  } catch {
+    throw new Error(`Unsafe file path: ${filePath}`)
+  }
 
   if (decoded.startsWith('/') || decoded.includes('\\')) {
     throw new Error(`Unsafe file path: ${filePath}`)
