@@ -12,6 +12,7 @@ import { addRegistry } from './pipeline.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
 import { Prompter } from '../../infra/prompts.js'
+import { parseNamespace } from '../../registry/identifier.js'
 import {
   displayHeader,
   displayResults,
@@ -43,7 +44,12 @@ export function registerAddCommand(program: Command): void {
         const { items: installedRegistries = [], language } =
           await rackJson.readOrCreate(targetDir)
 
-        if (installedRegistries.includes(identifier)) {
+        const canonicalize = (id: string) => {
+          const { namespace, path } = parseNamespace(id)
+          return `${namespace}/${path}`
+        }
+
+        if (installedRegistries.some((r) => canonicalize(r) === canonicalize(identifier))) {
           displayAlreadyInstalled(identifier, logger)
           return
         }

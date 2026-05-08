@@ -13,8 +13,9 @@
  */
 
 import path from 'node:path'
-import { isPlainObject, isString, uniq } from 'lodash-es'
+import { isPlainObject, isString } from 'lodash-es'
 import { pathExists, readJSON, writeJSON } from './infra/fs.js'
+import { parseNamespace } from './registry/identifier.js'
 import { RackJsonError, getErrorMessage } from './utils/errors.js'
 
 import type { Language } from './registry/types.js'
@@ -56,6 +57,27 @@ export interface RackJsonConfig {
  */
 function rackJsonPath(targetDir: string): string {
   return path.join(targetDir, 'rack.json')
+}
+
+/**
+ * Normalize an identifier to `namespace/path` for deduplication.
+ */
+function canonicalize(identifier: string): string {
+  const { namespace, path: p } = parseNamespace(identifier)
+  return `${namespace}/${p}`
+}
+
+/**
+ * Deduplicate identifiers by canonical form, keeping the first occurrence.
+ */
+function uniqByCanonical(items: string[]): string[] {
+  const seen = new Set<string>()
+  return items.filter((id) => {
+    const key = canonicalize(id)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -154,7 +176,7 @@ async function readOrCreate(targetDir: string): Promise<RackJsonConfig> {
  */
 async function update(targetDir: string, newItems: string[]): Promise<void> {
   const config = await read(targetDir)
-  config.items = uniq([...(config.items || []), ...newItems])
+  config.items = uniqByCanonical([...(config.items || []), ...newItems])
 
   try {
     await writeJSON(rackJsonPath(targetDir), config)

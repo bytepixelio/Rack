@@ -97,9 +97,10 @@ There are no Services or DI container — the Worker is small enough that a flat
                       ▼
 ┌──────────────────────────────────────────┐
 │                                          │
-│                                          │
-│           /registries/… only:            │
-│    parseRegistryUrl -> enforceAccess     │
+│  /registries/…:  enforceNamespaceAccess  │
+│  /namespaces:    filter by token access  │
+│  /namespaces/:ns/registries:             │
+│                  enforceNamespaceAccess  │
 │                                          │
 └─────────────────────┬────────────────────┘
                       │
@@ -116,7 +117,7 @@ There are no Services or DI container — the Worker is small enough that a flat
 └──────────────────────────────────────────┘
 ```
 
-Auth gating is **only** applied to `/registries/*`. Listing endpoints (`/namespaces`, `/namespaces/:ns/registries`) and asset endpoints (`/schemas/*`, `/presets/*`) mirror the server's anonymous-by-default policy. Health is unauthenticated by design.
+Auth gating is applied to `/registries/*` and listing endpoints (`/namespaces`, `/namespaces/:ns/registries`). The listing endpoints filter out token-gated namespaces for unauthenticated callers so that namespace names and registry lists are not leaked — see the [namespace discovery docs](../../../apps/docs/en/guide/authentication.md#namespace-discovery). Asset endpoints (`/schemas/*`, `/presets/*`) remain anonymous. Health is unauthenticated by design.
 
 ## URL → R2 key mapping
 

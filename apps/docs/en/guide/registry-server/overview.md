@@ -110,16 +110,16 @@ The Server reads repo-root `config/auth.json` (gating uploads); the Worker reads
 
 ## API Endpoints
 
-| Method   | Path                               | Description                |
-| -------- | ---------------------------------- | -------------------------- |
-| GET/HEAD | `/registries/@ns/name/versions`    | Version list               |
-| GET/HEAD | `/registries/@ns/name`             | Latest version             |
-| GET/HEAD | `/registries/@ns/name/1.0.0`       | Specific version           |
-| GET/HEAD | `/registries/@ns/name/1.0.0/files/*` | Template file            |
-| POST     | `/registries`                      | Upload registry package    |
-| GET      | `/namespaces`                      | List all namespaces        |
-| GET      | `/namespaces/:ns/registries`       | List registries in namespace |
-| GET/HEAD | `/presets/:name`                   | Get preset template        |
-| GET/HEAD | `/schemas/:file`                   | Get JSON schema            |
-| GET      | `/health`                          | Health check               |
-| GET      | `/metrics`                         | Prometheus metrics         |
+| Method   | Path                                 | Description                                  |
+| -------- | ------------------------------------ | -------------------------------------------- |
+| GET/HEAD | `/registries/@ns/name/versions`      | Version list                                 |
+| GET/HEAD | `/registries/@ns/name`               | Latest version                               |
+| GET/HEAD | `/registries/@ns/name/1.0.0`         | Specific version                             |
+| GET/HEAD | `/registries/@ns/name/1.0.0/files/*` | Template file                                |
+| POST     | `/registries`                        | Upload registry package                      |
+| GET      | `/namespaces`                        | List namespaces (auth-filtered)              |
+| GET      | `/namespaces/:ns/registries`         | List registries in namespace (auth-required) |
+| GET/HEAD | `/presets/:name`                     | Get preset template                          |
+| GET/HEAD | `/schemas/:file`                     | Get JSON schema                              |
+| GET      | `/health`                            | Health check                                 |
+| GET      | `/metrics`                           | Prometheus metrics                           |
