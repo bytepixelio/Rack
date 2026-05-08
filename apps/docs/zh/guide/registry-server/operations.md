@@ -233,7 +233,16 @@ Registry Server 使用结构化日志 (生产环境为 JSON 格式, 开发环境
 
 ### 响应缓存
 
-所有响应都会带 `Cache-Control: public, max-age=60`(由 `@fastify/caching` 全局加上)。模板文件下载路径 (`/registries/.../files/*`) 还会额外设置基于文件 mtime + size 计算的 `ETag`,JSON 路由 (registry/preset/namespaces/health/metrics) 不带 ETag。
+服务器按资源类型设置不同的 `Cache-Control` 策略 (定义在 `@rack/registry-core` 的 `CACHE_HEADERS` 中):
+
+| 级别        | 值                                    | 适用路由                         |
+| ----------- | ------------------------------------- | -------------------------------- |
+| `none`      | `no-store`                            | 错误响应、`/health`              |
+| `short`     | `public, max-age=60`                  | 列表接口、`latest`、`versions`   |
+| `long`      | `public, max-age=86400`               | schemas、presets                 |
+| `immutable` | `public, max-age=31536000, immutable` | 版本化的 registry 和模板文件     |
+
+版本化内容 (`/registries/@ns/name/1.0.0/...`) 是内容寻址的, URL 语义不会随时间改变, 因此可以永久缓存。列表和 `latest` 接口需要在 ~60 秒内反映新发布。模板文件下载路径 (`/registries/.../files/*`) 还会设置基于文件 mtime + size 计算的 `ETag`。
 
 ### 压缩
 
