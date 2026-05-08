@@ -2,7 +2,9 @@
  * Registry conflict detection and validation.
  *
  * Checks whether any registry in a set declares a conflict with another
- * registry in the same set. Version suffixes are stripped before comparison.
+ * registry in the same set. Identifiers are normalized to `namespace/path`
+ * via {@link parseNamespace} so that different forms of the same registry
+ * (e.g. `vue`, `@rack/vue`, `vue@1.0.0`) are treated as equivalent.
  *
  * @example
  * ```ts
@@ -11,6 +13,7 @@
  */
 
 import { ConflictError } from '../utils/errors.js'
+import { parseNamespace } from '../registry/identifier.js'
 
 import type { ResolvedRegistryItem } from './types.js'
 
@@ -36,13 +39,13 @@ export interface ConflictInfo {
  */
 export function validateNoConflicts(items: ResolvedRegistryItem[]): void {
   const nameToId = new Map(
-    items.map((item) => [stripVersion(item.identifier), item.identifier])
+    items.map((item) => [canonicalize(item.identifier), item.identifier])
   )
   const conflicts: ConflictInfo[] = []
 
   for (const item of items) {
     for (const conflict of item.conflicts ?? []) {
-      const match = nameToId.get(stripVersion(conflict))
+      const match = nameToId.get(canonicalize(conflict))
       if (match && match !== item.identifier) {
         conflicts.push({ identifier: item.identifier, conflictsWith: match })
       }
@@ -63,15 +66,17 @@ export function validateNoConflicts(items: ResolvedRegistryItem[]): void {
 // ─── Internal ────────────────────────────────────────────────────────────────
 
 /**
- * Strip version suffix from an identifier for conflict comparison.
+ * Normalize an identifier to `namespace/path` for comparison.
+ * Strips version, language, and resolves the default namespace.
  *
  * @example
  * ```ts
- * stripVersion('@rack/vue@2.0.0') // => '@rack/vue'
- * stripVersion('@rack/vue')       // => '@rack/vue'
+ * canonicalize('@rack/vue@2.0.0')        // → '@rack/vue'
+ * canonicalize('frameworks/vue@1.0.0')   // → '@rack/frameworks/vue'
+ * canonicalize('vue')                    // → '@rack/vue'
  * ```
  */
-function stripVersion(identifier: string): string {
-  const parts = identifier.split('@')
-  return parts.slice(0, 2).join('@')
+function canonicalize(identifier: string): string {
+  const { namespace, path } = parseNamespace(identifier)
+  return `${namespace}/${path}`
 }

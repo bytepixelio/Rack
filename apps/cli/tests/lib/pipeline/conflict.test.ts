@@ -49,6 +49,27 @@ describe('pipeline/conflict', () => {
     ).toThrow(ConflictError)
   })
 
+  it('detects conflicts for non-namespaced identifiers with version', () => {
+    expect(() =>
+      validateNoConflicts([
+        createItem({
+          identifier: '@rack/react',
+          conflicts: ['frameworks/vue']
+        }),
+        createItem({ identifier: 'frameworks/vue@1.0.0' })
+      ])
+    ).toThrow(ConflictError)
+  })
+
+  it('treats shorthand and full namespace as equivalent', () => {
+    expect(() =>
+      validateNoConflicts([
+        createItem({ identifier: '@rack/a', conflicts: ['b'] }),
+        createItem({ identifier: '@rack/b' })
+      ])
+    ).toThrow(ConflictError)
+  })
+
   it('does not report self-conflicts', () => {
     expect(() =>
       validateNoConflicts([
