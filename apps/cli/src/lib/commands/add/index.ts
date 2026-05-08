@@ -58,7 +58,7 @@ export function registerAddCommand(program: Command): void {
             )
         )
 
-        await rackJson.update(targetDir, [identifier])
+        await rackJson.update(targetDir, result.appliedRegistries)
 
         displayResults(result, logger)
       } catch (error) {

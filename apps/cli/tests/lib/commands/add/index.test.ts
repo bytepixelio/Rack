@@ -53,12 +53,26 @@ describe('add command', () => {
     scripts: {}
   }
 
-  it('runs pipeline and appends registry to rack.json', async () => {
+  it('runs pipeline and appends all applied registries to rack.json', async () => {
     readOrCreateMock.mockResolvedValue({ items: [], language: 'ts' })
     addRegistryMock.mockResolvedValue(baseResult)
     await runCommand(registerAddCommand, ['add', '@rack/vue'])
     expect(addRegistryMock).toHaveBeenCalled()
     expect(updateMock).toHaveBeenCalledWith(expect.any(String), ['@rack/vue'])
+  })
+
+  it('persists transitive dependencies to rack.json', async () => {
+    readOrCreateMock.mockResolvedValue({ items: [], language: 'ts' })
+    addRegistryMock.mockResolvedValue({
+      ...baseResult,
+      appliedRegistries: ['@rack/vue', '@rack/postcss', '@rack/utils']
+    })
+    await runCommand(registerAddCommand, ['add', '@rack/vue'])
+    expect(updateMock).toHaveBeenCalledWith(expect.any(String), [
+      '@rack/vue',
+      '@rack/postcss',
+      '@rack/utils'
+    ])
   })
 
   it('short-circuits and does not call addRegistry when already installed', async () => {
