@@ -45,7 +45,7 @@ The Worker therefore handles **only `GET` / `HEAD`**. Anything else returns `405
         ▼
 ┌───────────────┐
 │               │
-│    lib/*.ts   │   ← parser, auth, response, constants
+│    lib/*.ts   │   ← auth, response (parser & constants from @rack/registry-core)
 │               │
 └───────┬───────┘
         │
