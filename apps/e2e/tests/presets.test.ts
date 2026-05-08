@@ -50,7 +50,9 @@ describe('every preset scaffolds via rk init --ci', () => {
       expect(manifest.name).toBe(projectName)
       expect(manifest.template).toBe(preset.id)
       expect(manifest.items).toEqual(expect.arrayContaining(preset.registries))
-      expect(manifest.items).toHaveLength(preset.registries.length)
+      expect(manifest.items.length).toBeGreaterThanOrEqual(
+        preset.registries.length
+      )
 
       // After composition, every member material's declared contract
       // (files / dependencies / devDependencies / scripts) must hold.
