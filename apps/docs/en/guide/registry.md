@@ -110,7 +110,7 @@ When you run `rk add runtimes/node`, Rack will:
 3. **Detect Conflicts** - Verify that no registries declared in `conflicts` are already installed
 4. **Merge Files** - Intelligently merge files according to priority rules (see [File Merge Strategy](/guide/file-merge))
 5. **Install Dependencies** - Run `npm install` or `pnpm install` to install npm packages
-6. **Update Configuration** - Record the registry in the `items` array of `rack.json`
+6. **Update Configuration** - Record all applied registries (including transitive dependencies) in the `items` array of `rack.json`
 
 ## Registry Sources
 
