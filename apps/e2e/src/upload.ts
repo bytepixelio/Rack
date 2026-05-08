@@ -7,6 +7,10 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURE_DIR = path.resolve(HERE, '../fixtures/upload-fixture')
+const CATEGORIZED_FIXTURE_DIR = path.resolve(
+  HERE,
+  '../fixtures/upload-categorized-fixture'
+)
 
 export interface UploadPackage {
   path: string
@@ -30,10 +34,27 @@ export interface UploadOptions {
  * `rk add`.
  */
 export async function buildUploadPackage(): Promise<UploadPackage> {
+  return buildPackage(FIXTURE_DIR)
+}
+
+/**
+ * Build a tar.gz of the categorized round-trip fixture.
+ *
+ * Same shape as {@link buildUploadPackage} but the registry has
+ * `type: registry:quality`, so install lands at
+ * `@rack/quality/e2e-roundtrip-quality/0.0.0` rather than the flat
+ * `@rack/<name>` path. Round-trip tests use it to observe read and
+ * write paths on the same multi-segment data.
+ */
+export async function buildCategorizedUploadPackage(): Promise<UploadPackage> {
+  return buildPackage(CATEGORIZED_FIXTURE_DIR)
+}
+
+async function buildPackage(fixtureDir: string): Promise<UploadPackage> {
   const dir = await mkdtemp(path.join(tmpdir(), 'rack-e2e-upload-'))
   const pkgPath = path.join(dir, 'pkg.tar.gz')
 
-  await execa('tar', ['-czf', pkgPath, '-C', FIXTURE_DIR, '.'])
+  await execa('tar', ['-czf', pkgPath, '-C', fixtureDir, '.'])
 
   const buf = await readFile(pkgPath)
   const checksum = createHash('sha256').update(buf).digest('hex')
