@@ -233,7 +233,16 @@ The following performance features are always enabled and not configurable via e
 
 ### Response Caching
 
-All responses get `Cache-Control: public, max-age=60` (added globally by `@fastify/caching`). Template-file download routes (`/registries/.../files/*`) additionally set an `ETag` derived from the file's mtime + size; JSON routes (registry/preset/namespaces/health/metrics) do not set ETag.
+The server sets `Cache-Control` per resource type (tiers defined in `@rack/registry-core`'s `CACHE_HEADERS`):
+
+| Tier        | Value                                 | Routes                                  |
+| ----------- | ------------------------------------- | --------------------------------------- |
+| `none`      | `no-store`                            | Error responses, `/health`              |
+| `short`     | `public, max-age=60`                  | Listings, `latest`, `versions`          |
+| `long`      | `public, max-age=86400`               | Schemas, presets                        |
+| `immutable` | `public, max-age=31536000, immutable` | Versioned registries and template files |
+
+Versioned content (`/registries/@ns/name/1.0.0/...`) is content-addressed — the URL's semantics cannot change over time, so it can be cached indefinitely. Listings and `latest` need to reflect new releases within ~60 seconds. Template-file download routes (`/registries/.../files/*`) additionally set an `ETag` derived from the file's mtime + size.
 
 ### Compression
 

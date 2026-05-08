@@ -149,13 +149,13 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 
 The following values are compiled into the server and cannot be changed via environment variables:
 
-| Setting               | Value           | Description                                          |
-| --------------------- | --------------- | ---------------------------------------------------- |
-| Cache-Control max-age | `60` seconds    | `Cache-Control: public, max-age=60` on all responses |
-| Compression           | Always enabled  | Supports `gzip`, `deflate`, `br` encodings           |
-| Rate limit max        | `1200` requests | Maximum requests per window                          |
-| Rate limit window     | `1 minute`      | Rate limit time window                               |
-| Max upload size       | `100 MB`        | Maximum file upload size                             |
+| Setting            | Value            | Description                                                          |
+| ------------------ | ---------------- | -------------------------------------------------------------------- |
+| Cache-Control      | Per-route tiered | See [Operations — Response Caching](./operations.md#response-caching) |
+| Compression        | Always enabled   | Supports `gzip`, `deflate`, `br` encodings                          |
+| Rate limit max     | `1200` requests  | Maximum requests per window                                          |
+| Rate limit window  | `1 minute`       | Rate limit time window                                               |
+| Max upload size    | `100 MB`         | Maximum file upload size                                             |
 
 ::: tip Rate Limiting
 Rate limits are applied **per client IP**. When deploying behind a reverse proxy (e.g., Nginx), ensure `X-Forwarded-For` is correctly forwarded so each real client IP is counted independently. When the limit is exceeded, the server returns `429 Too Many Requests` with `{ "statusCode": 429, "error": "Too Many Requests", "message": "Rate limit exceeded, retry in X" }`
