@@ -156,7 +156,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     expect(logger.debug).toHaveBeenCalledWith(
@@ -187,7 +188,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     expect(logger.debug).toHaveBeenCalledWith(
@@ -208,7 +210,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     await vi.advanceTimersByTimeAsync(1)
@@ -231,7 +234,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(1)
 
@@ -260,7 +264,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     await vi.advanceTimersByTimeAsync(3000)
@@ -286,7 +291,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(3000)
 
@@ -312,7 +318,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     await vi.advanceTimersByTimeAsync(16000)
@@ -357,12 +364,14 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     service.emitEvent('version.created', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     await vi.advanceTimersByTimeAsync(500)
@@ -405,12 +414,14 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     service.emitEvent('version.created', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     await vi.advanceTimersByTimeAsync(3000)
@@ -453,14 +464,16 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(100)
 
     service.emitEvent('version.created', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(3000)
 
@@ -485,7 +498,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
 
     // Let the first attempt fail so there's a retry queued with a timer
@@ -527,7 +541,8 @@ describe('WebhookService', () => {
     service.emitEvent('uploaded', {
       namespace: '@rack',
       name: 'node',
-      version: '1.0.0'
+      version: '1.0.0',
+      segments: ['node']
     })
     await vi.advanceTimersByTimeAsync(1)
 

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://registry.rackjs.com/schemas/registry-item.json",
+  "name": "e2e-roundtrip-quality",
+  "namespace": "@rack",
+  "version": "0.0.0",
+  "type": "registry:quality",
+  "priority": 6,
+  "description": "E2E round-trip fixture. Exercises POST /registries → canonical-URL GET → namespace listing → wrong-URL 404 against a `registry:quality`-typed registry, so the read and write paths are observed on the same multi-segment data.",
+  "files": [
+    {
+      "target": ".e2e-roundtrip-quality",
+      "type": "registry:config",
+      "content": "e2e round-trip fixture\n"
+    }
+  ]
+}
