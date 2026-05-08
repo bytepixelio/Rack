@@ -13,7 +13,7 @@
 import path from 'node:path'
 import { merge } from './merge/index.js'
 import { registry } from '../registry/client.js'
-import { getErrorMessage } from '../utils/errors.js'
+import { getErrorMessage, PathTraversalError } from '../utils/errors.js'
 import {
   chmod,
   readFile,
@@ -49,7 +49,7 @@ export async function applyFiles(
     logger.info(`Applying registry: ${item.identifier}`)
 
     for (const file of item.files ?? []) {
-      const targetPath = path.join(targetDir, file.target)
+      const targetPath = resolveWithinTarget(targetDir, file.target)
 
       if (file.type === 'registry:asset' && file.path) {
         changes.push(
@@ -64,6 +64,30 @@ export async function applyFiles(
   }
 
   return changes
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Resolve a file target path and verify it stays within the target directory.
+ *
+ * @param targetDir - Absolute path to the project root
+ * @param target    - Relative target path from the registry file descriptor
+ * @returns Absolute resolved path guaranteed to be under {@link targetDir}
+ * @throws {@link PathTraversalError} if the resolved path escapes the target directory
+ */
+function resolveWithinTarget(targetDir: string, target: string): string {
+  const resolved = path.resolve(targetDir, target)
+  const relative = path.relative(targetDir, resolved)
+
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new PathTraversalError(
+      `File target "${target}" resolves outside the project directory`,
+      target
+    )
+  }
+
+  return resolved
 }
 
 // ─── Internal ───────────────────────────────────────────────────────────────

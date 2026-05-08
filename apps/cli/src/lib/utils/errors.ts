@@ -151,6 +151,21 @@ export class RackJsonError extends AppError {
   }
 }
 
+// ─── Path Safety ───────────────────────────────────────────────────────────
+
+/**
+ * Error thrown when a file target path escapes the project directory.
+ */
+export class PathTraversalError extends AppError {
+  constructor(
+    message: string,
+    /** The offending target path from the registry file descriptor. */
+    public readonly target: string
+  ) {
+    super('PATH_TRAVERSAL', message)
+  }
+}
+
 // ─── Config ────────────────────────────────────────────────────────────────
 
 /**
