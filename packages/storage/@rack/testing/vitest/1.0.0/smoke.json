@@ -1,6 +1,6 @@
 {
   "files": {
-    "exist": ["vitest.config.ts"]
+    "exist": ["vitest.config.ts", "test/hello.test.ts"]
   },
   "json": {
     "package.json": {
@@ -10,6 +10,7 @@
     }
   },
   "text": {
-    "vitest.config.ts": { "contains": ["coverage", "defineConfig"] }
+    "vitest.config.ts": { "contains": ["coverage", "defineConfig"] },
+    "test/hello.test.ts": { "contains": ["from 'vitest'", "expect"] }
   }
 }

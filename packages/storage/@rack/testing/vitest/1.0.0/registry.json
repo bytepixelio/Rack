@@ -16,14 +16,19 @@
   },
   "files": [
     {
+      "target": ".gitignore",
+      "type": "registry:config",
+      "path": "./templates/.gitignore"
+    },
+    {
       "target": "vitest.config.ts",
       "type": "registry:config",
       "path": "./templates/vitest.config.ts"
     },
     {
-      "target": ".gitignore",
-      "type": "registry:config",
-      "path": "./templates/.gitignore"
+      "target": "test/hello.test.ts",
+      "type": "registry:test",
+      "path": "./templates/test/hello.test.ts"
     }
   ]
 }
