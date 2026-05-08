@@ -316,14 +316,27 @@ export class UploadService {
   /**
    * Emit webhook events after a successful upload.
    *
-   * Fires `uploaded` and `version.created` events.
+   * Fires `uploaded` and `version.created` events. `segments` is
+   * threaded into the payload so subscribers can rebuild the
+   * canonical URL (e.g. `@rack/quality/husky/1.0.0`) — single-leaf
+   * `name` alone would lose the category prefix.
+   *
    * Errors are logged but do not propagate.
    */
-  emitEvents(namespace: string, name: string, version: string): void {
+  emitEvents(
+    namespace: string,
+    name: string,
+    version: string,
+    segments: string[]
+  ): void {
     try {
-      this.webhook.emitEvent('uploaded', { namespace, name, version })
-      this.webhook.emitEvent('version.created', { namespace, name, version })
-      this.logger.info({ namespace, name, version }, 'Webhook events emitted')
+      const data = { namespace, name, version, segments }
+      this.webhook.emitEvent('uploaded', data)
+      this.webhook.emitEvent('version.created', data)
+      this.logger.info(
+        { namespace, name, version, segments },
+        'Webhook events emitted'
+      )
     } catch (error) {
       this.logger.warn({ error }, 'Failed to emit webhook events')
     }

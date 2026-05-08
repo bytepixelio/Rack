@@ -89,15 +89,32 @@ export class WebhookService {
   /**
    * Emit an event and enqueue deliveries for matching webhooks.
    *
+   * `data.segments` is the registry's storage path under the namespace
+   * — `['quality', 'husky']` for `@rack/quality/husky`, `['node']` for a
+   * flat-layout registry. The payload's `path` is built as
+   * `<namespace>/<segments-joined>/<version>` so subscribers can rebuild
+   * the canonical read URL even for multi-segment registries.
+   *
    * @param type - Event type
-   * @param data - Event context
+   * @param data - Event context, including segments for path construction
    *
    * @example
-   * webhook.emitEvent('uploaded', { namespace: '@rack', name: 'node', version: '1.0.0' })
+   * webhook.emitEvent('uploaded', {
+   *   namespace: '@rack',
+   *   name: 'husky',
+   *   version: '1.0.0',
+   *   segments: ['quality', 'husky']
+   * })
+   * // → payload.path = '@rack/quality/husky/1.0.0'
    */
   emitEvent(
     type: RegistryEventType,
-    data: { namespace: string; name: string; version: string }
+    data: {
+      namespace: string
+      name: string
+      version: string
+      segments: string[]
+    }
   ): void {
     const matching = this.webhooks.filter(
       (wh) => wh.enabled && wh.events.includes(type)
@@ -114,7 +131,7 @@ export class WebhookService {
       version: data.version,
       namespace: data.namespace,
       timestamp: new Date().toISOString(),
-      path: `${data.namespace}/${data.name}/${data.version}`
+      path: `${data.namespace}/${data.segments.join('/')}/${data.version}`
     }
 
     for (const webhook of matching) {

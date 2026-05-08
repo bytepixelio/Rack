@@ -452,22 +452,24 @@ describe('UploadService', () => {
 
   // ─── emitEvents ──────────────────────────────────────────────────────────
 
-  it('should emit uploaded and version.created events', () => {
+  it('should emit uploaded and version.created events with segments', () => {
     const webhook = createMockWebhook()
     const upload = createUpload({ webhook })
 
-    upload.emitEvents('@rack', 'node', '1.0.0')
+    upload.emitEvents('@rack', 'husky', '1.0.0', ['quality', 'husky'])
 
     expect(webhook.emitEvent).toHaveBeenCalledTimes(2)
     expect(webhook.emitEvent).toHaveBeenCalledWith('uploaded', {
       namespace: '@rack',
-      name: 'node',
-      version: '1.0.0'
+      name: 'husky',
+      version: '1.0.0',
+      segments: ['quality', 'husky']
     })
     expect(webhook.emitEvent).toHaveBeenCalledWith('version.created', {
       namespace: '@rack',
-      name: 'node',
-      version: '1.0.0'
+      name: 'husky',
+      version: '1.0.0',
+      segments: ['quality', 'husky']
     })
   })
 
@@ -478,7 +480,9 @@ describe('UploadService', () => {
     })
     const upload = createUpload({ webhook })
 
-    expect(() => upload.emitEvents('@rack', 'node', '1.0.0')).not.toThrow()
+    expect(() =>
+      upload.emitEvents('@rack', 'node', '1.0.0', ['node'])
+    ).not.toThrow()
   })
 
   // ─── R2 install ───────────────────────────────────────────────────────────

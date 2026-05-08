@@ -97,7 +97,7 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
         tempTarPath = undefined
 
         // 12. Emit webhook events
-        upload.emitEvents(namespace, name, version)
+        upload.emitEvents(namespace, name, version, segments)
 
         // 13. Success
         return reply.code(201).send({
