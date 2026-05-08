@@ -215,10 +215,9 @@ function resolveVersionConflict(versions: VersionEntry[]): Resolution {
  * @returns Compatible range, or `null` if no compatible range exists
  */
 function findCompatibleVersion(versions: VersionEntry[]): string | null {
-  const ranges = versions
-    .map((v) => v.version)
-    .filter((r) => semver.validRange(r))
-  if (ranges.length === 0) return null
+  const allVersions = versions.map((v) => v.version)
+  const ranges = allVersions.filter((r) => semver.validRange(r))
+  if (ranges.length !== allVersions.length) return null
 
   const candidates: { range: string; min: semver.SemVer }[] = []
   for (const r of ranges) {
