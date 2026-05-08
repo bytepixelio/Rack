@@ -8,8 +8,7 @@ import {
 
 describe('SEMVER_PATTERN', () => {
   it.each([['1.0.0'], ['2.3.1'], ['10.20.30'], ['1.0.0-beta'], ['2.3.1+build']])(
-    'matches %s',
-    (v) => {
+    'matches %s',(v) => {
       expect(SEMVER_PATTERN.test(v)).toBe(true)
     }
   )

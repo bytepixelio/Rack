@@ -14,20 +14,20 @@ export type RegistryResourceType = 'versions' | 'latest' | 'versioned' | 'file'
 
 /** Storage location of a single registry (resource). */
 export interface RegistryLocator {
-  /** Namespace including the leading `@`, e.g. `@rack` */
-  namespace: string
-  /** Path segments under the namespace, e.g. `['quality', 'husky']` */
-  segments: string[]
   /** SemVer string — only on `versioned` and `file` resources */
   version?: string
   /** Template-relative path inside the version dir — only on `file` resources */
   filePath?: string
+  /** Namespace including the leading `@`, e.g. `@rack` */
+  namespace: string
+  /** Path segments under the namespace, e.g. `['quality', 'husky']` */
+  segments: string[]
 }
 
 /** Result of {@link parseRegistryUrl}. */
 export interface ParsedRegistryUrl {
-  type: RegistryResourceType
   locator: RegistryLocator
+  type: RegistryResourceType
 }
 
 /** Subset of registry.json consulted by {@link deriveSegments}. */

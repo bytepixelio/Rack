@@ -54,6 +54,30 @@ my-registry/
 使用 `$schema` 字段可以在编辑器中获得智能提示和验证。
 :::
 
+## 存储路径派生
+
+Registry 上传后, 服务器将其存储到 `<namespace>/<segments>/<version>/` 路径下。`<segments>` 按以下顺序派生:
+
+1. **显式 `path` 字段**（registry.json 顶层）—— 按 `/` 拆分。最后一段必须等于 `name`, 否则上传被拒（`UPLOAD_FAILED`）。详见 [`path` 字段说明](/zh/reference/schema/registry-item#path)。
+2. **`type` 字段** —— 当 `path` 缺省时, 按下表映射:
+
+   | `type`               | 存储段        |
+   | -------------------- | ------------- |
+   | `registry:runtime`   | `runtimes/`   |
+   | `registry:framework` | `frameworks/` |
+   | `registry:build`     | `build/`      |
+   | `registry:feature`   | `features/`   |
+   | `registry:testing`   | `testing/`    |
+   | `registry:quality`   | `quality/`    |
+
+3. **回退** —— `type` 不在表中 → 扁平布局 `<namespace>/<name>/`。
+
+例: `name: "my-tool"`、`type: "registry:feature"`、命名空间 `@company` 的 Registry, 会存到 `@company/features/my-tool/<version>/`。该派生路径会出现在上传成功响应、规范读取 URL `GET /registries/<namespace>/<segments>/<version>` 以及 Webhook 推送 payload 中。
+
+::: tip 何时显式设置 `path`
+仅当存储位置需偏离 type 默认派生时设置 —— 例如把一个 `registry:feature` 归类到框架文件夹下（`"path": "frameworks/vue/router"`）。绝大多数 Registry 仅靠 `type` 即可。
+:::
+
 ## 打包 Registry
 
 将 Registry 打包成 tar.gz 格式。
@@ -148,9 +172,11 @@ curl -X POST "$SERVER_URL/registries" \
   "namespace": "@company",
   "name": "my-tool",
   "version": "1.0.0",
-  "path": "@company/my-tool/1.0.0"
+  "path": "@company/features/my-tool/1.0.0"
 }
 ```
+
+`path` 各段由 Registry 的 `type` 字段（或显式顶层 `path`）派生 —— 详见[存储路径派生](#存储路径派生)。
 
 ### 常见错误
 
@@ -323,7 +349,7 @@ MAJOR.MINOR.PATCH
   "namespace": "@company",
   "name": "my-tool",
   "version": "1.0.0",
-  "path": "@company/my-tool/1.0.0"
+  "path": "@company/features/my-tool/1.0.0"
 }
 ```
 
@@ -339,17 +365,17 @@ MAJOR.MINOR.PATCH
 发布后验证 Registry 是否可用:
 
 ```bash
-# 查看版本列表
-curl https://registry.company.com/registries/@company/my-tool/versions
+# 查看版本列表（使用派生后的存储路径 —— `registry:feature` → `features/`）
+curl https://registry.company.com/registries/@company/features/my-tool/versions
 
 # 预期输出
 # {"versions":["1.0.0"]}
 
 # 获取最新版本 Registry 配置
-curl https://registry.company.com/registries/@company/my-tool
+curl https://registry.company.com/registries/@company/features/my-tool
 
 # 获取特定版本
-curl https://registry.company.com/registries/@company/my-tool/1.0.0
+curl https://registry.company.com/registries/@company/features/my-tool/1.0.0
 ```
 
 使用 CLI 测试:

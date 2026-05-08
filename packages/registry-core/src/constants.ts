@@ -20,12 +20,12 @@ export const SEMVER_PATTERN = /^\d+\.\d+\.\d+/
  * registry.json (consumed by {@link deriveSegments}).
  */
 export const CATEGORY_BY_TYPE: Record<string, string> = {
-  'registry:runtime': 'runtimes',
-  'registry:framework': 'frameworks',
   'registry:build': 'build',
-  'registry:feature': 'features',
   'registry:testing': 'testing',
-  'registry:quality': 'quality'
+  'registry:quality': 'quality',
+  'registry:feature': 'features',
+  'registry:runtime': 'runtimes',
+  'registry:framework': 'frameworks'
 }
 
 /** File names exposed by the public `/schemas/:file` endpoint. */

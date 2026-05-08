@@ -151,6 +151,25 @@ aside: false
 | `registry:testing`   | 测试工具 | 5          |
 | `registry:quality`   | 质量工具 | 6          |
 
+### `path`
+
+- **类型**: `string`
+- **必填**: 否
+- **格式**: 小写 kebab 段以 `/` 连接（如 `quality/husky`）
+- **说明**: 可选的存储段路径, 覆盖由 `type` 派生的默认存储位置。最后一段**必须等于 `name`**, 否则上传被拒（`UPLOAD_FAILED`）。仅在 Registry 的语义角色与存储位置不一致时使用（少见场景）。未设置时, 服务器按 `type` 派生段路径 —— 详见 [存储路径派生](/zh/guide/registry-server/publishing#存储路径派生)。
+
+```json
+{
+  "namespace": "@rack",
+  "name": "husky",
+  "path": "quality/husky"
+}
+```
+
+::: warning 与 `files[].path` 的区别
+顶层 `path` 决定 **Registry 本身**的存储位置; `files[]` 数组项里的 `path` 指向**模板源文件**（如 `./templates/.gitignore`）。键名相同, 概念完全不同。
+:::
+
 ### `version`
 
 - **类型**: `string`
