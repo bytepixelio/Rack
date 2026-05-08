@@ -4,6 +4,7 @@
  * `GET /presets/:name` — Serve preset.json configuration files.
  */
 
+import { CACHE_HEADERS } from '@rack/registry-core'
 import { resolvePresetPath } from '../lib/path.js'
 import { streamFileResponse } from '../lib/file-stream.js'
 
@@ -27,7 +28,8 @@ export default async function presetRoute(app: FastifyInstance): Promise<void> {
         request,
         filePath,
         logger: request.log,
-        contentType: 'application/json'
+        contentType: 'application/json',
+        cacheControl: CACHE_HEADERS.long
       })
     }
   })

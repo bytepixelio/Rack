@@ -29,9 +29,6 @@ export const RATE_LIMIT_WINDOW = '1 minute'
 
 // ─── Caching ─────────────────────────────────────────────────────────────────
 
-/** Cache-Control max-age in seconds. */
-export const CACHE_MAX_AGE = 60
-
 /** Supported compression encodings. */
 export const COMPRESSION_ENCODINGS = ['gzip', 'deflate', 'br'] as const
 
@@ -54,15 +51,6 @@ export const WEBHOOK_USER_AGENT = 'Rack-Registry-Webhook/1.0'
 /** Histogram buckets for HTTP request duration (in seconds, 1ms to 10s). */
 export const HISTOGRAM_BUCKETS = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
 
-// ─── Schema ──────────────────────────────────────────────────────────────────
-
-/** Allowed schema file names served by the /schemas endpoint. */
-export const SCHEMA_WHITELIST = [
-  'rack.json',
-  'preset.json',
-  'registry-item.json'
-]
-
 // ─── Logging ─────────────────────────────────────────────────────────────────
 
 /** HTTP headers that should be redacted in request logs. */
@@ -74,28 +62,6 @@ export const SENSITIVE_HEADERS = [
   'proxy-authorization'
 ]
 
-// ─── Path Parsing ────────────────────────────────────────────────────────────
-
-/** Regex pattern matching a SemVer version prefix (e.g. `1.0.0`, `2.3.1-beta`). */
-export const SEMVER_PATTERN = /^\d+\.\d+\.\d+/
-
-// ─── Upload Path Derivation ──────────────────────────────────────────────────
-
-/**
- * Map a registry.json `type` to the storage segment that lives under
- * `<namespace>/`. Used at upload time to place a module under the same
- * category subdirectory the read path serves it from. Mirrors the
- * 6-category taxonomy documented in `apps/docs/{en,zh}/guide/registry.md`.
- *
- * To override the type-derived placement (e.g. for a registry whose
- * semantic role differs from its storage location), set an explicit
- * `path` field in registry.json.
- */
-export const CATEGORY_BY_TYPE: Record<string, string> = {
-  'registry:runtime': 'runtimes',
-  'registry:framework': 'frameworks',
-  'registry:build': 'build',
-  'registry:feature': 'features',
-  'registry:testing': 'testing',
-  'registry:quality': 'quality'
-}
+// Protocol-level constants (SEMVER_PATTERN, CATEGORY_BY_TYPE, SCHEMA_FILES,
+// CACHE_HEADERS) live in `@rack/registry-core` so the worker observes the
+// same values. Import them from there at the consuming site.

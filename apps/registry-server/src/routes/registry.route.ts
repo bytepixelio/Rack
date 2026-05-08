@@ -9,12 +9,14 @@
  */
 
 import fp from 'fastify-plugin'
-import { parseRegistryUrl } from '../lib/path.js'
+import { CACHE_HEADERS, parseRegistryUrl } from '@rack/registry-core'
 import { getMimeType, streamFileResponse } from '../lib/file-stream.js'
 import { AppError, ValidationError, ForbiddenError } from '../lib/errors.js'
 
-import type { ParsedRegistryPath } from '../types.js'
-import type { RegistryResourceType } from '../lib/path.js'
+import type {
+  RegistryLocator,
+  RegistryResourceType
+} from '@rack/registry-core'
 import type { RegistryService } from '../services/registry.service.js'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
@@ -23,54 +25,60 @@ interface WildcardParams {
   '*': string
 }
 
-/** Resolved resource: filesystem path + MIME content type. */
+/** Resolved resource: filesystem path + MIME content type + Cache-Control. */
 interface ResolvedResource {
   filePath: string | Promise<string>
   contentType: string
+  cacheControl: string
 }
 
 /**
- * Resolve a parsed registry URL to a filesystem path and content type.
+ * Resolve a parsed registry URL to a filesystem path, content type, and
+ * `Cache-Control` tier (matching the worker's per-resource policy).
  *
- * @param type - Resource type from URL parsing
- * @param path - Parsed path components
+ * @param type     - Resource type from URL parsing
+ * @param locator  - Parsed locator
  * @param registry - RegistryService instance
- * @returns Resolved file path and content type
+ * @returns Resolved file path, content type, and cache header
  */
 function resolveResource(
   type: RegistryResourceType,
-  path: ParsedRegistryPath,
+  locator: RegistryLocator,
   registry: RegistryService
 ): ResolvedResource {
   switch (type) {
     case 'versions':
       return {
-        filePath: registry.getVersionsPath(path.namespace, path.segments),
-        contentType: 'application/json'
+        filePath: registry.getVersionsPath(locator.namespace, locator.segments),
+        contentType: 'application/json',
+        cacheControl: CACHE_HEADERS.short
       }
     case 'versioned':
       return {
         filePath: registry.getVersionedPath(
-          path.namespace,
-          path.segments,
-          path.version!
+          locator.namespace,
+          locator.segments,
+          locator.version!
         ),
-        contentType: 'application/json'
+        contentType: 'application/json',
+        cacheControl: CACHE_HEADERS.immutable
       }
     case 'latest':
       return {
-        filePath: registry.getLatestPath(path.namespace, path.segments),
-        contentType: 'application/json'
+        filePath: registry.getLatestPath(locator.namespace, locator.segments),
+        contentType: 'application/json',
+        cacheControl: CACHE_HEADERS.short
       }
     case 'file':
       return {
         filePath: registry.getFilePath(
-          path.namespace,
-          path.segments,
-          path.version!,
-          path.filePath!
+          locator.namespace,
+          locator.segments,
+          locator.version!,
+          locator.filePath!
         ),
-        contentType: getMimeType(path.filePath!)
+        contentType: getMimeType(locator.filePath!),
+        cacheControl: CACHE_HEADERS.immutable
       }
   }
 }
@@ -99,18 +107,18 @@ async function registryRoute(app: FastifyInstance): Promise<void> {
         )
       }
 
-      const { type, path } = parsed
+      const { type, locator } = parsed
 
       // Namespace whitelist check (driven by auth.json)
-      if (!app.authService.isNamespaceAllowed(path.namespace)) {
+      if (!app.authService.isNamespaceAllowed(locator.namespace)) {
         throw new ForbiddenError('FORBIDDEN_NAMESPACE', 'Namespace not allowed')
       }
 
       // Auth check
-      const authResult = request.verifyNamespaceAccess(path.namespace)
+      const authResult = request.verifyNamespaceAccess(locator.namespace)
       if (!authResult.allowed && authResult.error) {
         request.log.warn(
-          { namespace: path.namespace, reason: authResult.error.code },
+          { namespace: locator.namespace, reason: authResult.error.code },
           'Namespace access denied'
         )
         throw new AppError(
@@ -121,9 +129,9 @@ async function registryRoute(app: FastifyInstance): Promise<void> {
       }
 
       // Resolve resource and stream response
-      const { filePath, contentType } = resolveResource(
+      const { filePath, contentType, cacheControl } = resolveResource(
         type,
-        path,
+        locator,
         app.registryService
       )
 
@@ -131,6 +139,7 @@ async function registryRoute(app: FastifyInstance): Promise<void> {
         reply,
         request,
         contentType,
+        cacheControl,
         logger: request.log,
         filePath: await filePath
       })

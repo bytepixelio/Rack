@@ -6,7 +6,7 @@
 
 import { NotFoundError } from '../lib/errors.js'
 import { resolveSchemaPath } from '../lib/path.js'
-import { SCHEMA_WHITELIST } from '../constants.js'
+import { CACHE_HEADERS, SCHEMA_FILES } from '@rack/registry-core'
 import { getMimeType, streamFileResponse } from '../lib/file-stream.js'
 
 import type { FastifyInstance } from 'fastify'
@@ -23,7 +23,7 @@ export default async function schemaRoute(app: FastifyInstance): Promise<void> {
     handler: async (request, reply) => {
       const { file } = request.params
 
-      if (!SCHEMA_WHITELIST.includes(file)) {
+      if (!SCHEMA_FILES.has(file)) {
         throw new NotFoundError('NOT_FOUND', 'Schema not found')
       }
 
@@ -34,7 +34,8 @@ export default async function schemaRoute(app: FastifyInstance): Promise<void> {
         request,
         filePath,
         logger: request.log,
-        contentType: getMimeType(filePath)
+        contentType: getMimeType(filePath),
+        cacheControl: CACHE_HEADERS.long
       })
     }
   })

@@ -151,18 +151,3 @@ export interface StorageHealthResult {
   /** Whether the storage is accessible */
   accessible: boolean
 }
-
-/** Parsed registry path components extracted from a URL. */
-export interface ParsedRegistryPath {
-  /** SemVer version string, if present */
-  version?: string
-
-  /** File path relative to the version directory, if present */
-  filePath?: string
-
-  /** Namespace (e.g. `@rack`) */
-  namespace: string
-
-  /** Registry name segments (e.g. `['runtimes', 'node']`) */
-  segments: string[]
-}

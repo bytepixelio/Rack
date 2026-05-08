@@ -6,10 +6,11 @@
  * filesystem directly.
  */
 
-import { join } from 'path'
-import { SEMVER_PATTERN } from '../constants.js'
+import { join, relative, sep } from 'path'
+import { listRegistries, SEMVER_PATTERN } from '@rack/registry-core'
 import {
   rm,
+  stat,
   mkdir,
   rename,
   access,
@@ -152,40 +153,64 @@ export class StorageService {
   /**
    * Discover all registries within a namespace.
    *
-   * A directory is considered a registry if it contains at least
-   * one subdirectory matching the SemVer pattern (e.g. `1.0.0`).
+   * Walks the namespace recursively and treats every directory that
+   * has a `versions.json` as a registry — matching the worker's
+   * "find every key ending in `/versions.json`" listing semantics
+   * (`@rack/registry-core:listRegistries`).
    *
    * @param namespace - Namespace to scan (e.g. `@rack`)
-   * @returns Sorted list of registry names
+   * @returns Sorted list of registry-relative paths (e.g. `['quality/husky']`)
    * @throws {Error} When the namespace directory does not exist
    *
    * @example
-   * // @rack/ contains: node/, vue/, .gitkeep
-   * // @rack/node/ contains: 1.0.0/, 2.0.0/
-   * // @rack/vue/ contains: readme.md (no version dirs)
+   * // @rack/quality/husky/{1.0.0/, versions.json}
+   * // @rack/runtimes/node/{1.0.0/, versions.json}
    * await storage.findRegistries('@rack')
-   * // → ['node']
+   * // → ['quality/husky', 'runtimes/node']
    */
   async findRegistries(namespace: string): Promise<string[]> {
-    const namespacePath = join(this.storageRoot, namespace)
-    const entries = await readdir(namespacePath, { withFileTypes: true })
-    const dirs = entries.filter((e) => e.isDirectory())
-
-    const results: string[] = []
-
-    for (const dir of dirs) {
-      const children = await readdir(join(namespacePath, dir.name), {
-        withFileTypes: true
-      }).catch(() => [])
-
-      const hasVersion = children.some(
-        (c) => c.isDirectory() && SEMVER_PATTERN.test(c.name)
-      )
-
-      if (hasVersion) results.push(dir.name)
+    // Probe the namespace dir up front so a missing namespace surfaces
+    // as an ENOENT (caller maps that to 404), and a non-directory entry
+    // (e.g. a stray file at `@<ns>`) surfaces as a 500. Errors inside
+    // the recursive walk are swallowed instead — a missing nested dir
+    // mid-iteration shouldn't kill the listing.
+    const stats = await stat(join(this.storageRoot, namespace))
+    if (!stats.isDirectory()) {
+      throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' })
     }
 
-    return results.sort()
+    return listRegistries(this.toRegistryStore(), namespace)
+  }
+
+  /**
+   * Adapter that turns the local fs into a `RegistryStore` — yields every
+   * file path under a key prefix, recursively, with forward-slash
+   * separators. Tolerates per-entry `readdir` failures so a transient
+   * mid-walk error doesn't crash the whole listing.
+   */
+  private toRegistryStore() {
+    const root = this.storageRoot
+    return {
+      walk: async function* (prefix: string): AsyncIterable<string> {
+        async function* go(dir: string): AsyncIterable<string> {
+          let entries
+          try {
+            entries = await readdir(dir, { withFileTypes: true })
+          } catch {
+            return
+          }
+          for (const entry of entries) {
+            const abs = join(dir, entry.name)
+            if (entry.isDirectory()) {
+              yield* go(abs)
+            } else if (entry.isFile()) {
+              yield relative(root, abs).split(sep).join('/')
+            }
+          }
+        }
+        yield* go(join(root, prefix))
+      }
+    }
   }
 
   // ─── Version Management ──────────────────────────────────────────────────

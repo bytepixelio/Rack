@@ -17,7 +17,8 @@ import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
 import { createHash, randomUUID } from 'crypto'
 import { createReadStream, createWriteStream } from 'fs'
-import { ALLOWED_UPLOAD_MIMETYPES, CATEGORY_BY_TYPE } from '../constants.js'
+import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
+import { deriveSegments } from '@rack/registry-core'
 import {
   ConflictError,
   ForbiddenError,
@@ -193,18 +194,10 @@ export class UploadService {
     const explicitPath = typeof data.path === 'string' ? data.path : undefined
 
     let segments: string[]
-    if (explicitPath) {
-      segments = explicitPath.split('/').filter(Boolean)
-      if (segments.length === 0 || segments[segments.length - 1] !== name) {
-        throw new ValidationError(
-          'UPLOAD_FAILED',
-          `path "${explicitPath}" must end with name "${name}"`
-        )
-      }
-    } else if (type && CATEGORY_BY_TYPE[type]) {
-      segments = [CATEGORY_BY_TYPE[type], name]
-    } else {
-      segments = [name]
+    try {
+      segments = deriveSegments({ name, type, path: explicitPath })
+    } catch (err) {
+      throw new ValidationError('UPLOAD_FAILED', (err as Error).message)
     }
 
     this.logger.info(

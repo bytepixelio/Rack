@@ -6,7 +6,6 @@
  * All path resolution is delegated to `lib/path.ts`.
  */
 
-import { join } from 'path'
 import { NotFoundError } from '../lib/errors.js'
 import {
   resolveFilePath,
@@ -137,18 +136,4 @@ export class RegistryService {
     )
   }
 
-  /**
-   * Get the directory path for a registry.
-   *
-   * @param namespace - e.g. `@rack`
-   * @param name - e.g. `node`
-   * @returns Absolute directory path
-   *
-   * @example
-   * registry.getRegistryDir('@rack', 'node')
-   * // → '/storage/@rack/node'
-   */
-  getRegistryDir(namespace: string, name: string): string {
-    return join(this.storageRoot, namespace, name)
-  }
 }
