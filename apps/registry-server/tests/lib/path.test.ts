@@ -32,6 +32,17 @@ describe('resolveRegistryPath', () => {
       resolveRegistryPath('/storage', '@rack', ['..', '..', 'etc'], '1.0.0')
     ).toThrow('Path traversal detected')
   })
+
+  it('should throw on sibling-prefix traversal', () => {
+    expect(() =>
+      resolveRegistryPath(
+        '/tmp/rack',
+        '@rack',
+        ['..', '..', '..', 'rack-secrets'],
+        '1.0.0'
+      )
+    ).toThrow('Path traversal detected')
+  })
 })
 
 describe('resolveFilePath', () => {
@@ -54,6 +65,18 @@ describe('resolveFilePath', () => {
         ['node'],
         '1.0.0',
         '../../../../etc/passwd'
+      )
+    ).toThrow('Path traversal detected')
+  })
+
+  it('should throw on sibling-prefix traversal via filePath', () => {
+    expect(() =>
+      resolveFilePath(
+        '/tmp/rack',
+        '@rack',
+        ['node'],
+        '1.0.0',
+        '../../../../rack-secrets/config.json'
       )
     ).toThrow('Path traversal detected')
   })
