@@ -81,8 +81,8 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![/\\\\])",
-          "description": "Template path on the registry server (alternative to content). Must not contain .. segments or start with / or \\."
+          "pattern": "^(?!.*(?:^|/)(?:\\.\\.|\\.%2[eE]|%2[eE]\\.|%2[eE]%2[eE])(?:/|$))(?![/\\\\])(?!.*%2[fF])",
+          "description": "Template path on the registry server (alternative to content). Must not contain .. segments (including percent-encoded forms) or start with / or \\."
         },
         "content": {
           "type": "string",
