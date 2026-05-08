@@ -7,7 +7,7 @@
  * stays inside the root.
  */
 
-import { join, normalize } from 'node:path'
+import { join, normalize, relative, isAbsolute } from 'node:path'
 import {
   buildFileKey,
   buildRegistryKey,
@@ -18,7 +18,8 @@ import {
 
 /** Throw when a normalized path escapes its root. */
 function assertWithinRoot(resolved: string, storageRoot: string): void {
-  if (!resolved.startsWith(normalize(storageRoot))) {
+  const rel = relative(normalize(storageRoot), resolved)
+  if (rel.startsWith('..') || isAbsolute(rel)) {
     throw new Error('Path traversal detected')
   }
 }
