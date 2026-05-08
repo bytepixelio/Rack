@@ -11,6 +11,7 @@
  */
 
 import { CircularDependencyError } from '../utils/errors.js'
+import { parseNamespace } from '../registry/identifier.js'
 
 import type { ResolvedRegistryItem } from './types.js'
 
@@ -41,7 +42,9 @@ export function sortItems(
   const levels = computeLevels(items)
 
   return [...items].sort((a, b) => {
-    const levelDiff = levels.get(a.identifier)! - levels.get(b.identifier)!
+    const levelDiff =
+      levels.get(canonicalize(a.identifier))! -
+      levels.get(canonicalize(b.identifier))!
     return levelDiff !== 0 ? levelDiff : a.priority - b.priority
   })
 }
@@ -49,14 +52,25 @@ export function sortItems(
 // ─── Internal ────────────────────────────────────────────────────────────────
 
 /**
- * Build a simplified dependency graph: identifier → dependency identifiers.
+ * Normalize an identifier to `namespace/path` for graph key matching.
+ */
+function canonicalize(identifier: string): string {
+  const { namespace, path } = parseNamespace(identifier)
+  return `${namespace}/${path}`
+}
+
+/**
+ * Build a simplified dependency graph: canonical id → canonical dependency ids.
  *
  * @param items - Registry items
- * @returns Map of identifier → dependency identifier list
+ * @returns Map of canonical identifier → canonical dependency identifier list
  */
 function buildGraph(items: ResolvedRegistryItem[]): Map<string, string[]> {
   return new Map(
-    items.map((item) => [item.identifier, item.registryDependencies ?? []])
+    items.map((item) => [
+      canonicalize(item.identifier),
+      (item.registryDependencies ?? []).map(canonicalize)
+    ])
   )
 }
 
@@ -104,8 +118,9 @@ function computeLevels(items: ResolvedRegistryItem[]): Map<string, number> {
   }
 
   for (const item of items) {
-    if (!levels.has(item.identifier)) {
-      visit(item.identifier)
+    const key = canonicalize(item.identifier)
+    if (!levels.has(key)) {
+      visit(key)
     }
   }
 

@@ -62,6 +62,23 @@ describe('pipeline/sort', () => {
     expect(sorted[0]).toBe('base')
   })
 
+  it('canonicalizes identifiers so shorthand deps resolve to full-form items', () => {
+    const a = createItem({ identifier: '@rack/a' })
+    const b = createItem({
+      identifier: '@rack/b',
+      registryDependencies: ['a']
+    })
+    const c = createItem({
+      identifier: '@rack/c',
+      registryDependencies: ['b']
+    })
+    expect(sortItems([c, b, a]).map((i) => i.identifier)).toEqual([
+      '@rack/a',
+      '@rack/b',
+      '@rack/c'
+    ])
+  })
+
   it('does not mutate the input array', () => {
     const items = [
       createItem({ identifier: 'x', priority: 2 }),
