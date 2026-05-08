@@ -243,13 +243,13 @@ export class UploadService {
    * In both cases, regenerates versions.json afterward.
    *
    * `segments` is the path under `<namespace>/` (e.g. `["quality", "husky"]`).
-   * When omitted, falls back to `[name]` for backward compatibility.
+   * Callers obtain it from {@link parsePackageInfo}.
    *
    * @param extractedDir - Path to the extracted package
    * @param namespace - e.g. `@rack`
-   * @param name - Leaf identifier, e.g. `husky` (used in error messages)
+   * @param name - Leaf identifier (used in error messages and webhook payload)
    * @param version - e.g. `1.0.0`
-   * @param segments - Storage segments under namespace, defaults to `[name]`
+   * @param segments - Storage segments under namespace
    * @throws {ConflictError} When the version already exists
    */
   async install(
@@ -257,24 +257,21 @@ export class UploadService {
     namespace: string,
     name: string,
     version: string,
-    segments?: string[]
+    segments: string[]
   ): Promise<void> {
-    const segs = segments ?? [name]
-
     if (this.r2) {
-      await this.installToR2(extractedDir, namespace, name, version, segs)
+      await this.installToR2(extractedDir, namespace, version, segments)
     } else {
-      await this.installToLocal(extractedDir, namespace, name, version, segs)
+      await this.installToLocal(extractedDir, namespace, version, segments)
     }
 
-    await this.regenerateVersions(namespace, name, version, segs)
+    await this.regenerateVersions(namespace, name, version, segments)
   }
 
   /** Install to local filesystem via atomic rename. */
   private async installToLocal(
     extractedDir: string,
     namespace: string,
-    name: string,
     version: string,
     segments: string[]
   ): Promise<void> {
@@ -283,7 +280,7 @@ export class UploadService {
     if (await this.storage.exists(targetDir)) {
       throw new ConflictError(
         'VERSION_EXISTS',
-        `Registry ${namespace}/${name}@${version} already exists`
+        `Registry ${namespace}/${segments.join('/')}@${version} already exists`
       )
     }
 
@@ -296,7 +293,6 @@ export class UploadService {
   private async installToR2(
     extractedDir: string,
     namespace: string,
-    name: string,
     version: string,
     segments: string[]
   ): Promise<void> {
@@ -305,7 +301,7 @@ export class UploadService {
     if (await this.r2!.exists(`${keyPrefix}/registry.json`)) {
       throw new ConflictError(
         'VERSION_EXISTS',
-        `Registry ${namespace}/${name}@${version} already exists`
+        `Registry ${namespace}/${segments.join('/')}@${version} already exists`
       )
     }
 

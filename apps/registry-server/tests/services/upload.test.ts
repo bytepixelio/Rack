@@ -368,7 +368,7 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
     await writeFile(join(extractDir, 'registry.json'), '{}')
 
-    await upload.install(extractDir, '@rack', 'node', '1.0.0')
+    await upload.install(extractDir, '@rack', 'node', '1.0.0', ['node'])
 
     expect(
       await storage.exists(
@@ -394,7 +394,7 @@ describe('UploadService', () => {
       new Error('scan failed')
     )
 
-    await upload.install(extractDir, '@rack', 'node', '3.0.0')
+    await upload.install(extractDir, '@rack', 'node', '3.0.0', ['node'])
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ namespace: '@rack', name: 'node' }),
@@ -403,17 +403,22 @@ describe('UploadService', () => {
     vi.mocked(storage.findVersions).mockRestore()
   })
 
-  it('should throw when version already exists', async () => {
+  it('should throw when version already exists, with canonical path in message', async () => {
     const upload = createUpload()
 
-    await mkdir(join(tempDir, '@rack', 'node', '1.0.0'), { recursive: true })
+    await mkdir(join(tempDir, '@rack', 'quality', 'husky', '1.0.0'), {
+      recursive: true
+    })
 
     const extractDir = join(tempDir, 'extract')
     await mkdir(extractDir, { recursive: true })
 
     await expect(
-      upload.install(extractDir, '@rack', 'node', '1.0.0')
-    ).rejects.toThrow('already exists')
+      upload.install(extractDir, '@rack', 'husky', '1.0.0', [
+        'quality',
+        'husky'
+      ])
+    ).rejects.toThrow('@rack/quality/husky@1.0.0 already exists')
   })
 
   // ─── cleanup ─────────────────────────────────────────────────────────────
@@ -495,7 +500,7 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
     await writeFile(join(extractDir, 'registry.json'), '{}')
 
-    await upload.install(extractDir, '@rack', 'node', '1.0.0')
+    await upload.install(extractDir, '@rack', 'node', '1.0.0', ['node'])
 
     expect(r2.uploadDirectory).toHaveBeenCalledWith(
       extractDir,
@@ -507,7 +512,7 @@ describe('UploadService', () => {
     )
   })
 
-  it('should throw when version already exists in R2', async () => {
+  it('should throw when version already exists in R2, with canonical path in message', async () => {
     const r2 = createMockR2()
     vi.mocked(r2.exists).mockResolvedValue(true)
     const upload = createUpload({ r2 })
@@ -516,8 +521,11 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
 
     await expect(
-      upload.install(extractDir, '@rack', 'node', '1.0.0')
-    ).rejects.toThrow('already exists')
+      upload.install(extractDir, '@rack', 'husky', '1.0.0', [
+        'quality',
+        'husky'
+      ])
+    ).rejects.toThrow('@rack/quality/husky@1.0.0 already exists')
   })
 
   it('should regenerate versions.json from R2', async () => {
@@ -529,7 +537,7 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
     await writeFile(join(extractDir, 'registry.json'), '{}')
 
-    await upload.install(extractDir, '@rack', 'node', '2.0.0')
+    await upload.install(extractDir, '@rack', 'node', '2.0.0', ['node'])
 
     expect(r2.findVersions).toHaveBeenCalledWith('@rack/node')
     expect(r2.writeFile).toHaveBeenCalledWith(
@@ -545,7 +553,7 @@ describe('UploadService', () => {
     await mkdir(extractDir, { recursive: true })
     await writeFile(join(extractDir, 'registry.json'), '{}')
 
-    await upload.install(extractDir, '@rack', 'node', '1.0.0')
+    await upload.install(extractDir, '@rack', 'node', '1.0.0', ['node'])
 
     expect(
       await storage.exists(
