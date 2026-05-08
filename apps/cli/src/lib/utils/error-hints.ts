@@ -35,6 +35,9 @@ export const ERROR_HINTS: Record<string, string> = {
   MERGE_FAILED:
     'Inspect the target file for syntax errors, ' +
     'or remove it and re-run to regenerate.',
+  PATH_TRAVERSAL:
+    'Check files[].target in the registry — it must be a relative path ' +
+    'within the project directory (no ".." or absolute paths).',
   VALIDATION_ERROR: "See 'rk <command> --help' for valid options."
 }
 
