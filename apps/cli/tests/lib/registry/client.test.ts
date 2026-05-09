@@ -165,6 +165,22 @@ describe('registry/client fetchItem', () => {
     ])
   })
 
+  it('does not merge disallowed language block fields like scripts', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        scripts: { dev: 'vite' },
+        languages: {
+          ts: { scripts: { dev: 'vite --host' }, dependencies: { x: '1' } } as any
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue', { language: 'ts' })
+    expect(item.scripts).toEqual({ dev: 'vite' })
+    expect(item.dependencies).toEqual({ x: '1' })
+  })
+
   it('prefers explicit options.language over identifier suffix', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({
