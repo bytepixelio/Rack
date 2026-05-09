@@ -50,11 +50,11 @@ aside: false
 
 ### `language`
 
-- **Type**: `string`
+- **Type**: `string` (`"js"` | `"ts"`)
 - **Required**: No
 - **Description**: Project language
 
-**Common values**:
+**Allowed values**:
 
 - `"ts"` - TypeScript
 - `"js"` - JavaScript

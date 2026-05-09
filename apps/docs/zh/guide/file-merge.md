@@ -369,7 +369,7 @@ interface MergeParams {
 }
 
 interface MergeHelpers {
-  language?: string // 语言变体（如 'ts', 'js'）
+  language?: 'js' | 'ts' // 语言变体
 }
 
 interface MergeResult {
