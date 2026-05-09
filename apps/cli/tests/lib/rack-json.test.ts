@@ -79,6 +79,17 @@ describe('rack-json', () => {
     expect(err.message).toContain('items')
   })
 
+  it('read throws INVALID when items contains an unparseable identifier', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['quality/eslint:py'] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('invalid identifier')
+  })
+
   it('read throws INVALID when items contains non-strings', async () => {
     await writeFile(
       join(tmp, 'rack.json'),

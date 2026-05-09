@@ -10,12 +10,12 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
-          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "description": "Full format: @namespace/path (optional @version, optional :language)"
         },
         {
-          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
-          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "description": "Shorthand: path (optional @version, optional :language, resolves to @rack/path)"
         }
       ]
     },
@@ -23,12 +23,12 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[^/@\\s]+/[^@\\s]+$",
-          "description": "Full format with namespace: @namespace/name (no version allowed)"
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*$",
+          "description": "Full format: @namespace/path (no version or language allowed)"
         },
         {
-          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*$",
-          "description": "Shorthand without namespace: name (no version allowed, resolves to @rack/name)"
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*$",
+          "description": "Shorthand: path (no version or language allowed, resolves to @rack/path)"
         }
       ]
     },
