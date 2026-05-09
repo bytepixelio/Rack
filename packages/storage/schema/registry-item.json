@@ -10,11 +10,11 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[a-zA-Z0-9._+-]+)?(?::(js|ts))?$",
           "description": "Full format: @namespace/path (optional @version, optional :language)"
         },
         {
-          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[a-zA-Z0-9._+-]+)?(?::(js|ts))?$",
           "description": "Shorthand: path (optional @version, optional :language, resolves to @rack/path)"
         }
       ]
