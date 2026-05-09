@@ -138,6 +138,19 @@ describe('UploadService', () => {
     )
   })
 
+  // ─── extractTarGz ─────────────────────────────────────────────────────────
+
+  it('should throw a 400 INVALID_ARCHIVE when the file is not a gzip', async () => {
+    const upload = createUpload()
+    const tarPath = join(tempDir, 'not-a-gzip.tar.gz')
+    await writeFile(tarPath, 'this is plain text, not gzip')
+
+    await expect(upload.extractTarGz(tarPath)).rejects.toMatchObject({
+      code: 'INVALID_ARCHIVE',
+      statusCode: 400
+    })
+  })
+
   // ─── parsePackageInfo ────────────────────────────────────────────────────
 
   it('should parse valid package info with flat fallback segments', async () => {

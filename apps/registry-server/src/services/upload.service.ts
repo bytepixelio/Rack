@@ -126,18 +126,33 @@ export class UploadService {
   /**
    * Extract a tar.gz archive to a temp directory.
    *
+   * The MIME allowlist accepts `application/x-tar` and
+   * `application/octet-stream` because clients label uploads
+   * inconsistently, so we may receive plain tar or arbitrary binary
+   * blobs that pass MIME but fail at gunzip / tar parsing. Those are
+   * user input errors, not server faults — convert them to a 400 with
+   * a clear code so monitoring does not register them as 5xx.
+   *
    * @param tarPath - Path to the tar.gz file
    * @returns Path to the extraction directory
+   * @throws {ValidationError} If the file is not a valid tar.gz archive
    */
   async extractTarGz(tarPath: string): Promise<string> {
     const extractDir = join(this.storageRoot, '.tmp', `extract-${randomUUID()}`)
     await this.storage.mkdirp(extractDir)
 
-    await pipeline(
-      createReadStream(tarPath),
-      createGunzip(),
-      tarExtract({ cwd: extractDir, strict: true })
-    )
+    try {
+      await pipeline(
+        createReadStream(tarPath),
+        createGunzip(),
+        tarExtract({ cwd: extractDir, strict: true })
+      )
+    } catch (error) {
+      throw new ValidationError(
+        'INVALID_ARCHIVE',
+        `Uploaded file is not a valid tar.gz archive: ${(error as Error).message}`
+      )
+    }
 
     this.logger.info({ extractDir }, 'Package extracted')
     return extractDir
