@@ -176,3 +176,21 @@ export class ConfigError extends AppError {
     super('CONFIG_ERROR', message)
   }
 }
+
+// ─── Package ───────────────────────────────────────────────────────────────
+
+/**
+ * Error thrown when an existing project `package.json` cannot be parsed.
+ *
+ * Surfaced before any pipeline write so a corrupted manifest does not
+ * get silently overwritten with a freshly-synthesized empty file.
+ */
+export class PackageJsonInvalidError extends AppError {
+  constructor(
+    message: string,
+    /** Absolute path to the `package.json` that failed to parse. */
+    public readonly filePath: string
+  ) {
+    super('PACKAGE_JSON_INVALID', message)
+  }
+}

@@ -8,6 +8,7 @@
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
+import { PackageJsonInvalidError, getErrorMessage } from './utils/errors.js'
 import { pathExists, readJSON, writeJSON } from './infra/fs.js'
 
 const execFileAsync = promisify(execFile)
@@ -44,8 +45,14 @@ async function update(
   if (await pathExists(filePath)) {
     try {
       current = await readJSON<PackageJson>(filePath)
-    } catch {
-      current = {}
+    } catch (error) {
+      // Refuse to silently rewrite a broken package.json — that would
+      // wipe scripts, dependencies, packageManager, exports, etc. The
+      // user must fix or remove the file before re-running.
+      throw new PackageJsonInvalidError(
+        `package.json exists but could not be parsed: ${getErrorMessage(error)}`,
+        filePath
+      )
     }
   }
 
