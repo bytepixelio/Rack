@@ -22,6 +22,7 @@ import type { Logger } from '../infra/logger.js'
 import type {
   Preset,
   Language,
+  RegistryFile,
   RegistryItem,
   ResolvedRegistryItem
 } from './types.js'
@@ -335,7 +336,8 @@ function rethrowAsFileNotFound(
  *
  * Picks the language variant (`language` → `item.defaultLanguage` → `'ts'`),
  * then deep-merges the matching `languages[lang]` block into the base item.
- * Returns the original item unchanged when no overrides exist.
+ * `files` are merged by `target`: language files with a matching target
+ * replace the base entry; others are appended.
  */
 function applyLanguageOverrides(
   item: RegistryItem,
@@ -343,5 +345,45 @@ function applyLanguageOverrides(
 ): RegistryItem {
   const lang = language ?? item.defaultLanguage ?? 'ts'
   const overrides = item.languages?.[lang]
-  return overrides ? (merge({}, item, overrides) as RegistryItem) : item
+  if (!overrides) return item
+
+  const { files: langFiles, ...rest } = overrides
+  const merged = merge({}, item, rest) as RegistryItem
+
+  if (langFiles?.length) {
+    merged.files = mergeFilesByTarget(item.files ?? [], langFiles)
+  }
+
+  return merged
+}
+
+/**
+ * Merge two file lists by `target`.
+ *
+ * Base files whose target matches a language file are replaced in-place;
+ * language files with no matching base entry are appended.
+ *
+ * @param base - Common files from the top-level `files` array
+ * @param overrides - Language-specific files
+ */
+function mergeFilesByTarget(
+  base: RegistryFile[],
+  overrides: RegistryFile[]
+): RegistryFile[] {
+  const overrideMap = new Map(overrides.map(f => [f.target, f]))
+  const seen = new Set<string>()
+
+  const result = base.map(f => {
+    if (overrideMap.has(f.target)) {
+      seen.add(f.target)
+      return overrideMap.get(f.target)!
+    }
+    return f
+  })
+
+  for (const f of overrides) {
+    if (!seen.has(f.target)) result.push(f)
+  }
+
+  return result
 }
