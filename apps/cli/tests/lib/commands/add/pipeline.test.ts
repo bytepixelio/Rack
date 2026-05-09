@@ -115,4 +115,44 @@ describe('add/pipeline addRegistry', () => {
       expect.objectContaining({ logger: expect.anything() })
     )
   })
+
+  it('warns that conflict check is degraded when an installed fetch fails', async () => {
+    const logger = createMockLogger()
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    // installedRegistries asks for two; fetchItems returns one — the
+    // second silently failed (per fetchItems contract).
+    fetchItemsMock.mockResolvedValue([createItem({ identifier: '@rack/b' })])
+
+    await addRegistry(
+      {
+        identifier: '@rack/a',
+        targetDir: '/t',
+        installedRegistries: ['@rack/b', '@rack/missing']
+      },
+      logger
+    )
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching(/Conflict check is degraded.*@rack\/missing/)
+    )
+  })
+
+  it('does not warn when every installed registry fetched successfully', async () => {
+    const logger = createMockLogger()
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    fetchItemsMock.mockResolvedValue([createItem({ identifier: '@rack/b' })])
+
+    await addRegistry(
+      {
+        identifier: '@rack/a',
+        targetDir: '/t',
+        installedRegistries: ['@rack/b']
+      },
+      logger
+    )
+
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Conflict check is degraded')
+    )
+  })
 })
