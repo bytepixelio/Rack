@@ -282,6 +282,18 @@ describe('registry/client fetchPreset', () => {
       registry.fetchPreset('@presets/team/vue-app')
     ).rejects.toBeInstanceOf(AppError)
   })
+
+  it('rejects preset with @version suffix', async () => {
+    await expect(
+      registry.fetchPreset('@presets/tutorial@1.0.0')
+    ).rejects.toBeInstanceOf(AppError)
+  })
+
+  it('rejects preset with :language suffix', async () => {
+    await expect(
+      registry.fetchPreset('@presets/tutorial:ts')
+    ).rejects.toBeInstanceOf(AppError)
+  })
 })
 
 describe('registry/client fetchFile', () => {
