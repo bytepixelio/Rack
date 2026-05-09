@@ -52,11 +52,23 @@ export default {
 
     const nsMatch = pathname.match(/^\/namespaces\/([^/]+)\/registries$/)
     if (nsMatch) {
+      // CLI sends `@rack` percent-encoded (`%40rack`); Worker URL parsing
+      // does not auto-decode path segments, so callers would otherwise
+      // hit the `must start with @` validation in handleNamespaceRegistries.
+      let namespace: string
+      try {
+        namespace = decodeURIComponent(nsMatch[1])
+      } catch {
+        return json(
+          { code: 'INVALID_NAMESPACE', message: 'Invalid namespace encoding' },
+          400
+        )
+      }
       return handleNamespaceRegistries(
         env.BUCKET,
         env.ADMIN_TOKEN,
         request,
-        nsMatch[1]
+        namespace
       )
     }
 
