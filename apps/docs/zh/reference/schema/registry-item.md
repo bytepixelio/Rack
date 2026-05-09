@@ -270,11 +270,11 @@ aside: false
 
 - **类型**: `string[]`
 - **必填**: 否
-- **说明**: 冲突的 Registry, 不能同时安装
+- **说明**: 冲突的 Registry, 不能同时安装。每项遵循与 `preset.registries` 相同的 `@namespace/name[@version][:language]` 形式 —— schema 允许版本与语言后缀，但冲突比对走 canonical（namespace + path），因此后缀只起文档作用，不会进一步收窄匹配。
 
 ```json
 {
-  "conflicts": ["frameworks/vue"]
+  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
 }
 ```
 

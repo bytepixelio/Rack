@@ -270,11 +270,11 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 - **Type**: `string[]`
 - **Required**: No
-- **Description**: Conflicting registries that cannot be installed together
+- **Description**: Conflicting registries that cannot be installed together. Each entry follows the same `@namespace/name[@version][:language]` shape as `preset.registries` — schema accepts the version and language suffixes, but conflict comparison is canonical (namespace + path), so suffixes there serve as documentation rather than narrowing.
 
 ```json
 {
-  "conflicts": ["frameworks/vue"]
+  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
 }
 ```
 
