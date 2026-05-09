@@ -141,7 +141,7 @@ describe('R2UploadBackend', () => {
     await backend.uploadDirectory(dir, '@rack/node/1.0.0')
 
     const keys = mockSend.mock.calls.map(
-      ([cmd]: [{ Key: string }]) => cmd.Key
+      (call) => (call[0] as { Key: string }).Key
     )
     // registry.json must be the final PutObject so partial failures
     // never leave the publish marker present without its files.
