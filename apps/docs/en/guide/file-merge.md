@@ -369,7 +369,7 @@ interface MergeParams {
 }
 
 interface MergeHelpers {
-  language?: string           // Language variant (e.g., 'ts', 'js')
+  language?: 'js' | 'ts'      // Language variant
 }
 
 interface MergeResult {

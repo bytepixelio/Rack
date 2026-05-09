@@ -50,11 +50,11 @@ aside: false
 
 ### `language`
 
-- **类型**: `string`
+- **类型**: `string`（`"js"` | `"ts"`）
 - **必填**: 否
 - **说明**: 项目语言
 
-**常用值**:
+**允许值**:
 
 - `"ts"` - TypeScript
 - `"js"` - JavaScript
