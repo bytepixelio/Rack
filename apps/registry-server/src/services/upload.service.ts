@@ -369,7 +369,43 @@ export class UploadService {
       await this.installToLocal(extractedDir, namespace, version, segments)
     }
 
-    await this.regenerateVersions(namespace, name, version, segments)
+    // Roll back the install (delete the just-written version dir / R2
+    // prefix) if versions.json regeneration fails. Without this the
+    // client sees a 5xx but the version stays half-published — visible
+    // by direct URL but absent from versions/latest, and any retry hits
+    // VERSION_EXISTS.
+    try {
+      await this.regenerateVersions(namespace, name, version, segments)
+    } catch (error) {
+      await this.rollbackInstall(namespace, version, segments).catch(
+        (rollbackError) =>
+          this.logger.error(
+            { rollbackError, namespace, name, version, segments },
+            'Failed to roll back install after regenerateVersions failure'
+          )
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Remove a freshly-installed version directory (local) or key prefix
+   * (R2). Called by {@link install} on post-install failure.
+   */
+  private async rollbackInstall(
+    namespace: string,
+    version: string,
+    segments: string[]
+  ): Promise<void> {
+    if (this.r2) {
+      const keyPrefix = `${namespace}/${segments.join('/')}/${version}`
+      await this.r2.deletePrefix(keyPrefix)
+      this.logger.warn({ keyPrefix }, 'Rolled back R2 install')
+    } else {
+      const targetDir = join(this.storageRoot, namespace, ...segments, version)
+      await this.storage.remove(targetDir, { recursive: true, force: true })
+      this.logger.warn({ targetDir }, 'Rolled back local install')
+    }
   }
 
   /** Install to local filesystem via atomic rename. */

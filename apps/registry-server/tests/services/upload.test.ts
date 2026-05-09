@@ -78,6 +78,7 @@ describe('UploadService', () => {
       exists: vi.fn().mockResolvedValue(false),
       findVersions: vi.fn().mockResolvedValue([]),
       writeFile: vi.fn().mockResolvedValue(undefined),
+      deletePrefix: vi.fn().mockResolvedValue(undefined),
       uploadDirectory: vi.fn().mockResolvedValue(undefined)
     } as unknown as R2UploadBackend
   }
@@ -515,7 +516,7 @@ describe('UploadService', () => {
     expect(versions).toContain('1.0.0')
   })
 
-  it('should throw when regenerateVersions fails', async () => {
+  it('should throw and roll back the install when regenerateVersions fails', async () => {
     const upload = createUpload()
     const extractDir = join(tempDir, 'extract-regen')
     await mkdir(extractDir, { recursive: true })
@@ -528,7 +529,30 @@ describe('UploadService', () => {
     await expect(
       upload.install(extractDir, '@rack', 'node', '3.0.0', ['node'])
     ).rejects.toThrow('scan failed')
+
+    // The just-renamed version dir must be gone so a retry is not blocked
+    // by VERSION_EXISTS and so callers do not see a half-published version.
+    expect(
+      await storage.exists(join(tempDir, '@rack', 'node', '3.0.0'))
+    ).toBe(false)
+
     vi.mocked(storage.findVersions).mockRestore()
+  })
+
+  it('should delete uploaded R2 keys when regenerateVersions fails', async () => {
+    const r2 = createMockR2()
+    vi.mocked(r2.findVersions).mockRejectedValue(new Error('list failed'))
+    const upload = createUpload({ r2 })
+
+    const extractDir = join(tempDir, 'extract-regen-r2')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    await expect(
+      upload.install(extractDir, '@rack', 'node', '4.0.0', ['node'])
+    ).rejects.toThrow('list failed')
+
+    expect(r2.deletePrefix).toHaveBeenCalledWith('@rack/node/4.0.0')
   })
 
   it('should throw when version already exists, with canonical path in message', async () => {
