@@ -85,8 +85,9 @@ aside: false
 
 **Format**:
 
-- Full format: `@namespace/name` or `@namespace/name@version` (for non-`@rack` namespaces)
-- Shorthand format: `name` or `name@version` (CLI will automatically resolve to `@rack/name`, recommended for `@rack` registries)
+- Full format: `@namespace/name`, `@namespace/name@version`, or `@namespace/name:language` (for non-`@rack` namespaces)
+- Shorthand format: `name`, `name@version`, or `name:language` (CLI will automatically resolve to `@rack/name`, recommended for `@rack` registries)
+- Language suffix (`:js` or `:ts`) is optional and specifies the language variant
 
 **Version format** (follows semver):
 

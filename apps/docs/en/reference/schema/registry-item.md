@@ -360,11 +360,11 @@ For `registry:asset`, prefer using `path`. When `path` is used, the CLI writes t
 
 **`mergeStrategy` configuration**
 
-| Field     | Type   | Required | Description                                    |
-| --------- | ------ | -------- | ---------------------------------------------- |
-| type      | string | Yes      | Strategy type: `builtin` or `custom`           |
-| strategy  | string | No       | Built-in strategy name (only when `type: "builtin"`): `json`, `ignore`, `env`, `overwrite` |
-| script    | string | No       | Plugin script path (only when `type: "custom"`) |
+| Field     | Type   | Required                       | Description                                    |
+| --------- | ------ | ------------------------------ | ---------------------------------------------- |
+| type      | string | Yes                            | Strategy type: `builtin` or `custom`           |
+| strategy  | string | Yes when `type` is `"builtin"` | Built-in strategy name: `json`, `ignore`, `env`, `overwrite`. Not allowed when `type` is `"custom"` |
+| script    | string | Yes when `type` is `"custom"`  | Plugin script path. Not allowed when `type` is `"builtin"` |
 
 **Example**:
 
