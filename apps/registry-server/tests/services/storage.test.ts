@@ -2,7 +2,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { StorageService } from '../../src/services/storage.service.js'
-import { chmod, mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
+import { chmod, mkdtemp, mkdir, symlink, writeFile, rm } from 'fs/promises'
 
 describe('StorageService', () => {
   let tempDir: string
@@ -229,6 +229,17 @@ describe('StorageService', () => {
     await writeFile(join(tempDir, 'file.txt'), 'hello')
     expect(await storage.exists(join(tempDir, 'file.txt'))).toBe(true)
     expect(await storage.exists(join(tempDir, 'nope.txt'))).toBe(false)
+  })
+
+  it('should identify regular files via isFile()', async () => {
+    await writeFile(join(tempDir, 'real.txt'), 'data')
+    await mkdir(join(tempDir, 'subdir'))
+    await symlink(join(tempDir, 'real.txt'), join(tempDir, 'link.txt'))
+
+    expect(await storage.isFile(join(tempDir, 'real.txt'))).toBe(true)
+    expect(await storage.isFile(join(tempDir, 'subdir'))).toBe(false)
+    expect(await storage.isFile(join(tempDir, 'link.txt'))).toBe(false)
+    expect(await storage.isFile(join(tempDir, 'missing.txt'))).toBe(false)
   })
 
   it('should read and write files', async () => {

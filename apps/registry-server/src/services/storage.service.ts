@@ -12,6 +12,7 @@ import { listRegistries, SEMVER_PATTERN } from '@rack/registry-core'
 import {
   rm,
   stat,
+  lstat,
   mkdir,
   rename,
   access,
@@ -90,6 +91,23 @@ export class StorageService {
     try {
       await access(targetPath)
       return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Check whether a path is a regular file (not a directory or symlink).
+   *
+   * Uses `lstat` so symlinks are not followed.
+   *
+   * @param targetPath - Absolute path to check
+   * @returns `true` only for regular files
+   */
+  async isFile(targetPath: string): Promise<boolean> {
+    try {
+      const stats = await lstat(targetPath)
+      return stats.isFile()
     } catch {
       return false
     }

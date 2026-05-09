@@ -277,15 +277,15 @@ export class UploadService {
       }
     }
 
-    // 3. Validate each path and check existence
+    // 3. Validate each path and check it is a regular file
     for (const filePath of paths) {
       const { normalized } = validateFilePath(filePath)
       const fullPath = join(extractedDir, normalized)
 
-      if (!await this.storage.exists(fullPath)) {
+      if (!await this.storage.isFile(fullPath)) {
         throw new ValidationError(
           'FILE_NOT_FOUND',
-          `File referenced in registry.json does not exist in package: ${filePath}`
+          `File referenced in registry.json is missing or not a regular file: ${filePath}`
         )
       }
     }
