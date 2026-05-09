@@ -51,7 +51,7 @@ describe('pipeline/resolve-dependencies', () => {
     })
     const b = createItem({
       identifier: '@rack/b',
-      registryDependencies: ['utils@1.0.0']
+      registryDependencies: ['utils']
     })
     const utils = createItem({ identifier: '@rack/utils' })
     fetchItemMock.mockResolvedValue(utils)

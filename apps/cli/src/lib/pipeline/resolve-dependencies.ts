@@ -4,7 +4,7 @@
  * Given a set of initial registry items, fetches all transitive
  * `registryDependencies` and returns the complete deduplicated list.
  * Identifiers are canonicalized via {@link parseNamespace} so that
- * different forms (e.g. `utils`, `@rack/utils@1.0.0`) are deduplicated.
+ * different forms (e.g. `utils`, `@rack/utils`) are deduplicated.
  */
 
 import { registry } from '../registry/client.js'
@@ -21,8 +21,8 @@ import type { ResolvedRegistryItem } from './types.js'
  *
  * @example
  * ```ts
- * canonicalize('@rack/utils@1.0.0') // → '@rack/utils'
- * canonicalize('utils')             // → '@rack/utils'
+ * canonicalize('@rack/utils') // → '@rack/utils'
+ * canonicalize('utils')       // → '@rack/utils'
  * ```
  */
 function canonicalize(identifier: string): string {
