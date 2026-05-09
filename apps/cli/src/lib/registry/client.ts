@@ -125,6 +125,13 @@ async function fetchPreset(identifier: string): Promise<Preset> {
     )
   }
 
+  if (parsed.version || parsed.language) {
+    throw new AppError(
+      'INVALID_PRESET',
+      'Presets do not support @version or :language suffixes'
+    )
+  }
+
   const resolved = await rackrc.getRegistry(parsed.namespace)
   if (!resolved) {
     throw new RegistryNotFoundError(
