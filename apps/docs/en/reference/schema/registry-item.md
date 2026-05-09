@@ -349,8 +349,8 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 | -------------- | ------- | -------- | -------------------------------------------- |
 | target         | string  | Yes      | Target file path                             |
 | type           | string  | Yes      | `FileObject` type                            |
-| content        | string  | No       | Inline file content, mutually exclusive with path |
-| path           | string  | No       | Template file path on the server, mutually exclusive with content |
+| content        | string  | No       | Inline file content. For non-asset files, content takes priority over path when both are provided |
+| path           | string  | No       | Template file path on the server. For `registry:asset`, path takes priority over content when both are provided |
 | executable     | boolean | No       | Whether executable permission is needed      |
 | mergeStrategy  | object  | No       | Merge strategy configuration                 |
 
