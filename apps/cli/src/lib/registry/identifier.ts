@@ -11,6 +11,7 @@
  * ```
  */
 
+import { SEMVER_PATTERN } from '@rack/registry-core'
 import { DEFAULT_NAMESPACE } from '../../constants.js'
 import { InvalidNamespaceError } from '../utils/errors.js'
 
@@ -50,8 +51,8 @@ export interface ParsedNamespace {
  * parseNamespace('nextjs@14.0.0')
  * // { namespace: '@rack', path: 'nextjs', version: '14.0.0' }
  *
- * parseNamespace('@mycompany/runtime/node@1.0:ts')
- * // { namespace: '@mycompany', path: 'runtime/node', version: '1.0', language: 'ts' }
+ * parseNamespace('@mycompany/runtime/node@1.0.0:ts')
+ * // { namespace: '@mycompany', path: 'runtime/node', version: '1.0.0', language: 'ts' }
  * ```
  */
 export function parseNamespace(identifier: string): ParsedNamespace {
@@ -99,8 +100,8 @@ export function isPreset(identifier: string): boolean {
  *
  * @example
  * ```ts
- * extractLanguage('@rack/vue@1.0:ts')
- * // { language: 'ts', rest: '@rack/vue@1.0' }
+ * extractLanguage('@rack/vue@1.0.0:ts')
+ * // { language: 'ts', rest: '@rack/vue@1.0.0' }
  *
  * extractLanguage('@rack/vue')
  * // { language: undefined, rest: '@rack/vue' }
@@ -178,6 +179,13 @@ function extractVersion(identifier: string): {
 
   if (!version) {
     throw new InvalidNamespaceError('Version cannot be empty', identifier)
+  }
+
+  if (!SEMVER_PATTERN.test(version)) {
+    throw new InvalidNamespaceError(
+      'Version must be a valid semver (e.g. 1.0.0)',
+      identifier
+    )
   }
 
   return { version, namePath }
