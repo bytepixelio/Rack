@@ -121,14 +121,48 @@ describe('registry/client fetchItem', () => {
     http.get.mockResolvedValue({
       data: {
         ...baseItem,
-        files: [{ path: 'tailwind.config.ts' }],
+        files: [
+          { path: 'tailwind.config.ts', target: 'tailwind.config.ts', type: 'registry:config' }
+        ],
         languages: {
-          js: { files: [{ path: 'tailwind.config.js' }] }
+          js: {
+            files: [
+              { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+            ]
+          }
         }
       }
     })
     const item = await registry.fetchItem('@rack/vue:js')
-    expect(item.files).toEqual([{ path: 'tailwind.config.js' }])
+    expect(item.files).toEqual([
+      { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+    ])
+  })
+
+  it('appends language files and preserves common files with different targets', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        files: [
+          { path: 'index.html', target: 'index.html', type: 'registry:entry' },
+          { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' }
+        ],
+        languages: {
+          js: {
+            files: [
+              { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+            ]
+          }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue:js')
+    expect(item.files).toEqual([
+      { path: 'index.html', target: 'index.html', type: 'registry:entry' },
+      { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' },
+      { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+    ])
   })
 
   it('prefers explicit options.language over identifier suffix', async () => {
