@@ -77,7 +77,7 @@ my-presets/
 
 ### 3. Deploy Template
 
-The CLI fetches presets at `{host}/presets/{path}` (no `/preset.json` suffix, no namespace segment).
+The CLI fetches presets at `{host}/presets/{name}` (single-segment name, no `/preset.json` suffix, no namespace segment).
 
 **Recommended: `@rack/registry-server`**
 

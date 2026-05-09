@@ -77,7 +77,7 @@ my-presets/
 
 ### 3. 部署模板
 
-CLI 按 `{host}/presets/{path}` 拉取 preset (URL 不带 `/preset.json` 后缀, 也不带命名空间段)。
+CLI 按 `{host}/presets/{name}` 拉取 preset (单段名称, URL 不带 `/preset.json` 后缀, 也不带命名空间段)。
 
 **推荐: `@rack/registry-server`**
 

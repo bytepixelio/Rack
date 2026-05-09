@@ -19,6 +19,7 @@ import { registry } from '../../../src/lib/registry/client.js'
 import { rackrc } from '../../../src/lib/rackrc.js'
 import * as httpMod from '../../../src/lib/infra/http.js'
 import {
+  AppError,
   HttpError,
   RegistryNotFoundError
 } from '../../../src/lib/utils/errors.js'
@@ -274,6 +275,12 @@ describe('registry/client fetchPreset', () => {
     await expect(
       registry.fetchPreset('@presets/missing')
     ).rejects.toBeInstanceOf(RegistryNotFoundError)
+  })
+
+  it('rejects multi-segment preset paths', async () => {
+    await expect(
+      registry.fetchPreset('@presets/team/vue-app')
+    ).rejects.toBeInstanceOf(AppError)
   })
 })
 

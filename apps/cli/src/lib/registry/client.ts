@@ -16,7 +16,7 @@ import { merge } from 'lodash-es'
 import { rackrc } from '../rackrc.js'
 import { HttpClient } from '../infra/http.js'
 import { validateFilePath } from '@rack/registry-core'
-import { HttpError, RegistryNotFoundError } from '../utils/errors.js'
+import { AppError, HttpError, RegistryNotFoundError } from '../utils/errors.js'
 import { parseNamespace, type ParsedNamespace } from './identifier.js'
 
 import type { Logger } from '../infra/logger.js'
@@ -115,6 +115,13 @@ async function fetchItem(
  */
 async function fetchPreset(identifier: string): Promise<Preset> {
   const parsed = parseNamespace(identifier)
+
+  if (parsed.path.includes('/')) {
+    throw new AppError(
+      'INVALID_PRESET',
+      `Preset name must be a single segment, got: ${parsed.path}`
+    )
+  }
 
   const resolved = await rackrc.getRegistry(parsed.namespace)
   if (!resolved) {
