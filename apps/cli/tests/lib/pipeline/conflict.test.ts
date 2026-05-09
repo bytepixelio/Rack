@@ -91,4 +91,30 @@ describe('pipeline/conflict', () => {
       ])
     ).not.toThrow()
   })
+
+  it('detects conflicts against installedIdentifiers even when fetch failed', () => {
+    expect(() =>
+      validateNoConflicts(
+        [
+          createItem({
+            identifier: '@rack/new-ui',
+            conflicts: ['@rack/old-ui']
+          })
+        ],
+        ['@rack/old-ui']
+      )
+    ).toThrow(ConflictError)
+  })
+
+  it('installedIdentifiers do not override already-fetched items', () => {
+    expect(() =>
+      validateNoConflicts(
+        [
+          createItem({ identifier: '@rack/a' }),
+          createItem({ identifier: '@rack/b', conflicts: ['@rack/a'] })
+        ],
+        ['@rack/a']
+      )
+    ).toThrow(ConflictError)
+  })
 })

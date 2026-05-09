@@ -82,7 +82,7 @@ export async function addRegistry(
     language,
     logger
   })
-  validateNoConflicts([...installedItems, ...resolved])
+  validateNoConflicts([...installedItems, ...resolved], installedRegistries)
 
   // 4. Sort
   const items = sortItems(resolved)
