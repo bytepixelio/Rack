@@ -90,6 +90,28 @@ export function isPreset(identifier: string): boolean {
   return identifier.startsWith('@presets/')
 }
 
+/**
+ * Format a {@link ParsedNamespace} back into its canonical
+ * `@namespace/path[@version][:language]` string.
+ *
+ * Used when writing identifiers to `rack.json`: the namespace and path
+ * are normalized to lowercase by `parseNamespace`, but explicit
+ * `@version` and `:language` suffixes the user typed must round-trip.
+ *
+ * @param parsed - Parsed identifier components
+ * @returns Canonical identifier string
+ *
+ * @example
+ * formatCanonicalIdentifier(parseNamespace('@RACK/Vue@1.2.3:js'))
+ * // → '@rack/vue@1.2.3:js'
+ */
+export function formatCanonicalIdentifier(parsed: ParsedNamespace): string {
+  let id = `${parsed.namespace}/${parsed.path}`
+  if (parsed.version) id += `@${parsed.version}`
+  if (parsed.language) id += `:${parsed.language}`
+  return id
+}
+
 // ─── Internal ────────────────────────────────────────────────────────────────
 
 /**

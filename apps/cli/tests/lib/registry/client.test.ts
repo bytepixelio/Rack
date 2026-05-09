@@ -65,10 +65,26 @@ describe('registry/client fetchItem', () => {
       'https://r.example.com/registries/@rack/vue/1.0.0',
       { headers: { Authorization: 'Bearer T' } }
     )
-    expect(item.identifier).toBe('@rack/vue')
+    expect(item.identifier).toBe('@rack/vue@1.0.0')
     expect(item.registryUrl).toBe(
       'https://r.example.com/registries/@rack/vue/1.0.0'
     )
+  })
+
+  it('preserves @version and :language suffixes in canonical identifier', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@RACK/Vue@1.0.0:js')
+    expect(item.identifier).toBe('@rack/vue@1.0.0:js')
+  })
+
+  it('omits version/language suffix when identifier had none', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue')
+    expect(item.identifier).toBe('@rack/vue')
   })
 
   it('strips trailing slashes from the registry base URL', async () => {
