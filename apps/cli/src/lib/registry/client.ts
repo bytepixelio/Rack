@@ -17,7 +17,11 @@ import { rackrc } from '../rackrc.js'
 import { HttpClient } from '../infra/http.js'
 import { validateFilePath } from '@rack/registry-core'
 import { AppError, HttpError, RegistryNotFoundError } from '../utils/errors.js'
-import { parseNamespace, type ParsedNamespace } from './identifier.js'
+import {
+  parseNamespace,
+  formatCanonicalIdentifier,
+  type ParsedNamespace
+} from './identifier.js'
 
 import type { Logger } from '../infra/logger.js'
 import type {
@@ -90,7 +94,10 @@ async function fetchItem(
     // Template files still need a versioned base path, so append item.version.
     const registryUrl = parsed.version ? url : `${url}/${item.version}`
 
-    const canonicalId = `${parsed.namespace}/${parsed.path}`
+    // Preserve user-supplied @version / :language so the value written
+    // back to rack.json.items round-trips, while normalizing namespace
+    // and path casing.
+    const canonicalId = formatCanonicalIdentifier(parsed)
 
     return {
       ...applyLanguageOverrides(item, options.language ?? parsed.language),
