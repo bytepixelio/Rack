@@ -128,7 +128,7 @@
     },
     "namespace": {
       "type": "string",
-      "pattern": "^@[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$",
       "description": "Owner namespace, prefixed with @"
     },
     "path": {
