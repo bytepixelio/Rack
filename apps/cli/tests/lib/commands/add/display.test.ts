@@ -33,13 +33,26 @@ describe('add/display', () => {
     expect(out).toContain('@rack/vue')
   })
 
-  it('displayAlreadyInstalled prints a yellow notice', () => {
+  it('displayAlreadyInstalled prints a simple notice on exact match', () => {
     const logger = createMockLogger()
-    displayAlreadyInstalled('@rack/vue', logger)
+    displayAlreadyInstalled('@rack/vue', '@rack/vue', logger)
     const out = (logger.info as ReturnType<typeof vi.fn>).mock.calls
       .flat()
       .join(' ')
     expect(out).toContain('already installed')
+    expect(out).toContain('No changes made')
+  })
+
+  it('displayAlreadyInstalled flags a variant mismatch and tells the user how to swap', () => {
+    const logger = createMockLogger()
+    displayAlreadyInstalled('@rack/vue@2.0.0', '@rack/vue@1.0.0', logger)
+    const out = (logger.info as ReturnType<typeof vi.fn>).mock.calls
+      .flat()
+      .join(' ')
+    expect(out).toContain('different variant')
+    expect(out).toContain('@rack/vue@1.0.0')
+    expect(out).toContain('@rack/vue@2.0.0')
+    expect(out).toContain('rack.json.items')
   })
 
   it('displayResults prints applied, file changes, and dependency summaries', () => {
