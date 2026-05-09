@@ -123,7 +123,25 @@ export function registerSetCommand(configCommand: Command): void {
           }
 
           const config = await rackrc.load()
-          const registryEntry = config.registries[namespace] ?? {
+          const existingEntry = config.registries[namespace]
+
+          // First-time setup must include --url; otherwise we'd persist
+          // a config with `url: ""` that every later HTTP call would
+          // turn into a malformed request.
+          if (!existingEntry && !url) {
+            throw new Error(
+              `Namespace ${namespace} is not configured yet — pass --url ` +
+                'when creating a new namespace entry.'
+            )
+          }
+
+          if (url && !/^https?:\/\//.test(url)) {
+            throw new Error(
+              '--url must be an absolute http:// or https:// URL'
+            )
+          }
+
+          const registryEntry = existingEntry ?? {
             url: '',
             headers: {}
           }
