@@ -74,7 +74,20 @@ export interface RegistryItem {
   scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
-  languages?: Record<string, Partial<RegistryItem>>
+  languages?: Record<string, LanguageOverride>
+}
+
+/**
+ * Language-specific overrides allowed inside `languages.<lang>`.
+ *
+ * The schema only permits these three fields; any other key is rejected
+ * at upload time. Keeping the CLI type aligned prevents consuming
+ * fields that the schema forbids.
+ */
+export interface LanguageOverride {
+  files?: RegistryFile[]
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
 }
 
 // ─── Preset ──────────────────────────────────────────────────────────────────

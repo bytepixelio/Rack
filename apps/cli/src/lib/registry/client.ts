@@ -329,11 +329,16 @@ function applyLanguageOverrides(
   const overrides = item.languages?.[lang]
   if (!overrides) return item
 
-  const { files: langFiles, ...rest } = overrides
-  const merged = merge({}, item, rest) as RegistryItem
+  const merged = { ...item }
 
-  if (langFiles?.length) {
-    merged.files = mergeFilesByTarget(item.files ?? [], langFiles)
+  if (overrides.dependencies) {
+    merged.dependencies = merge({}, item.dependencies, overrides.dependencies)
+  }
+  if (overrides.devDependencies) {
+    merged.devDependencies = merge({}, item.devDependencies, overrides.devDependencies)
+  }
+  if (overrides.files?.length) {
+    merged.files = mergeFilesByTarget(item.files ?? [], overrides.files)
   }
 
   return merged
