@@ -6,6 +6,7 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/auth-core/ packages/auth-core/
+COPY packages/registry-core/ packages/registry-core/
 COPY apps/registry-server/ apps/registry-server/
 
 RUN pnpm install --frozen-lockfile --filter @rack/registry-server... --ignore-scripts
