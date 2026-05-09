@@ -12,6 +12,7 @@ import {
   S3Client,
   PutObjectCommand,
   HeadObjectCommand,
+  DeleteObjectCommand,
   ListObjectsV2Command
 } from '@aws-sdk/client-s3'
 
@@ -98,6 +99,40 @@ export class R2UploadBackend {
         ContentType: 'application/json'
       })
     )
+  }
+
+  /**
+   * Delete every object whose key starts with `prefix`.
+   *
+   * Used to roll back a partially-uploaded version when a later step
+   * (versions.json regeneration, etc.) fails. Caller is expected to
+   * swallow errors — a rollback failure should not mask the original.
+   *
+   * @param prefix - Key prefix to wipe (e.g. `@rack/node/1.0.0`)
+   */
+  async deletePrefix(prefix: string): Promise<void> {
+    let continuationToken: string | undefined
+
+    do {
+      const list = await this.client.send(
+        new ListObjectsV2Command({
+          Prefix: prefix,
+          Bucket: this.bucketName,
+          ContinuationToken: continuationToken
+        })
+      )
+
+      for (const obj of list.Contents ?? []) {
+        if (!obj.Key) continue
+        await this.client.send(
+          new DeleteObjectCommand({ Bucket: this.bucketName, Key: obj.Key })
+        )
+      }
+
+      continuationToken = list.IsTruncated
+        ? list.NextContinuationToken
+        : undefined
+    } while (continuationToken)
   }
 
   /**
