@@ -55,12 +55,19 @@ describe('pkg', () => {
     })
   })
 
-  it('update treats an unparseable package.json as empty and rewrites it', async () => {
+  it('update refuses to overwrite an unparseable package.json', async () => {
     await writeFile(join(tmp, 'package.json'), '{ corrupt')
-    await pkg.update(tmp, { scripts: { a: 'b' } })
-    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
-    expect(data.scripts).toEqual({ a: 'b' })
-    expect(data.version).toBe('1.0.0')
+
+    await expect(
+      pkg.update(tmp, { scripts: { a: 'b' } })
+    ).rejects.toMatchObject({
+      code: 'PACKAGE_JSON_INVALID',
+      filePath: join(tmp, 'package.json')
+    })
+
+    // The corrupt content must remain untouched so the user can recover it.
+    const onDisk = await readFile(join(tmp, 'package.json'), 'utf8')
+    expect(onDisk).toBe('{ corrupt')
   })
 
   it('update leaves existing fields alone when new ones are empty', async () => {
