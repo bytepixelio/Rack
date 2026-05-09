@@ -152,6 +152,16 @@ async function read(targetDir: string): Promise<RackJsonConfig> {
         'INVALID'
       )
     }
+    for (const item of obj.items) {
+      try {
+        parseNamespace(item as string)
+      } catch {
+        throw new RackJsonError(
+          `rack.json field "items" contains invalid identifier: ${item}`,
+          'INVALID'
+        )
+      }
+    }
   }
 
   if (obj.language !== undefined) {

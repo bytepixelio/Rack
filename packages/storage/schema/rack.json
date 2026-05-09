@@ -10,12 +10,12 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
-          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "description": "Full format: @namespace/path (optional @version, optional :language)"
         },
         {
-          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
-          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@[^\\s]+)?(?::(js|ts))?$",
+          "description": "Shorthand: path (optional @version, optional :language, resolves to @rack/path)"
         }
       ]
     }
