@@ -421,17 +421,10 @@ export class UploadService {
     version: string,
     segments: string[]
   ): Promise<void> {
-    try {
-      if (this.r2) {
-        await this.regenerateVersionsR2(namespace, name, version, segments)
-      } else {
-        await this.regenerateVersionsLocal(namespace, name, version, segments)
-      }
-    } catch (error) {
-      this.logger.warn(
-        { name, error, namespace },
-        'Failed to regenerate versions.json'
-      )
+    if (this.r2) {
+      await this.regenerateVersionsR2(namespace, name, version, segments)
+    } else {
+      await this.regenerateVersionsLocal(namespace, name, version, segments)
     }
   }
 

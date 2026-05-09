@@ -396,7 +396,7 @@ describe('UploadService', () => {
     expect(versions).toContain('1.0.0')
   })
 
-  it('should warn when regenerateVersions fails', async () => {
+  it('should throw when regenerateVersions fails', async () => {
     const upload = createUpload()
     const extractDir = join(tempDir, 'extract-regen')
     await mkdir(extractDir, { recursive: true })
@@ -406,12 +406,9 @@ describe('UploadService', () => {
       new Error('scan failed')
     )
 
-    await upload.install(extractDir, '@rack', 'node', '3.0.0', ['node'])
-
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'node', namespace: '@rack' }),
-      'Failed to regenerate versions.json'
-    )
+    await expect(
+      upload.install(extractDir, '@rack', 'node', '3.0.0', ['node'])
+    ).rejects.toThrow('scan failed')
     vi.mocked(storage.findVersions).mockRestore()
   })
 
