@@ -282,7 +282,7 @@ aside: false
 
 - **类型**: `string[]`
 - **必填**: 否
-- **说明**: 自动安装的其他 Registry
+- **说明**: 自动安装的其他 Registry。不支持版本锁定 (`@version` 后缀), 依赖始终解析为最新版本。
 
 ```json
 {
@@ -478,7 +478,7 @@ aside: false
 - `devDependencies` - 语言特定的开发依赖
 - `files` - 语言特定的文件
 
-> `scripts`、`envVars`、`registryDependencies` 等字段必须放在 Registry 顶层 (通用) 配置中, 不能放进 `languages.X`。
+> `scripts`、`registryDependencies` 等字段必须放在 Registry 顶层 (通用) 配置中, 不能放进 `languages.X`。
 
 **设计原则**
 

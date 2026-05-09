@@ -282,7 +282,7 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 - **Type**: `string[]`
 - **Required**: No
-- **Description**: Other registries to be automatically installed
+- **Description**: Other registries to be automatically installed. Version pinning (`@version` suffix) is not supported; dependencies always resolve to the latest version.
 
 ```json
 {
@@ -478,7 +478,7 @@ Using custom plugin:
 - `devDependencies` - language-specific development dependencies
 - `files` - language-specific files
 
-> Fields like `scripts`, `envVars`, `registryDependencies` must live at the registry's top-level (common) configuration; they cannot be placed inside `languages.X`.
+> Fields like `scripts`, `registryDependencies` must live at the registry's top-level (common) configuration; they cannot be placed inside `languages.X`.
 
 **Design principles**
 

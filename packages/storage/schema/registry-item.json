@@ -19,6 +19,19 @@
         }
       ]
     },
+    "registryDependencyIdentifier": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^@[^/@\\s]+/[^@\\s]+$",
+          "description": "Full format with namespace: @namespace/name (no version allowed)"
+        },
+        {
+          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*$",
+          "description": "Shorthand without namespace: name (no version allowed, resolves to @rack/name)"
+        }
+      ]
+    },
     "fileType": {
       "type": "string",
       "enum": [
@@ -176,8 +189,8 @@
     },
     "registryDependencies": {
       "type": "array",
-      "items": { "$ref": "#/$defs/registryIdentifier" },
-      "description": "Registries that must be installed before this one"
+      "items": { "$ref": "#/$defs/registryDependencyIdentifier" },
+      "description": "Registries that must be installed before this one (version pinning not supported)"
     },
     "dependencies": {
       "$ref": "#/$defs/dependencyMap",
