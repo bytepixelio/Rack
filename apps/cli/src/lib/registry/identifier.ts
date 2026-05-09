@@ -77,17 +77,27 @@ export function parseNamespace(identifier: string): ParsedNamespace {
 /**
  * Check if an identifier refers to a preset.
  *
+ * Goes through {@link parseNamespace} so casing matches the rest of
+ * the parser (`@Presets/vue` is normalized to `@presets`). Anything
+ * the parser rejects (e.g. empty, malformed) returns `false`.
+ *
  * @param identifier - Registry or preset identifier
- * @returns `true` if the identifier uses the `@presets/` namespace
+ * @returns `true` if the identifier resolves to the `@presets` namespace
  *
  * @example
  * ```ts
  * isPreset('@presets/vue')        // true
+ * isPreset('@Presets/vue')        // true (case-insensitive)
  * isPreset('@rack/tailwindcss')   // false
+ * isPreset('not valid')           // false (parse error)
  * ```
  */
 export function isPreset(identifier: string): boolean {
-  return identifier.startsWith('@presets/')
+  try {
+    return parseNamespace(identifier).namespace === '@presets'
+  } catch {
+    return false
+  }
 }
 
 /**
