@@ -54,10 +54,7 @@ export interface RawNamespaceToken {
 }
 
 /** Shape of the auth.json configuration file. */
-export type RawAuthConfig = Record<
-  string,
-  RawNamespaceToken[] | null | undefined
->
+export type RawAuthConfig = Record<string, RawNamespaceToken[]>
 
 /** Validated token record stored in a parsed {@link AuthConfig}. */
 export interface TokenRecord {
@@ -73,9 +70,10 @@ export interface TokenRecord {
  * - `allowedNamespaces`: every namespace declared in auth.json, including
  *   anonymous ones (empty token array). A namespace NOT in this set is
  *   forbidden.
- * - `tokens`: only namespaces with at least one valid token. Namespaces
- *   whose tokens were all rejected fall back to anonymous (absent from
- *   this map).
+ * - `tokens`: only namespaces with at least one valid token. A namespace
+ *   with `[]` is anonymous (absent from this map). A non-empty array
+ *   that yields zero valid tokens is a config error and causes
+ *   `parseAuthConfig` to throw.
  */
 export interface AuthConfig {
   allowedNamespaces: Set<string>

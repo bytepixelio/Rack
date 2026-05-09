@@ -4,12 +4,37 @@
 
 import type { AuthConfig, TokenRecord, RawAuthConfig } from './types.js'
 
-/** Parse a date value, returning undefined for invalid or empty values. */
-function parseDate(value: unknown): Date | undefined {
-  if (typeof value !== 'string' || !value.trim()) return undefined
+/**
+ * Parse an `expiresAt` value into a Date.
+ *
+ * Three states:
+ *
+ * - `undefined` / missing field / empty string → token never expires.
+ * - Valid date string → that Date.
+ * - Anything else → throws. Silently treating an invalid date as
+ *   "never expires" is a security regression for publish tokens
+ *   (a typo in `expiresAt` would extend the token's lifetime instead
+ *   of failing closed).
+ */
+function parseExpiresAt(value: unknown, namespace: string): Date | undefined {
+  if (value === undefined || value === null) return undefined
+  if (typeof value === 'string' && !value.trim()) return undefined
+
+  if (typeof value !== 'string') {
+    throw new Error(
+      `Namespace "${namespace}" has an invalid expiresAt: ` +
+        'must be an ISO-8601 date string'
+    )
+  }
 
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? undefined : date
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(
+      `Namespace "${namespace}" has an invalid expiresAt: ` +
+        `"${value}" is not a valid date`
+    )
+  }
+  return date
 }
 
 /**
@@ -36,9 +61,15 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
   const tokens = new Map<string, Map<string, TokenRecord>>()
 
   for (const [namespace, rawTokens] of Object.entries(config)) {
+    if (!Array.isArray(rawTokens)) {
+      throw new Error(
+        `Namespace "${namespace}" must map to an array of token entries`
+      )
+    }
+
     allowedNamespaces.add(namespace)
 
-    if (!Array.isArray(rawTokens) || rawTokens.length === 0) continue
+    if (rawTokens.length === 0) continue
 
     const tokenMap = new Map<string, TokenRecord>()
 
@@ -51,11 +82,17 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
         token: key,
         publish: entry.publish === true,
         mark: typeof entry.mark === 'string' ? entry.mark : undefined,
-        expiresAt: parseDate(entry.expiresAt)
+        expiresAt: parseExpiresAt(entry.expiresAt, namespace)
       })
     }
 
-    if (tokenMap.size > 0) tokens.set(namespace, tokenMap)
+    if (tokenMap.size === 0) {
+      throw new Error(
+        `Namespace "${namespace}" has token entries but none contain a valid "token" string`
+      )
+    }
+
+    tokens.set(namespace, tokenMap)
   }
 
   return { tokens, allowedNamespaces }

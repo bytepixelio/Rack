@@ -17,6 +17,9 @@ vi.mock('@aws-sdk/client-s3', () => ({
   HeadObjectCommand: vi
     .fn()
     .mockImplementation((input) => ({ ...input, _type: 'HeadObject' })),
+  DeleteObjectCommand: vi
+    .fn()
+    .mockImplementation((input) => ({ ...input, _type: 'DeleteObject' })),
   ListObjectsV2Command: vi
     .fn()
     .mockImplementation((input) => ({ ...input, _type: 'ListObjects' }))
@@ -126,6 +129,25 @@ describe('R2UploadBackend', () => {
     )
   })
 
+  it('should upload registry.json last so it acts as a publish marker', async () => {
+    mockSend.mockResolvedValue({})
+
+    const dir = join(tempDir, 'package-order')
+    await mkdir(join(dir, 'templates'), { recursive: true })
+    await writeFile(join(dir, 'registry.json'), '{}')
+    await writeFile(join(dir, 'templates', 'a.ts'), 'export {}')
+    await writeFile(join(dir, 'templates', 'b.ts'), 'export {}')
+
+    await backend.uploadDirectory(dir, '@rack/node/1.0.0')
+
+    const keys = mockSend.mock.calls.map(
+      (call) => (call[0] as { Key: string }).Key
+    )
+    // registry.json must be the final PutObject so partial failures
+    // never leave the publish marker present without its files.
+    expect(keys[keys.length - 1]).toBe('@rack/node/1.0.0/registry.json')
+  })
+
   // ─── writeFile ────────────────────────────────────────────────────────────
 
   it('should write content to R2', async () => {
@@ -228,5 +250,95 @@ describe('R2UploadBackend', () => {
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({ Prefix: '@rack/node/' })
     )
+  })
+
+  it('should follow ListObjectsV2 pagination when finding versions', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        IsTruncated: true,
+        NextContinuationToken: 'page-2',
+        CommonPrefixes: [{ Prefix: '@rack/node/1.0.0/' }]
+      })
+      .mockResolvedValueOnce({
+        IsTruncated: false,
+        CommonPrefixes: [{ Prefix: '@rack/node/2.0.0/' }]
+      })
+
+    const versions = await backend.findVersions('@rack/node')
+
+    expect(versions).toEqual(['1.0.0', '2.0.0'])
+    expect(mockSend).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ ContinuationToken: 'page-2' })
+    )
+  })
+
+  // ─── deletePrefix ────────────────────────────────────────────────────────
+
+  it('should delete every object under a prefix', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [
+          { Key: '@rack/node/1.0.0/registry.json' },
+          { Key: '@rack/node/1.0.0/templates/index.ts' }
+        ]
+      })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+
+    await backend.deletePrefix('@rack/node/1.0.0')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        _type: 'DeleteObject',
+        Key: '@rack/node/1.0.0/registry.json'
+      })
+    )
+    expect(mockSend).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        _type: 'DeleteObject',
+        Key: '@rack/node/1.0.0/templates/index.ts'
+      })
+    )
+  })
+
+  it('should follow ListObjectsV2 pagination when deleting', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        IsTruncated: true,
+        NextContinuationToken: 'page-2',
+        Contents: [{ Key: 'a' }]
+      })
+      .mockResolvedValueOnce({}) // delete a
+      .mockResolvedValueOnce({
+        IsTruncated: false,
+        Contents: [{ Key: 'b' }]
+      })
+      .mockResolvedValueOnce({}) // delete b
+
+    await backend.deletePrefix('prefix')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        _type: 'ListObjects',
+        ContinuationToken: 'page-2'
+      })
+    )
+  })
+
+  it('should skip objects whose Key is undefined', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [{ Key: undefined }, { Key: 'real' }]
+      })
+      .mockResolvedValueOnce({})
+
+    await backend.deletePrefix('p')
+
+    // Two send calls: list + one delete (the undefined Key is skipped)
+    expect(mockSend).toHaveBeenCalledTimes(2)
   })
 })

@@ -2,7 +2,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { StorageService } from '../../src/services/storage.service.js'
-import { chmod, mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
+import { chmod, mkdtemp, mkdir, symlink, writeFile, rm } from 'fs/promises'
 
 describe('StorageService', () => {
   let tempDir: string
@@ -184,14 +184,37 @@ describe('StorageService', () => {
     expect(sorted).toEqual(['1.0.0', '1.0.0'])
   })
 
-  it('should handle versions with different segment counts', () => {
-    const sorted = storage.sortVersionsDescending(['1.0', '1.0.1'])
-    expect(sorted).toEqual(['1.0.1', '1.0'])
+  it('should sort prerelease below its stable version', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0-beta',
+      '1.0.0',
+      '0.9.0'
+    ])
+    expect(sorted).toEqual(['1.0.0', '1.0.0-beta', '0.9.0'])
   })
 
-  it('should handle versions where b has fewer segments than a', () => {
-    const sorted = storage.sortVersionsDescending(['1.0.1', '1.0'])
-    expect(sorted).toEqual(['1.0.1', '1.0'])
+  it('should sort multiple prerelease identifiers correctly', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0-beta.1',
+      '1.0.0-rc.1',
+      '1.0.0',
+      '1.0.0-alpha'
+    ])
+    expect(sorted).toEqual([
+      '1.0.0',
+      '1.0.0-rc.1',
+      '1.0.0-beta.1',
+      '1.0.0-alpha'
+    ])
+  })
+
+  it('should ignore build metadata for ordering', () => {
+    const sorted = storage.sortVersionsDescending([
+      '1.0.0+build.1',
+      '1.0.0+build.2'
+    ])
+    expect(sorted[0]).toMatch(/^1\.0\.0\+build\.\d$/)
+    expect(sorted[1]).toMatch(/^1\.0\.0\+build\.\d$/)
   })
 
   it('should not mutate original array', () => {
@@ -206,6 +229,17 @@ describe('StorageService', () => {
     await writeFile(join(tempDir, 'file.txt'), 'hello')
     expect(await storage.exists(join(tempDir, 'file.txt'))).toBe(true)
     expect(await storage.exists(join(tempDir, 'nope.txt'))).toBe(false)
+  })
+
+  it('should identify regular files via isFile()', async () => {
+    await writeFile(join(tempDir, 'real.txt'), 'data')
+    await mkdir(join(tempDir, 'subdir'))
+    await symlink(join(tempDir, 'real.txt'), join(tempDir, 'link.txt'))
+
+    expect(await storage.isFile(join(tempDir, 'real.txt'))).toBe(true)
+    expect(await storage.isFile(join(tempDir, 'subdir'))).toBe(false)
+    expect(await storage.isFile(join(tempDir, 'link.txt'))).toBe(false)
+    expect(await storage.isFile(join(tempDir, 'missing.txt'))).toBe(false)
   })
 
   it('should read and write files', async () => {

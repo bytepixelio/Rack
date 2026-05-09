@@ -59,9 +59,9 @@ interface Resolution {
   strategy: ResolutionStrategy
 }
 
-interface ResolvedSet {
-  conflicts: VersionConflict[]
-  resolved: Record<string, string>
+/** A version entry tagged with the field (`dependencies` or `devDependencies`) it came from. */
+interface FieldedVersionEntry extends VersionEntry {
+  field: DepField
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -80,14 +80,44 @@ interface ResolvedSet {
 export function resolveDependencies(
   items: ResolvedRegistryItem[]
 ): DependencyResolutionResult {
-  const deps = resolveSet(items, 'dependencies')
-  const devDeps = resolveSet(items, 'devDependencies')
+  // Merge dependencies + devDependencies into a single per-package map so
+  // that a package declared as a runtime dep by one registry and a dev dep
+  // by another participates in the same conflict resolution and ends up
+  // written to a single field — without this, package.json would carry the
+  // package twice with potentially different versions.
+  const versionsByPackage = collectVersions(items)
+  const dependencies: Record<string, string> = {}
+  const devDependencies: Record<string, string> = {}
+  const conflicts: VersionConflict[] = []
 
-  return {
-    dependencies: deps.resolved,
-    devDependencies: devDeps.resolved,
-    conflicts: [...deps.conflicts, ...devDeps.conflicts]
+  for (const [pkg, versions] of versionsByPackage) {
+    const resolution =
+      versions.length === 1
+        ? { version: versions[0].version, strategy: 'same' as const }
+        : resolveVersionConflict(versions)
+
+    // Runtime placement wins: if any registry treated this package as a
+    // runtime dep, the resolved entry lands in `dependencies`.
+    const targetField: DepField = versions.some(
+      (v) => v.field === 'dependencies'
+    )
+      ? 'dependencies'
+      : 'devDependencies'
+
+    if (targetField === 'dependencies') dependencies[pkg] = resolution.version
+    else devDependencies[pkg] = resolution.version
+
+    if (resolution.strategy !== 'same') {
+      conflicts.push({
+        package: pkg,
+        versions,
+        resolvedVersion: resolution.version,
+        strategy: resolution.strategy
+      })
+    }
   }
+
+  return { dependencies, devDependencies, conflicts }
 }
 
 /**
@@ -118,64 +148,35 @@ export function logConflicts(
 // ─── Internal ───────────────────────────────────────────────────────────────
 
 /**
- * Resolve a single dependency field (`dependencies` or `devDependencies`).
+ * Collect all declared versions of each package across both
+ * `dependencies` and `devDependencies` fields.
+ *
+ * Each entry remembers which field it came from so the caller can
+ * decide final placement (`dependencies` wins over `devDependencies`
+ * when a package appears in both).
  *
  * @param items - Registry items
- * @param field - Which dependency field to process
- * @returns Resolved versions, recorded conflicts, and warning messages
- */
-function resolveSet(
-  items: ResolvedRegistryItem[],
-  field: DepField
-): ResolvedSet {
-  const versionsByPackage = collectVersions(items, field)
-  const resolved: Record<string, string> = {}
-  const conflicts: VersionConflict[] = []
-
-  for (const [pkg, versions] of versionsByPackage) {
-    if (versions.length === 1) {
-      resolved[pkg] = versions[0].version
-      continue
-    }
-
-    const resolution = resolveVersionConflict(versions)
-    resolved[pkg] = resolution.version
-
-    if (resolution.strategy !== 'same') {
-      conflicts.push({
-        package: pkg,
-        versions,
-        resolvedVersion: resolution.version,
-        strategy: resolution.strategy
-      })
-    }
-  }
-
-  return { resolved, conflicts }
-}
-
-/**
- * Collect all declared versions of each package across the given items.
- *
- * @param items - Registry items
- * @param field - Which dependency field to read
  * @returns Map of package name → versions declared by each registry
  */
 function collectVersions(
-  items: ResolvedRegistryItem[],
-  field: DepField
-): Map<string, VersionEntry[]> {
-  const map = new Map<string, VersionEntry[]>()
+  items: ResolvedRegistryItem[]
+): Map<string, FieldedVersionEntry[]> {
+  const map = new Map<string, FieldedVersionEntry[]>()
+  const fields: DepField[] = ['dependencies', 'devDependencies']
+
   for (const item of items) {
-    for (const [pkg, version] of Object.entries(item[field] ?? {})) {
-      const entry: VersionEntry = {
-        version,
-        registry: item.identifier,
-        priority: item.priority
+    for (const field of fields) {
+      for (const [pkg, version] of Object.entries(item[field] ?? {})) {
+        const entry: FieldedVersionEntry = {
+          field,
+          version,
+          registry: item.identifier,
+          priority: item.priority
+        }
+        const existing = map.get(pkg)
+        if (existing) existing.push(entry)
+        else map.set(pkg, [entry])
       }
-      const existing = map.get(pkg)
-      if (existing) existing.push(entry)
-      else map.set(pkg, [entry])
     }
   }
   return map

@@ -115,7 +115,7 @@ Configurations in `languages.js` and `languages.ts` only take effect in their re
 }
 ```
 
-> If a `script` or `envVar` is language-specific, place it in the registry's top-level (common) configuration or split it out into a separate registry. Language blocks do not accept these fields.
+> If a `script` is language-specific, place it in the registry's top-level (common) configuration or split it out into a separate registry. Language blocks only accept `dependencies`, `devDependencies`, and `files`.
 
 #### `defaultLanguage`
 

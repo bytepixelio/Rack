@@ -144,7 +144,7 @@ Copy `.env.example` to `.env`:
 | `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)               |
 | `R2_SECRET_ACCESS_KEY` | —                        | R2 API secret access key (required when `STORAGE_BACKEND=r2`)           |
 
-Compression (gzip/deflate/br) and caching (ETag, Cache-Control 60s) are always enabled. Rate limiting is fixed at 1200 requests per client IP per minute.
+Compression (gzip/deflate/br) is always enabled. Cache-Control is set per route using `@rack/registry-core` cache tiers (`no-store` for errors/health, `max-age=60` for listings, `max-age=86400` for schemas/presets, `immutable` for versioned content). Rate limiting is fixed at 1200 requests per client IP per minute.
 
 ### Auth configuration (`auth.json`)
 

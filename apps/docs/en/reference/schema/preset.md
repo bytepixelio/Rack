@@ -103,17 +103,23 @@ aside: false
 
 - **Type**: `string[]`
 - **Required**: Yes
-- **Description**: List of registries; version can be specified
+- **Description**: List of registries; version and language variant can be specified
 
 **Format**:
 
-- Full format: `@namespace/name` or `@namespace/name@version` (for non-`@rack` namespaces)
-- Shorthand format: `name` or `name@version` (CLI will automatically resolve to `@rack/name`, recommended for `@rack` registries)
+- Full format: `@namespace/name[@version][:language]` (for non-`@rack` namespaces)
+- Shorthand format: `name[@version][:language]` (CLI will automatically resolve to `@rack/name`, recommended for `@rack` registries)
 
 **Version format** (follows semver):
 
 - Exact version: `runtimes/node@1.0.0` or `@rack/runtimes/node@1.0.0`
 - Without version: `runtimes/node` (uses latest version)
+
+**Language variant** (optional `:js` or `:ts` suffix):
+
+- Pin a single member to its JS variant: `frameworks/vue:js`
+- Combine with version: `frameworks/vue@1.0.0:ts`
+- Omit to inherit the project-wide `language` from `rack.json` (or `defaultLanguage` from the registry, falling back to `ts`)
 
 ```json
 {

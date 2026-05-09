@@ -12,11 +12,12 @@
  */
 
 import { createGunzip } from 'zlib'
-import { join, dirname } from 'path'
+import { lstat, readdir } from 'fs/promises'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
+import { join, dirname, relative, sep } from 'path'
 import { createHash, randomUUID } from 'crypto'
-import { deriveSegments } from '@rack/registry-core'
+import { validateFilePath, deriveSegments } from '@rack/registry-core'
 import { createReadStream, createWriteStream } from 'fs'
 import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
 import {
@@ -125,18 +126,33 @@ export class UploadService {
   /**
    * Extract a tar.gz archive to a temp directory.
    *
+   * The MIME allowlist accepts `application/x-tar` and
+   * `application/octet-stream` because clients label uploads
+   * inconsistently, so we may receive plain tar or arbitrary binary
+   * blobs that pass MIME but fail at gunzip / tar parsing. Those are
+   * user input errors, not server faults — convert them to a 400 with
+   * a clear code so monitoring does not register them as 5xx.
+   *
    * @param tarPath - Path to the tar.gz file
    * @returns Path to the extraction directory
+   * @throws {ValidationError} If the file is not a valid tar.gz archive
    */
   async extractTarGz(tarPath: string): Promise<string> {
     const extractDir = join(this.storageRoot, '.tmp', `extract-${randomUUID()}`)
     await this.storage.mkdirp(extractDir)
 
-    await pipeline(
-      createReadStream(tarPath),
-      createGunzip(),
-      tarExtract({ cwd: extractDir, strict: true })
-    )
+    try {
+      await pipeline(
+        createReadStream(tarPath),
+        createGunzip(),
+        tarExtract({ cwd: extractDir, strict: true })
+      )
+    } catch (error) {
+      throw new ValidationError(
+        'INVALID_ARCHIVE',
+        `Uploaded file is not a valid tar.gz archive: ${(error as Error).message}`
+      )
+    }
 
     this.logger.info({ extractDir }, 'Package extracted')
     return extractDir
@@ -244,6 +260,101 @@ export class UploadService {
   }
 
   /**
+   * Validate that every `files[].path` in the manifest is a legal path
+   * and points to an existing regular file in the extracted directory.
+   *
+   * @param extractedDir - Path to the extracted package
+   * @throws {ValidationError} If any path is invalid or missing
+   */
+  async validateFilePaths(extractedDir: string): Promise<void> {
+    const manifest = await this.readManifest(extractedDir)
+    const paths = collectManifestPaths(manifest)
+
+    for (const filePath of paths) {
+      const { normalized } = validateFilePath(filePath)
+      const fullPath = join(extractedDir, normalized)
+
+      if (!await this.storage.isFile(fullPath)) {
+        throw new ValidationError(
+          'FILE_NOT_FOUND',
+          `File referenced in registry.json is missing or not a regular file: ${filePath}`
+        )
+      }
+    }
+
+    this.logger.info({ count: paths.length }, 'File path validation passed')
+  }
+
+  /**
+   * Walk the extracted package tree and reject:
+   *
+   * 1. Any non-regular, non-directory entry (symlink, hardlink, FIFO,
+   *    socket, device file). Tar's `strict: true` blocks most exotic
+   *    entry types, but this is a defense-in-depth check on the
+   *    actual filesystem state after extraction.
+   * 2. Any regular file that is not declared in the manifest's
+   *    allowlist (`registry.json` + `files[].path` +
+   *    `languages.*.files[].path` + custom `mergeStrategy.script`).
+   *
+   * Without this check, `installToLocal` (`rename` of the whole dir)
+   * and `installToR2` (`walkDirectory` + upload) would propagate any
+   * stowaway file into final storage where it could be served via
+   * `/files/*` or have its symlink target leaked.
+   *
+   * @param extractedDir - Path to the extracted package
+   * @throws {ValidationError} On unsafe entries or undeclared files
+   */
+  async validateExtractedTree(extractedDir: string): Promise<void> {
+    const manifest = await this.readManifest(extractedDir)
+    const allowlist = buildAllowlist(manifest)
+
+    let fileCount = 0
+
+    const walk = async (dir: string): Promise<void> => {
+      const entries = await readdir(dir, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const abs = join(dir, entry.name)
+
+        // 1. Reject non-regular, non-directory entries via lstat (no follow).
+        //    Dirent.is* on some platforms reflects the resolved type, so
+        //    re-stat to be sure.
+        const stats = await lstat(abs)
+        if (!stats.isFile() && !stats.isDirectory()) {
+          throw new ValidationError(
+            'UNSAFE_FILE',
+            `Package contains an unsupported entry type at ${this.relPath(extractedDir, abs)} ` +
+              '(only regular files and directories are allowed)'
+          )
+        }
+
+        if (stats.isDirectory()) {
+          await walk(abs)
+          continue
+        }
+
+        // 2. Reject regular files not declared in manifest allowlist.
+        const rel = this.relPath(extractedDir, abs)
+        if (!allowlist.has(rel)) {
+          throw new ValidationError(
+            'UNDECLARED_FILE',
+            `Package contains a file not declared in registry.json: ${rel}`
+          )
+        }
+
+        fileCount++
+      }
+    }
+
+    await walk(extractedDir)
+
+    this.logger.info(
+      { count: fileCount, allowlistSize: allowlist.size },
+      'Extracted tree validation passed'
+    )
+  }
+
+  /**
    * Install a package to its final storage location.
    *
    * When R2 backend is configured, uploads files to R2.
@@ -273,7 +384,43 @@ export class UploadService {
       await this.installToLocal(extractedDir, namespace, version, segments)
     }
 
-    await this.regenerateVersions(namespace, name, version, segments)
+    // Roll back the install (delete the just-written version dir / R2
+    // prefix) if versions.json regeneration fails. Without this the
+    // client sees a 5xx but the version stays half-published — visible
+    // by direct URL but absent from versions/latest, and any retry hits
+    // VERSION_EXISTS.
+    try {
+      await this.regenerateVersions(namespace, name, version, segments)
+    } catch (error) {
+      await this.rollbackInstall(namespace, version, segments).catch(
+        (rollbackError) =>
+          this.logger.error(
+            { rollbackError, namespace, name, version, segments },
+            'Failed to roll back install after regenerateVersions failure'
+          )
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Remove a freshly-installed version directory (local) or key prefix
+   * (R2). Called by {@link install} on post-install failure.
+   */
+  private async rollbackInstall(
+    namespace: string,
+    version: string,
+    segments: string[]
+  ): Promise<void> {
+    if (this.r2) {
+      const keyPrefix = `${namespace}/${segments.join('/')}/${version}`
+      await this.r2.deletePrefix(keyPrefix)
+      this.logger.warn({ keyPrefix }, 'Rolled back R2 install')
+    } else {
+      const targetDir = join(this.storageRoot, namespace, ...segments, version)
+      await this.storage.remove(targetDir, { recursive: true, force: true })
+      this.logger.warn({ targetDir }, 'Rolled back local install')
+    }
   }
 
   /** Install to local filesystem via atomic rename. */
@@ -297,7 +444,15 @@ export class UploadService {
     this.logger.info({ targetDir }, 'Package installed to local')
   }
 
-  /** Install to R2 by uploading all extracted files. */
+  /**
+   * Install to R2 by uploading all extracted files.
+   *
+   * `uploadDirectory` writes `registry.json` last so the publish
+   * marker only appears after every other file is in place. If an
+   * intermediate `PutObject` fails, the partially-written prefix is
+   * deleted so a retry is not blocked by half-published objects (and
+   * `VERSION_EXISTS` keeps reflecting "complete install").
+   */
   private async installToR2(
     extractedDir: string,
     namespace: string,
@@ -313,7 +468,18 @@ export class UploadService {
       )
     }
 
-    await this.r2!.uploadDirectory(extractedDir, keyPrefix)
+    try {
+      await this.r2!.uploadDirectory(extractedDir, keyPrefix)
+    } catch (error) {
+      await this.r2!.deletePrefix(keyPrefix).catch((rollbackError) =>
+        this.logger.error(
+          { rollbackError, keyPrefix },
+          'Failed to clean up R2 after partial uploadDirectory'
+        )
+      )
+      throw error
+    }
+
     this.logger.info({ keyPrefix }, 'Package installed to R2')
   }
 
@@ -364,6 +530,17 @@ export class UploadService {
 
   // ─── Private ─────────────────────────────────────────────────────────────
 
+  /** Read and parse the extracted package's `registry.json`. */
+  private async readManifest(extractedDir: string): Promise<ManifestShape> {
+    const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
+    return JSON.parse(raw) as ManifestShape
+  }
+
+  /** POSIX-style relative path from `extractedDir` to `abs`. */
+  private relPath(extractedDir: string, abs: string): string {
+    return relative(extractedDir, abs).split(sep).join('/')
+  }
+
   /** Rebuild versions.json after a new version is installed. */
   private async regenerateVersions(
     namespace: string,
@@ -371,17 +548,10 @@ export class UploadService {
     version: string,
     segments: string[]
   ): Promise<void> {
-    try {
-      if (this.r2) {
-        await this.regenerateVersionsR2(namespace, name, version, segments)
-      } else {
-        await this.regenerateVersionsLocal(namespace, name, version, segments)
-      }
-    } catch (error) {
-      this.logger.warn(
-        { name, error, namespace },
-        'Failed to regenerate versions.json'
-      )
+    if (this.r2) {
+      await this.regenerateVersionsR2(namespace, name, version, segments)
+    } else {
+      await this.regenerateVersionsLocal(namespace, name, version, segments)
     }
   }
 
@@ -428,4 +598,68 @@ export class UploadService {
       'versions.json regenerated (R2)'
     )
   }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Minimal shape of `registry.json` needed for upload-time validation. */
+interface ManifestFile {
+  path?: string
+  mergeStrategy?: { type?: string; script?: string }
+}
+
+interface ManifestShape {
+  files?: ManifestFile[]
+  languages?: Record<string, { files?: ManifestFile[] }>
+}
+
+/**
+ * Collect every file path declared in the manifest:
+ *
+ * - `files[].path`
+ * - `languages.*.files[].path`
+ * - `files[].mergeStrategy.script` (when `type === 'custom'`)
+ * - `languages.*.files[].mergeStrategy.script` (when `type === 'custom'`)
+ */
+function collectManifestPaths(manifest: ManifestShape): string[] {
+  const paths: string[] = []
+
+  const collectFrom = (files: ManifestFile[] | undefined): void => {
+    if (!files) return
+    for (const f of files) {
+      if (f.path) paths.push(f.path)
+      if (f.mergeStrategy?.type === 'custom' && f.mergeStrategy.script) {
+        paths.push(f.mergeStrategy.script)
+      }
+    }
+  }
+
+  collectFrom(manifest.files)
+  if (manifest.languages) {
+    for (const lang of Object.values(manifest.languages)) {
+      collectFrom(lang.files)
+    }
+  }
+
+  return paths
+}
+
+/**
+ * Build the allowlist of POSIX-relative file paths that may appear in
+ * the extracted package. Always includes `registry.json`. Manifest paths
+ * are normalized via {@link validateFilePath} so an entry like `./a/b`
+ * matches a tree file at `a/b`.
+ */
+function buildAllowlist(manifest: ManifestShape): Set<string> {
+  const allow = new Set<string>(['registry.json'])
+  for (const p of collectManifestPaths(manifest)) {
+    try {
+      const { normalized } = validateFilePath(p)
+      allow.add(normalized)
+    } catch {
+      // Invalid path will fail in validateFilePaths with a descriptive error;
+      // skip here so this helper never throws mid-walk.
+    }
+  }
+  return allow
 }

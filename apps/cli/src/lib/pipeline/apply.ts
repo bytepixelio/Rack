@@ -13,7 +13,11 @@
 import path from 'node:path'
 import { merge } from './merge/index.js'
 import { registry } from '../registry/client.js'
-import { getErrorMessage, PathTraversalError } from '../utils/errors.js'
+import {
+  FileFetchError,
+  getErrorMessage,
+  PathTraversalError
+} from '../utils/errors.js'
 import {
   chmod,
   readFile,
@@ -114,12 +118,14 @@ async function applyBinary(
     logger.debug(`Fetching binary file: ${file.path}`)
     buffer = await registry.fetchBinaryFile(registryUrl, file.path!)
   } catch (error) {
-    logger.error(`Failed to fetch binary file: ${file.path}`, error)
-    return {
-      type: 'skipped',
-      path: file.target,
-      warnings: [`Failed to fetch binary file: ${getErrorMessage(error)}`]
-    }
+    // Manifest-declared files are required: aborting the pipeline keeps
+    // package.json / rack.json from recording a successful install when
+    // source files are actually missing on disk.
+    throw new FileFetchError(
+      `Failed to fetch binary file ${file.path}: ${getErrorMessage(error)}`,
+      file.path!,
+      file.target
+    )
   }
 
   await ensureDir(path.dirname(targetPath))
@@ -164,12 +170,13 @@ async function applyText(
       logger.debug(`Fetching file: ${file.path}`)
       incomingContent = await registry.fetchFile(registryUrl, file.path)
     } catch (error) {
-      logger.error(`Failed to fetch file: ${file.path}`, error)
-      return {
-        type: 'skipped',
-        path: file.target,
-        warnings: [`Failed to fetch file: ${getErrorMessage(error)}`]
-      }
+      // Required file: surface as a typed error so the caller can abort
+      // before writing rack.json / package.json.
+      throw new FileFetchError(
+        `Failed to fetch file ${file.path}: ${getErrorMessage(error)}`,
+        file.path,
+        file.target
+      )
     }
   } else {
     return {

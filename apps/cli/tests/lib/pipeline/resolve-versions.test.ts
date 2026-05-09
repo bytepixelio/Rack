@@ -165,3 +165,65 @@ describe('pipeline/resolve-versions logConflicts', () => {
     )
   })
 })
+
+describe('pipeline/resolve-versions cross-field conflicts', () => {
+  it('promotes a package to dependencies when one registry uses runtime', () => {
+    const items = [
+      createItem({
+        identifier: 'a',
+        priority: 1,
+        dependencies: { typescript: '^5.0.0' }
+      }),
+      createItem({
+        identifier: 'b',
+        priority: 2,
+        devDependencies: { typescript: '^5.0.0' }
+      })
+    ]
+
+    const res = resolveDependencies(items)
+
+    expect(res.dependencies).toEqual({ typescript: '^5.0.0' })
+    expect(res.devDependencies).toEqual({})
+  })
+
+  it('keeps a package in devDependencies when no registry treats it as runtime', () => {
+    const items = [
+      createItem({
+        identifier: 'a',
+        devDependencies: { vitest: '^1.0.0' }
+      }),
+      createItem({
+        identifier: 'b',
+        devDependencies: { vitest: '^1.5.0' }
+      })
+    ]
+
+    const res = resolveDependencies(items)
+
+    expect(res.dependencies).toEqual({})
+    expect(res.devDependencies).toEqual({ vitest: '^1.5.0' })
+  })
+
+  it('resolves cross-field version conflicts together with one entry', () => {
+    const items = [
+      createItem({
+        identifier: 'a',
+        priority: 1,
+        dependencies: { typescript: '^5.0.0' }
+      }),
+      createItem({
+        identifier: 'b',
+        priority: 2,
+        devDependencies: { typescript: '^4.9.0' }
+      })
+    ]
+
+    const res = resolveDependencies(items)
+
+    expect(res.dependencies.typescript).toBe('^5.0.0')
+    expect(res.devDependencies.typescript).toBeUndefined()
+    expect(res.conflicts).toHaveLength(1)
+    expect(res.conflicts[0].package).toBe('typescript')
+  })
+})

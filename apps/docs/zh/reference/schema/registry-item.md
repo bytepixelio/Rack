@@ -43,9 +43,6 @@ aside: false
     "dev": "vite",
     "build": "vite build"
   },
-  "envVars": {
-    "VITE_APP_TITLE": "My React App"
-  },
   "languages": {
     "js": {
       "files": [
@@ -273,11 +270,11 @@ aside: false
 
 - **类型**: `string[]`
 - **必填**: 否
-- **说明**: 冲突的 Registry, 不能同时安装
+- **说明**: 冲突的 Registry, 不能同时安装。每项遵循与 `preset.registries` 相同的 `@namespace/name[@version][:language]` 形式 —— schema 允许版本与语言后缀，但冲突比对走 canonical（namespace + path），因此后缀只起文档作用，不会进一步收窄匹配。
 
 ```json
 {
-  "conflicts": ["frameworks/vue"]
+  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
 }
 ```
 
@@ -285,7 +282,7 @@ aside: false
 
 - **类型**: `string[]`
 - **必填**: 否
-- **说明**: 自动安装的其他 Registry
+- **说明**: 自动安装的其他 Registry。不支持版本锁定 (`@version` 后缀), 依赖始终解析为最新版本。
 
 ```json
 {
@@ -352,20 +349,22 @@ aside: false
 | ------------- | ------- | ---- | ------------------------------- |
 | target        | string  | 是   | 目标文件路径                    |
 | type          | string  | 是   | `FileObject` 类型               |
-| content       | string  | 否   | 内联文件内容, 与 path 二选一    |
-| path          | string  | 否   | 外部文件路径, 与 content 二选一 |
+| content       | string  | 否   | 内联文件内容。非 asset 文件同时有 content 和 path 时优先使用 content |
+| path          | string  | 否   | 服务端模板文件路径。`registry:asset` 同时有 path 和 content 时优先使用 path |
 | executable    | boolean | 否   | 是否需要可执行权限              |
 | mergeStrategy | object  | 否   | 合并策略配置                    |
+
+**`path` 格式要求**: 相对 POSIX 路径, 可选 `./` 前缀。每个路径段只允许 `A-Z a-z 0-9 . _ @ + -`。**不允许**使用: 百分号编码 (`%`)、查询符 (`?`)、片段符 (`#`)、反斜杠 (`\`)、绝对路径、空段, 以及 `.`/`..` 段。引用的文件必须存在于上传的包中, 且必须是普通文件 (不能是目录或符号链接)。
 
 `registry:asset` 类型建议使用 `path`。当使用 `path` 时, CLI 按二进制方式写入目标文件, 并采用覆盖行为。
 
 **`mergeStrategy` 配置**
 
-| 字段     | 类型   | 必填 | 说明                                    |
-| -------- | ------ | ---- | --------------------------------------- |
-| type     | string | 是   | 策略类型：`builtin` 或 `custom`          |
-| strategy | string | 否   | 内置策略名称（仅在 `type: "builtin"` 时使用）：`json`、`ignore`、`env`、`overwrite` |
-| script   | string | 否   | 插件脚本路径（仅在 `type: "custom"` 时使用） |
+| 字段     | 类型   | 必填                         | 说明                                    |
+| -------- | ------ | ---------------------------- | --------------------------------------- |
+| type     | string | 是                           | 策略类型：`builtin` 或 `custom`          |
+| strategy | string | `type` 为 `"builtin"` 时必填 | 内置策略名称：`json`、`ignore`、`env`、`overwrite`。`type` 为 `"custom"` 时不允许出现 |
+| script   | string | `type` 为 `"custom"` 时必填  | 插件脚本路径。`type` 为 `"builtin"` 时不允许出现 |
 
 **示例**：
 
@@ -436,26 +435,11 @@ aside: false
 }
 ```
 
-### `envVars`
-
-- **类型**: `Record<string, string>`
-- **必填**: 否
-- **说明**: 环境变量配置
-
-```json
-{
-  "envVars": {
-    "VITE_APP_TITLE": "My React App",
-    "NODE_ENV": "development"
-  }
-}
-```
-
 ### `languages`
 
-- **类型**: `object`
+- **类型**: `object`（key 只允许 `"js"` 或 `"ts"`）
 - **必填**: 否
-- **说明**: 语言特定配置
+- **说明**: 语言特定配置。当前仅支持 JavaScript (`js`) 和 TypeScript (`ts`) 两种语言变体
 
 ```json
 {
@@ -496,7 +480,7 @@ aside: false
 - `devDependencies` - 语言特定的开发依赖
 - `files` - 语言特定的文件
 
-> `scripts`、`envVars`、`registryDependencies` 等字段必须放在 Registry 顶层 (通用) 配置中, 不能放进 `languages.X`。
+> `scripts`、`registryDependencies` 等字段必须放在 Registry 顶层 (通用) 配置中, 不能放进 `languages.X`。
 
 **设计原则**
 
@@ -505,7 +489,7 @@ aside: false
 
 ### `defaultLanguage`
 
-- **类型**: `string`（匹配 `^[a-z0-9-]+$`, 通常为 `"js"` 或 `"ts"`）
+- **类型**: `string`（只允许 `"js"` 或 `"ts"`）
 - **必填**: 否 (有 `languages` 时推荐)
 - **说明**: 默认语言, 决定没有显式指定语言时使用的变体。CLI 在解析时优先级为: 命令行 `:language` 后缀 > `rack.json` 中的 `language` > `defaultLanguage` > `"ts"`
 

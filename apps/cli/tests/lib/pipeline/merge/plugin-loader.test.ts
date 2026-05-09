@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../../helpers/tmp.js'
 
@@ -73,6 +73,19 @@ describe('merge/plugin-loader', () => {
     await expect(
       executePlugin(
         { type: 'custom', script: '../../../../../etc/passwd' },
+        registryUrl,
+        { filePath: 'x', currentContent: null, incomingContent: 'a' },
+        {}
+      )
+    ).rejects.toThrow(/path traversal|Plugin execution failed/)
+  })
+
+  it('rejects sibling-prefix paths that share a common prefix with root', async () => {
+    const sibling = `../${basename(tmp)}-evil/merge.mjs`
+    const registryUrl = `file://${join(tmp, 'registry.json')}`
+    await expect(
+      executePlugin(
+        { type: 'custom', script: sibling },
         registryUrl,
         { filePath: 'x', currentContent: null, incomingContent: 'a' },
         {}
