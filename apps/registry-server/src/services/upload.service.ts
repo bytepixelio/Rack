@@ -12,9 +12,10 @@
  */
 
 import { createGunzip } from 'zlib'
-import { join, dirname } from 'path'
+import { lstat, readdir } from 'fs/promises'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
+import { join, dirname, relative, sep } from 'path'
 import { createHash, randomUUID } from 'crypto'
 import { validateFilePath, deriveSegments } from '@rack/registry-core'
 import { createReadStream, createWriteStream } from 'fs'
@@ -251,33 +252,9 @@ export class UploadService {
    * @throws {ValidationError} If any path is invalid or missing
    */
   async validateFilePaths(extractedDir: string): Promise<void> {
-    const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
-    const manifest = JSON.parse(raw) as {
-      files?: { path?: string }[]
-      languages?: Record<string, { files?: { path?: string }[] }>
-    }
+    const manifest = await this.readManifest(extractedDir)
+    const paths = collectManifestPaths(manifest)
 
-    const paths: string[] = []
-
-    // 1. Collect top-level files
-    if (manifest.files) {
-      for (const f of manifest.files) {
-        if (f.path) paths.push(f.path)
-      }
-    }
-
-    // 2. Collect language variant files
-    if (manifest.languages) {
-      for (const lang of Object.values(manifest.languages)) {
-        if (lang.files) {
-          for (const f of lang.files) {
-            if (f.path) paths.push(f.path)
-          }
-        }
-      }
-    }
-
-    // 3. Validate each path and check it is a regular file
     for (const filePath of paths) {
       const { normalized } = validateFilePath(filePath)
       const fullPath = join(extractedDir, normalized)
@@ -291,6 +268,75 @@ export class UploadService {
     }
 
     this.logger.info({ count: paths.length }, 'File path validation passed')
+  }
+
+  /**
+   * Walk the extracted package tree and reject:
+   *
+   * 1. Any non-regular, non-directory entry (symlink, hardlink, FIFO,
+   *    socket, device file). Tar's `strict: true` blocks most exotic
+   *    entry types, but this is a defense-in-depth check on the
+   *    actual filesystem state after extraction.
+   * 2. Any regular file that is not declared in the manifest's
+   *    allowlist (`registry.json` + `files[].path` +
+   *    `languages.*.files[].path` + custom `mergeStrategy.script`).
+   *
+   * Without this check, `installToLocal` (`rename` of the whole dir)
+   * and `installToR2` (`walkDirectory` + upload) would propagate any
+   * stowaway file into final storage where it could be served via
+   * `/files/*` or have its symlink target leaked.
+   *
+   * @param extractedDir - Path to the extracted package
+   * @throws {ValidationError} On unsafe entries or undeclared files
+   */
+  async validateExtractedTree(extractedDir: string): Promise<void> {
+    const manifest = await this.readManifest(extractedDir)
+    const allowlist = buildAllowlist(manifest)
+
+    let fileCount = 0
+
+    const walk = async (dir: string): Promise<void> => {
+      const entries = await readdir(dir, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const abs = join(dir, entry.name)
+
+        // 1. Reject non-regular, non-directory entries via lstat (no follow).
+        //    Dirent.is* on some platforms reflects the resolved type, so
+        //    re-stat to be sure.
+        const stats = await lstat(abs)
+        if (!stats.isFile() && !stats.isDirectory()) {
+          throw new ValidationError(
+            'UNSAFE_FILE',
+            `Package contains an unsupported entry type at ${this.relPath(extractedDir, abs)} ` +
+              '(only regular files and directories are allowed)'
+          )
+        }
+
+        if (stats.isDirectory()) {
+          await walk(abs)
+          continue
+        }
+
+        // 2. Reject regular files not declared in manifest allowlist.
+        const rel = this.relPath(extractedDir, abs)
+        if (!allowlist.has(rel)) {
+          throw new ValidationError(
+            'UNDECLARED_FILE',
+            `Package contains a file not declared in registry.json: ${rel}`
+          )
+        }
+
+        fileCount++
+      }
+    }
+
+    await walk(extractedDir)
+
+    this.logger.info(
+      { count: fileCount, allowlistSize: allowlist.size },
+      'Extracted tree validation passed'
+    )
   }
 
   /**
@@ -414,6 +460,17 @@ export class UploadService {
 
   // ─── Private ─────────────────────────────────────────────────────────────
 
+  /** Read and parse the extracted package's `registry.json`. */
+  private async readManifest(extractedDir: string): Promise<ManifestShape> {
+    const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
+    return JSON.parse(raw) as ManifestShape
+  }
+
+  /** POSIX-style relative path from `extractedDir` to `abs`. */
+  private relPath(extractedDir: string, abs: string): string {
+    return relative(extractedDir, abs).split(sep).join('/')
+  }
+
   /** Rebuild versions.json after a new version is installed. */
   private async regenerateVersions(
     namespace: string,
@@ -471,4 +528,68 @@ export class UploadService {
       'versions.json regenerated (R2)'
     )
   }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Minimal shape of `registry.json` needed for upload-time validation. */
+interface ManifestFile {
+  path?: string
+  mergeStrategy?: { type?: string; script?: string }
+}
+
+interface ManifestShape {
+  files?: ManifestFile[]
+  languages?: Record<string, { files?: ManifestFile[] }>
+}
+
+/**
+ * Collect every file path declared in the manifest:
+ *
+ * - `files[].path`
+ * - `languages.*.files[].path`
+ * - `files[].mergeStrategy.script` (when `type === 'custom'`)
+ * - `languages.*.files[].mergeStrategy.script` (when `type === 'custom'`)
+ */
+function collectManifestPaths(manifest: ManifestShape): string[] {
+  const paths: string[] = []
+
+  const collectFrom = (files: ManifestFile[] | undefined): void => {
+    if (!files) return
+    for (const f of files) {
+      if (f.path) paths.push(f.path)
+      if (f.mergeStrategy?.type === 'custom' && f.mergeStrategy.script) {
+        paths.push(f.mergeStrategy.script)
+      }
+    }
+  }
+
+  collectFrom(manifest.files)
+  if (manifest.languages) {
+    for (const lang of Object.values(manifest.languages)) {
+      collectFrom(lang.files)
+    }
+  }
+
+  return paths
+}
+
+/**
+ * Build the allowlist of POSIX-relative file paths that may appear in
+ * the extracted package. Always includes `registry.json`. Manifest paths
+ * are normalized via {@link validateFilePath} so an entry like `./a/b`
+ * matches a tree file at `a/b`.
+ */
+function buildAllowlist(manifest: ManifestShape): Set<string> {
+  const allow = new Set<string>(['registry.json'])
+  for (const p of collectManifestPaths(manifest)) {
+    try {
+      const { normalized } = validateFilePath(p)
+      allow.add(normalized)
+    } catch {
+      // Invalid path will fail in validateFilePaths with a descriptive error;
+      // skip here so this helper never throws mid-walk.
+    }
+  }
+  return allow
 }
