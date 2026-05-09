@@ -102,7 +102,8 @@ tar -tzf my-tool-1.0.0.tar.gz
 
 ::: warning 包结构要求
 - `registry.json` 必须在压缩包的第一层目录中
-- 所有 `files[].path` 引用的文件必须包含在包中
+- 所有 `files[].path` 引用必须指向包内的普通文件 (不能是目录或符号链接)
+- `files[].path` 必须是相对 POSIX 路径, 每段只允许 `A-Z a-z 0-9 . _ @ + -`; 不允许百分号编码、`?`、`#` 和反斜杠
 - 推荐使用 `<name>-<version>.tar.gz` 命名格式
 :::
 
