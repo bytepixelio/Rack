@@ -350,9 +350,11 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 | target         | string  | Yes      | Target file path                             |
 | type           | string  | Yes      | `FileObject` type                            |
 | content        | string  | No       | Inline file content, mutually exclusive with path |
-| path           | string  | No       | External file path, mutually exclusive with content |
+| path           | string  | No       | Template file path on the server, mutually exclusive with content |
 | executable     | boolean | No       | Whether executable permission is needed      |
 | mergeStrategy  | object  | No       | Merge strategy configuration                 |
+
+**`path` format requirements**: relative POSIX path with an optional `./` prefix. Each segment must contain only `A-Z a-z 0-9 . _ @ + -`. The following are **not** allowed: percent-encoding (`%`), query (`?`), fragment (`#`), backslash (`\`), absolute paths, empty segments, or `.`/`..` segments. The referenced file must exist in the uploaded package and must be a regular file (not a directory or symlink).
 
 For `registry:asset`, prefer using `path`. When `path` is used, the CLI writes the target file in binary mode and applies overwrite behavior.
 

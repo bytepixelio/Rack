@@ -102,7 +102,8 @@ tar -tzf my-tool-1.0.0.tar.gz
 
 ::: warning Package Structure Requirements
 - `registry.json` must be in the first-level directory of the archive
-- All files referenced in `files[].path` must be included in the package
+- All `files[].path` references must point to regular files included in the package (not directories or symlinks)
+- `files[].path` values must be relative POSIX paths using only `A-Z a-z 0-9 . _ @ + -` per segment; percent-encoding, `?`, `#`, and backslash are not allowed
 - Recommended naming format: `<name>-<version>.tar.gz`
 :::
 
