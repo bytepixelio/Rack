@@ -9,6 +9,7 @@ import { join } from 'path'
 import Ajv from 'ajv/dist/2020.js'
 import addFormats from 'ajv-formats'
 import { readFile } from 'fs/promises'
+import { ValidationError } from '../lib/errors.js'
 
 import type { ValidateFunction } from 'ajv'
 
@@ -33,10 +34,16 @@ export class SchemaValidatorService {
   /**
    * Validate data against the registry-item schema.
    *
-   * Lazily loads and caches the validator on first call.
+   * Lazily loads and caches the validator on first call. Schema
+   * mismatches are user input errors (a bad `registry.json` in the
+   * uploaded package), so they surface as `ValidationError` (400) —
+   * not the generic `Error` that would default to 500 in the global
+   * error handler. Schema-loading failures are still 500 because they
+   * indicate a misconfigured server.
    *
    * @param data - Parsed JSON object to validate
-   * @throws {Error} When the data does not conform to the schema
+   * @throws {ValidationError} On schema mismatch (400)
+   * @throws {Error} On schema-loading or compilation failure (500)
    *
    * @example
    * await validator.validate({ name: '@rack/node', version: '1.0.0', ... })
@@ -45,7 +52,10 @@ export class SchemaValidatorService {
     const fn = await this.getValidator()
 
     if (!fn(data)) {
-      throw new Error(`Schema validation failed: ${JSON.stringify(fn.errors)}`)
+      throw new ValidationError(
+        'SCHEMA_VALIDATION_FAILED',
+        `Schema validation failed: ${JSON.stringify(fn.errors)}`
+      )
     }
   }
 
