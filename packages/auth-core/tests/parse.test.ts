@@ -41,9 +41,25 @@ describe('parseAuthConfig', () => {
     )
   })
 
-  it('drops tokens with invalid date strings (no expiration)', () => {
+  it('throws on invalid expiresAt date strings rather than silently dropping them', () => {
+    expect(() =>
+      parseAuthConfig({
+        '@priv': [{ token: 'abc', publish: true, expiresAt: 'not-a-date' }]
+      })
+    ).toThrow(/invalid expiresAt/)
+  })
+
+  it('throws when expiresAt is not a string', () => {
+    expect(() =>
+      parseAuthConfig({
+        '@priv': [{ token: 'abc', publish: true, expiresAt: 12345 }]
+      })
+    ).toThrow(/must be an ISO-8601 date string/)
+  })
+
+  it('treats an empty expiresAt string as never-expires', () => {
     const config = parseAuthConfig({
-      '@priv': [{ token: 'abc', publish: true, expiresAt: 'not-a-date' }]
+      '@priv': [{ token: 'abc', publish: true, expiresAt: '' }]
     })
     expect(config.tokens.get('@priv')?.get('abc')?.expiresAt).toBeUndefined()
   })
