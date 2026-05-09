@@ -429,7 +429,15 @@ export class UploadService {
     this.logger.info({ targetDir }, 'Package installed to local')
   }
 
-  /** Install to R2 by uploading all extracted files. */
+  /**
+   * Install to R2 by uploading all extracted files.
+   *
+   * `uploadDirectory` writes `registry.json` last so the publish
+   * marker only appears after every other file is in place. If an
+   * intermediate `PutObject` fails, the partially-written prefix is
+   * deleted so a retry is not blocked by half-published objects (and
+   * `VERSION_EXISTS` keeps reflecting "complete install").
+   */
   private async installToR2(
     extractedDir: string,
     namespace: string,
@@ -445,7 +453,18 @@ export class UploadService {
       )
     }
 
-    await this.r2!.uploadDirectory(extractedDir, keyPrefix)
+    try {
+      await this.r2!.uploadDirectory(extractedDir, keyPrefix)
+    } catch (error) {
+      await this.r2!.deletePrefix(keyPrefix).catch((rollbackError) =>
+        this.logger.error(
+          { rollbackError, keyPrefix },
+          'Failed to clean up R2 after partial uploadDirectory'
+        )
+      )
+      throw error
+    }
+
     this.logger.info({ keyPrefix }, 'Package installed to R2')
   }
 

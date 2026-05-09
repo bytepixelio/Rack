@@ -60,8 +60,14 @@ export class R2UploadBackend {
   /**
    * Upload all files from a local directory to R2.
    *
-   * Recursively walks the directory and uploads each file
-   * with its relative path as the R2 key prefix.
+   * Order is **template files first, `registry.json` last**, so the
+   * presence of `registry.json` at the destination prefix can be used
+   * as a publish marker by callers (`exists("<prefix>/registry.json")`
+   * implies a complete install). If any earlier upload fails, the
+   * caller is expected to invoke {@link deletePrefix} to roll back —
+   * `registry.json` will not have been written, so the version stays
+   * invisible to readers and a retry will not collide with
+   * `VERSION_EXISTS`.
    *
    * @param localDir - Local directory containing extracted files
    * @param keyPrefix - R2 key prefix (e.g. `@rack/node/1.0.0`)
@@ -69,22 +75,41 @@ export class R2UploadBackend {
   async uploadDirectory(localDir: string, keyPrefix: string): Promise<void> {
     const files = await this.walkDirectory(localDir)
 
-    for (const filePath of files) {
-      const relativePath = filePath.slice(localDir.length + 1)
-      const key = `${keyPrefix}/${relativePath}`
-      const body = await readFile(filePath)
+    const manifestPath = files.find(
+      (p) => p.slice(localDir.length + 1) === 'registry.json'
+    )
+    const others = manifestPath
+      ? files.filter((p) => p !== manifestPath)
+      : files
 
-      await this.client.send(
-        new PutObjectCommand({ Bucket: this.bucketName, Key: key, Body: body })
-      )
-
-      this.logger.debug({ key }, 'Uploaded file to R2')
+    for (const filePath of others) {
+      await this.putLocalFile(filePath, localDir, keyPrefix)
+    }
+    if (manifestPath) {
+      await this.putLocalFile(manifestPath, localDir, keyPrefix)
     }
 
     this.logger.info(
       { keyPrefix, fileCount: files.length },
       'Directory uploaded to R2'
     )
+  }
+
+  /** Upload a single local file, preserving its relative path under `keyPrefix`. */
+  private async putLocalFile(
+    filePath: string,
+    localDir: string,
+    keyPrefix: string
+  ): Promise<void> {
+    const relativePath = filePath.slice(localDir.length + 1)
+    const key = `${keyPrefix}/${relativePath}`
+    const body = await readFile(filePath)
+
+    await this.client.send(
+      new PutObjectCommand({ Bucket: this.bucketName, Key: key, Body: body })
+    )
+
+    this.logger.debug({ key }, 'Uploaded file to R2')
   }
 
   /**

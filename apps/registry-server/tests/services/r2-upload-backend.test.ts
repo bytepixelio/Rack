@@ -129,6 +129,25 @@ describe('R2UploadBackend', () => {
     )
   })
 
+  it('should upload registry.json last so it acts as a publish marker', async () => {
+    mockSend.mockResolvedValue({})
+
+    const dir = join(tempDir, 'package-order')
+    await mkdir(join(dir, 'templates'), { recursive: true })
+    await writeFile(join(dir, 'registry.json'), '{}')
+    await writeFile(join(dir, 'templates', 'a.ts'), 'export {}')
+    await writeFile(join(dir, 'templates', 'b.ts'), 'export {}')
+
+    await backend.uploadDirectory(dir, '@rack/node/1.0.0')
+
+    const keys = mockSend.mock.calls.map(
+      ([cmd]: [{ Key: string }]) => cmd.Key
+    )
+    // registry.json must be the final PutObject so partial failures
+    // never leave the publish marker present without its files.
+    expect(keys[keys.length - 1]).toBe('@rack/node/1.0.0/registry.json')
+  })
+
   // ─── writeFile ────────────────────────────────────────────────────────────
 
   it('should write content to R2', async () => {

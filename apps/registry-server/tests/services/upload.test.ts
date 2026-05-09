@@ -746,6 +746,22 @@ describe('UploadService', () => {
     ).rejects.toThrow('@rack/quality/husky@1.0.0 already exists')
   })
 
+  it('should clean up R2 prefix when uploadDirectory fails partway', async () => {
+    const r2 = createMockR2()
+    vi.mocked(r2.uploadDirectory).mockRejectedValue(new Error('put failed'))
+    const upload = createUpload({ r2 })
+
+    const extractDir = join(tempDir, 'extract-r2-fail')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    await expect(
+      upload.install(extractDir, '@rack', 'node', '5.0.0', ['node'])
+    ).rejects.toThrow('put failed')
+
+    expect(r2.deletePrefix).toHaveBeenCalledWith('@rack/node/5.0.0')
+  })
+
   it('should regenerate versions.json from R2', async () => {
     const r2 = createMockR2()
     vi.mocked(r2.findVersions).mockResolvedValue(['1.0.0', '0.9.0'])
