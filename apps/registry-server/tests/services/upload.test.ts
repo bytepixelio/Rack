@@ -367,6 +367,72 @@ describe('UploadService', () => {
     )
   })
 
+  // ─── validateFilePaths ────────────────────────────────────────────────────
+
+  it('should reject when a manifest file is missing on disk', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'missing-file')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        files: [
+          { path: 'src/missing.ts', target: 'src/missing.ts', type: 'registry:lib' }
+        ]
+      })
+    )
+
+    await expect(upload.validateFilePaths(dir)).rejects.toThrow(
+      /File referenced in registry.json is missing/
+    )
+  })
+
+  it('should reject when a custom merge script path is missing on disk', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'missing-script')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        files: [
+          {
+            path: 'src/a.ts',
+            target: 'src/a.ts',
+            type: 'registry:lib',
+            mergeStrategy: { type: 'custom', script: 'plugins/missing.js' }
+          }
+        ]
+      })
+    )
+
+    await expect(upload.validateFilePaths(dir)).rejects.toThrow(
+      /missing or not a regular file: plugins\/missing\.js/
+    )
+  })
+
+  it('should reject a traversal-style merge script path', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'evil-script')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        files: [
+          {
+            path: 'src/a.ts',
+            target: 'src/a.ts',
+            type: 'registry:lib',
+            mergeStrategy: { type: 'custom', script: '../evil.js' }
+          }
+        ]
+      })
+    )
+
+    await expect(upload.validateFilePaths(dir)).rejects.toThrow()
+  })
+
   // ─── validateExtractedTree ────────────────────────────────────────────────
 
   it('should accept a tree containing only declared files', async () => {

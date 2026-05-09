@@ -71,7 +71,8 @@
             "script": {
               "type": "string",
               "minLength": 1,
-              "description": "Plugin script path"
+              "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+              "description": "Plugin script path on the registry server. Same path-safety rules as files[].path: relative POSIX path with optional ./ prefix, no .. segments, no percent-encoding, no backslashes, no query/fragment."
             }
           },
           "required": ["type", "script"]
