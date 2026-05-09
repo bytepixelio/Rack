@@ -154,7 +154,17 @@ async function read(targetDir: string): Promise<RackJsonConfig> {
     }
     for (const item of obj.items) {
       try {
-        parseNamespace(item as string)
+        const parsed = parseNamespace(item as string)
+        const canonical = `${parsed.namespace}/${parsed.path}`
+        const inputBase = (item as string)
+          .replace(/:(js|ts)$/, '')
+          .replace(/@[^/]+$/, '')
+        const inputCanonical = inputBase.startsWith('@')
+          ? inputBase
+          : `@rack/${inputBase}`
+        if (inputCanonical !== canonical) {
+          throw new Error('not canonical')
+        }
       } catch {
         throw new RackJsonError(
           `rack.json field "items" contains invalid identifier: ${item}`,
