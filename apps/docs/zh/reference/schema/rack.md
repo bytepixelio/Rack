@@ -85,8 +85,9 @@ aside: false
 
 **格式**:
 
-- 完整格式: `@namespace/name` 或 `@namespace/name@version`（用于非 `@rack` 命名空间）
-- 简写格式: `name` 或 `name@version`（CLI 会自动解析为 `@rack/name`，推荐用于 `@rack` 注册表）
+- 完整格式: `@namespace/name`、`@namespace/name@version` 或 `@namespace/name:language`（用于非 `@rack` 命名空间）
+- 简写格式: `name`、`name@version` 或 `name:language`（CLI 会自动解析为 `@rack/name`，推荐用于 `@rack` 注册表）
+- 语言后缀（`:js` 或 `:ts`）为可选, 用于指定语言变体
 
 **版本号格式** (遵循 semver):
 

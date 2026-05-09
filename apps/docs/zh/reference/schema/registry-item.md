@@ -360,11 +360,11 @@ aside: false
 
 **`mergeStrategy` 配置**
 
-| 字段     | 类型   | 必填 | 说明                                    |
-| -------- | ------ | ---- | --------------------------------------- |
-| type     | string | 是   | 策略类型：`builtin` 或 `custom`          |
-| strategy | string | 否   | 内置策略名称（仅在 `type: "builtin"` 时使用）：`json`、`ignore`、`env`、`overwrite` |
-| script   | string | 否   | 插件脚本路径（仅在 `type: "custom"` 时使用） |
+| 字段     | 类型   | 必填                         | 说明                                    |
+| -------- | ------ | ---------------------------- | --------------------------------------- |
+| type     | string | 是                           | 策略类型：`builtin` 或 `custom`          |
+| strategy | string | `type` 为 `"builtin"` 时必填 | 内置策略名称：`json`、`ignore`、`env`、`overwrite`。`type` 为 `"custom"` 时不允许出现 |
+| script   | string | `type` 为 `"custom"` 时必填  | 插件脚本路径。`type` 为 `"builtin"` 时不允许出现 |
 
 **示例**：
 
