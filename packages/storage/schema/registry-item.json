@@ -211,7 +211,7 @@
     },
     "languages": {
       "type": "object",
-      "propertyNames": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "propertyNames": { "type": "string", "enum": ["js", "ts"] },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -228,7 +228,7 @@
     },
     "defaultLanguage": {
       "type": "string",
-      "pattern": "^[a-z0-9-]+$",
+      "enum": ["js", "ts"],
       "description": "Language key from `languages` to use when none is specified"
     }
   },

@@ -32,8 +32,8 @@
     },
     "language": {
       "type": "string",
-      "minLength": 1,
-      "description": "Active language variant for installed registries (e.g. js, ts)"
+      "enum": ["js", "ts"],
+      "description": "Active language variant for installed registries (js or ts)"
     },
     "template": {
       "type": "string",

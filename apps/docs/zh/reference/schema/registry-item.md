@@ -437,9 +437,9 @@ aside: false
 
 ### `languages`
 
-- **类型**: `object`
+- **类型**: `object`（key 只允许 `"js"` 或 `"ts"`）
 - **必填**: 否
-- **说明**: 语言特定配置
+- **说明**: 语言特定配置。当前仅支持 JavaScript (`js`) 和 TypeScript (`ts`) 两种语言变体
 
 ```json
 {
@@ -489,7 +489,7 @@ aside: false
 
 ### `defaultLanguage`
 
-- **类型**: `string`（匹配 `^[a-z0-9-]+$`, 通常为 `"js"` 或 `"ts"`）
+- **类型**: `string`（只允许 `"js"` 或 `"ts"`）
 - **必填**: 否 (有 `languages` 时推荐)
 - **说明**: 默认语言, 决定没有显式指定语言时使用的变体。CLI 在解析时优先级为: 命令行 `:language` 后缀 > `rack.json` 中的 `language` > `defaultLanguage` > `"ts"`
 

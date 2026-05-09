@@ -437,9 +437,9 @@ Using custom plugin:
 
 ### `languages`
 
-- **Type**: `object`
+- **Type**: `object` (keys must be `"js"` or `"ts"`)
 - **Required**: No
-- **Description**: Language-specific configuration
+- **Description**: Language-specific configuration. Only JavaScript (`js`) and TypeScript (`ts`) variants are currently supported
 
 ```json
 {
@@ -489,7 +489,7 @@ Using custom plugin:
 
 ### `defaultLanguage`
 
-- **Type**: `string` (matches `^[a-z0-9-]+$`, typically `"js"` or `"ts"`)
+- **Type**: `string` (must be `"js"` or `"ts"`)
 - **Required**: No (recommended when `languages` is present)
 - **Description**: Default language used when none is explicitly specified. The CLI resolves the variant in the order: `:language` suffix on the command line > `language` field in `rack.json` > `defaultLanguage` > `"ts"`.
 
