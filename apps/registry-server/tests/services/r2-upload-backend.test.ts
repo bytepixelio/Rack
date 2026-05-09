@@ -233,6 +233,27 @@ describe('R2UploadBackend', () => {
     )
   })
 
+  it('should follow ListObjectsV2 pagination when finding versions', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        IsTruncated: true,
+        NextContinuationToken: 'page-2',
+        CommonPrefixes: [{ Prefix: '@rack/node/1.0.0/' }]
+      })
+      .mockResolvedValueOnce({
+        IsTruncated: false,
+        CommonPrefixes: [{ Prefix: '@rack/node/2.0.0/' }]
+      })
+
+    const versions = await backend.findVersions('@rack/node')
+
+    expect(versions).toEqual(['1.0.0', '2.0.0'])
+    expect(mockSend).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ ContinuationToken: 'page-2' })
+    )
+  })
+
   // ─── deletePrefix ────────────────────────────────────────────────────────
 
   it('should delete every object under a prefix', async () => {

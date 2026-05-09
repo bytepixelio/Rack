@@ -138,7 +138,11 @@ export class R2UploadBackend {
   /**
    * Find all SemVer version prefixes for a registry in R2.
    *
-   * Uses ListObjectsV2 with delimiter to simulate directory listing.
+   * Uses ListObjectsV2 with delimiter to simulate directory listing,
+   * paginating until every page has been collected — without this loop
+   * a registry with more versions than fit in a single ListObjectsV2
+   * response (the default cap is 1000) would silently lose old version
+   * directories from versions.json.
    *
    * @param registryPrefix - e.g. `@rack/node/`
    * @returns List of version strings
@@ -148,21 +152,29 @@ export class R2UploadBackend {
       ? registryPrefix
       : `${registryPrefix}/`
 
-    const response = await this.client.send(
-      new ListObjectsV2Command({
-        Bucket: this.bucketName,
-        Prefix: prefix,
-        Delimiter: '/'
-      })
-    )
-
     const versions: string[] = []
+    let continuationToken: string | undefined
 
-    for (const cp of response.CommonPrefixes ?? []) {
-      if (!cp.Prefix) continue
-      const name = cp.Prefix.slice(prefix.length).replace(/\/$/, '')
-      if (SEMVER_PATTERN.test(name)) versions.push(name)
-    }
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Prefix: prefix,
+          Delimiter: '/',
+          Bucket: this.bucketName,
+          ContinuationToken: continuationToken
+        })
+      )
+
+      for (const cp of response.CommonPrefixes ?? []) {
+        if (!cp.Prefix) continue
+        const name = cp.Prefix.slice(prefix.length).replace(/\/$/, '')
+        if (SEMVER_PATTERN.test(name)) versions.push(name)
+      }
+
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined
+    } while (continuationToken)
 
     return versions
   }
