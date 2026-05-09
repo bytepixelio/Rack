@@ -3,9 +3,16 @@ import { tmpdir } from 'os'
 import { createHash } from 'crypto'
 import { AuthService } from '../../src/services/auth.service.js'
 import { UploadService } from '../../src/services/upload.service.js'
-import { rm, mkdir, mkdtemp, readFile, writeFile } from 'fs/promises'
 import { StorageService } from '../../src/services/storage.service.js'
 import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
+import {
+  rm,
+  mkdir,
+  mkdtemp,
+  readFile,
+  symlink,
+  writeFile
+} from 'fs/promises'
 
 import type { FastifyBaseLogger } from 'fastify'
 import type { WebhookService } from '../../src/services/webhook.service.js'
@@ -357,6 +364,118 @@ describe('UploadService', () => {
     await expect(upload.parsePackageInfo(dir)).rejects.toThrow(
       'version is required'
     )
+  })
+
+  // ─── validateExtractedTree ────────────────────────────────────────────────
+
+  it('should accept a tree containing only declared files', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-ok')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        files: [
+          { path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }
+        ]
+      })
+    )
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+
+    await expect(upload.validateExtractedTree(dir)).resolves.toBeUndefined()
+  })
+
+  it('should reject an undeclared file in the tree', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-extra')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({ files: [] })
+    )
+    await writeFile(join(dir, 'secrets.txt'), 'leaked')
+
+    await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
+      /not declared in registry.json: secrets.txt/
+    )
+  })
+
+  it('should reject an undeclared file inside a subdirectory', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-extra-sub')
+    await mkdir(join(dir, 'sub'), { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({ files: [] })
+    )
+    await writeFile(join(dir, 'sub', 'leak.env'), 'API_KEY=...')
+
+    await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
+      /not declared in registry.json: sub\/leak\.env/
+    )
+  })
+
+  it('should reject a symlink in the tree', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-symlink')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({ files: [] })
+    )
+    await symlink('/etc/hosts', join(dir, 'shadow'))
+
+    await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
+      /unsupported entry type at shadow/
+    )
+  })
+
+  it('should accept declared mergeStrategy.script paths in the tree', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-script')
+    await mkdir(join(dir, 'plugins'), { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        files: [
+          {
+            path: 'src/a.ts',
+            target: 'src/a.ts',
+            type: 'registry:lib',
+            mergeStrategy: {
+              type: 'custom',
+              script: 'plugins/merge.js'
+            }
+          }
+        ]
+      })
+    )
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    await writeFile(join(dir, 'plugins', 'merge.js'), 'module.exports = {}')
+
+    await expect(upload.validateExtractedTree(dir)).resolves.toBeUndefined()
+  })
+
+  it('should accept declared language-overlay files in the tree', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'tree-lang')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(dir, 'registry.json'),
+      JSON.stringify({
+        languages: {
+          ts: {
+            files: [
+              { path: 'tsconfig.json', target: 'tsconfig.json', type: 'registry:config' }
+            ]
+          }
+        }
+      })
+    )
+    await writeFile(join(dir, 'tsconfig.json'), '{}')
+
+    await expect(upload.validateExtractedTree(dir)).resolves.toBeUndefined()
   })
 
   // ─── validateNamespace ───────────────────────────────────────────────────
