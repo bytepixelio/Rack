@@ -88,4 +88,14 @@ describe('registry/identifier', () => {
     expect(isPreset('@rack/vue')).toBe(false)
     expect(isPreset('vue')).toBe(false)
   })
+
+  it('isPreset matches case-insensitively via parseNamespace', () => {
+    expect(isPreset('@Presets/vue')).toBe(true)
+    expect(isPreset('@PRESETS/vue')).toBe(true)
+  })
+
+  it('isPreset returns false for unparseable identifiers', () => {
+    expect(isPreset('')).toBe(false)
+    expect(isPreset('@no-slash')).toBe(false)
+  })
 })
