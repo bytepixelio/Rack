@@ -10,6 +10,7 @@ export default defineConfig({
   outDir: 'dist',
   minify: true,
   bundle: true,
+  noExternal: ['@rack/registry-core'],
   splitting: false,
   platform: 'node',
   target: 'node22',
