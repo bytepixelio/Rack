@@ -54,25 +54,27 @@
     },
     "mergeStrategy": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "$ref": "#/$defs/mergeStrategyKind" },
-        "strategy": { "$ref": "#/$defs/mergeStrategyName" },
-        "script": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Plugin script path (used when type=custom)"
-        }
-      },
       "required": ["type"],
       "oneOf": [
         {
-          "properties": { "type": { "const": "builtin" } },
-          "required": ["strategy"]
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "builtin" },
+            "strategy": { "$ref": "#/$defs/mergeStrategyName" }
+          },
+          "required": ["type", "strategy"]
         },
         {
-          "properties": { "type": { "const": "custom" } },
-          "required": ["script"]
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "custom" },
+            "script": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Plugin script path"
+            }
+          },
+          "required": ["type", "script"]
         }
       ]
     },
