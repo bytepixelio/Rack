@@ -65,7 +65,7 @@ describe('registry/client fetchItem', () => {
       'https://r.example.com/registries/@rack/vue/1.0.0',
       { headers: { Authorization: 'Bearer T' } }
     )
-    expect(item.identifier).toBe('@rack/vue@1.0.0')
+    expect(item.identifier).toBe('@rack/vue')
     expect(item.registryUrl).toBe(
       'https://r.example.com/registries/@rack/vue/1.0.0'
     )
