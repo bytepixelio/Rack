@@ -19,8 +19,8 @@ import { AppError } from '../../utils/errors.js'
 import { sortItems } from '../../pipeline/sort.js'
 import { registry } from '../../registry/client.js'
 import { applyFiles } from '../../pipeline/apply.js'
-import { isPreset } from '../../registry/identifier.js'
 import { validateNoConflicts } from '../../pipeline/conflict.js'
+import { isPreset, parseNamespace } from '../../registry/identifier.js'
 import {
   logConflicts,
   resolveDependencies
@@ -82,6 +82,7 @@ export async function addRegistry(
     language,
     logger
   })
+  warnDegradedConflictCheck(installedRegistries, installedItems, logger)
   validateNoConflicts([...installedItems, ...resolved], installedRegistries)
 
   // 4. Sort
@@ -114,4 +115,39 @@ export async function addRegistry(
     initialRegistries: [identifier],
     appliedRegistries: items.map((i) => i.identifier)
   }
+}
+
+// ─── Internal ───────────────────────────────────────────────────────────────
+
+/**
+ * Surface a clear warning when one or more installed registries failed to
+ * fetch — without it, an offline / unreachable registry whose `conflicts`
+ * array would have blocked the new install silently passes the conflict
+ * check via the identifier-only fallback in {@link validateNoConflicts}.
+ */
+function warnDegradedConflictCheck(
+  requested: string[],
+  fetched: { identifier: string }[],
+  logger: Logger
+): void {
+  if (requested.length === 0 || fetched.length === requested.length) return
+
+  const fetchedKeys = new Set(fetched.map((it) => canonicalize(it.identifier)))
+  const missing = requested.filter((id) => !fetchedKeys.has(canonicalize(id)))
+  if (missing.length === 0) return
+
+  logger.warn(
+    `Conflict check is degraded: could not fetch installed ${pluralize(missing.length, 'registry', 'registries')} ` +
+      `${missing.join(', ')}. Reciprocal "conflicts" declared by ` +
+      `${missing.length === 1 ? 'this registry' : 'these registries'} cannot be enforced.`
+  )
+}
+
+function canonicalize(identifier: string): string {
+  const { namespace, path } = parseNamespace(identifier)
+  return `${namespace}/${path}`
+}
+
+function pluralize(n: number, one: string, many: string): string {
+  return n === 1 ? one : many
 }
