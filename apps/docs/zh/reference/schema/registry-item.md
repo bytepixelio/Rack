@@ -43,9 +43,6 @@ aside: false
     "dev": "vite",
     "build": "vite build"
   },
-  "envVars": {
-    "VITE_APP_TITLE": "My React App"
-  },
   "languages": {
     "js": {
       "files": [
@@ -432,21 +429,6 @@ aside: false
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
-  }
-}
-```
-
-### `envVars`
-
-- **类型**: `Record<string, string>`
-- **必填**: 否
-- **说明**: 环境变量配置
-
-```json
-{
-  "envVars": {
-    "VITE_APP_TITLE": "My React App",
-    "NODE_ENV": "development"
   }
 }
 ```

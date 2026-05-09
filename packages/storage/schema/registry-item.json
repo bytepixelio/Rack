@@ -196,12 +196,6 @@
       "$ref": "#/$defs/dependencyMap",
       "description": "Scripts to merge into package.json"
     },
-    "envVars": {
-      "type": "object",
-      "propertyNames": { "minLength": 1 },
-      "additionalProperties": { "type": "string" },
-      "description": "Environment variables to record (values may be empty placeholders)"
-    },
     "languages": {
       "type": "object",
       "propertyNames": { "type": "string", "pattern": "^[a-z0-9-]+$" },

@@ -43,9 +43,6 @@ aside: false
     "dev": "vite",
     "build": "vite build"
   },
-  "envVars": {
-    "VITE_APP_TITLE": "My React App"
-  },
   "languages": {
     "js": {
       "files": [
@@ -432,21 +429,6 @@ Using custom plugin:
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
-  }
-}
-```
-
-### `envVars`
-
-- **Type**: `Record<string, string>`
-- **Required**: No
-- **Description**: Environment variable configuration
-
-```json
-{
-  "envVars": {
-    "VITE_APP_TITLE": "My React App",
-    "NODE_ENV": "development"
   }
 }
 ```
