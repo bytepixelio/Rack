@@ -349,8 +349,8 @@ aside: false
 | ------------- | ------- | ---- | ------------------------------- |
 | target        | string  | 是   | 目标文件路径                    |
 | type          | string  | 是   | `FileObject` 类型               |
-| content       | string  | 否   | 内联文件内容, 与 path 二选一    |
-| path          | string  | 否   | 服务端模板文件路径, 与 content 二选一 |
+| content       | string  | 否   | 内联文件内容。非 asset 文件同时有 content 和 path 时优先使用 content |
+| path          | string  | 否   | 服务端模板文件路径。`registry:asset` 同时有 path 和 content 时优先使用 path |
 | executable    | boolean | 否   | 是否需要可执行权限              |
 | mergeStrategy | object  | 否   | 合并策略配置                    |
 

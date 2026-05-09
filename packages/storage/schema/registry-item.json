@@ -95,11 +95,11 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
-          "description": "Template path on the registry server (alternative to content). Relative POSIX path with optional ./ prefix. Each segment must match [A-Za-z0-9._@+-]. No percent-encoding, backslashes, query (?), or fragment (#) characters."
+          "description": "Template path on the registry server. For registry:asset files, path takes priority over content. For other file types, content takes priority over path. Relative POSIX path with optional ./ prefix. Each segment must match [A-Za-z0-9._@+-]. No percent-encoding, backslashes, query (?), or fragment (#) characters."
         },
         "content": {
           "type": "string",
-          "description": "Inline file content (alternative to path)"
+          "description": "Inline file content. For non-asset file types, content takes priority over path. At least one of content or path must be provided."
         },
         "executable": {
           "type": "boolean",
