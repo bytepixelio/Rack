@@ -99,8 +99,12 @@ async function fetchItem(
     // and path casing.
     const canonicalId = formatCanonicalIdentifier(parsed)
 
+    // Identifier `:language` suffix wins over the project-wide language
+    // (passed in via `options.language` from rack.json), matching the
+    // documented precedence: identifier suffix > rack.json.language >
+    // item.defaultLanguage > 'ts'.
     return {
-      ...applyLanguageOverrides(item, options.language ?? parsed.language),
+      ...applyLanguageOverrides(item, parsed.language ?? options.language),
       identifier: canonicalId,
       registryUrl
     }

@@ -198,7 +198,7 @@ describe('registry/client fetchItem', () => {
     expect(item.dependencies).toEqual({ x: '1' })
   })
 
-  it('prefers explicit options.language over identifier suffix', async () => {
+  it('prefers identifier suffix over explicit options.language', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({
       data: {
@@ -210,7 +210,7 @@ describe('registry/client fetchItem', () => {
       }
     })
     const item = await registry.fetchItem('@rack/vue:js', { language: 'ts' })
-    expect(item.dependencies).toEqual({ t: '1' })
+    expect(item.dependencies).toEqual({ j: '1' })
   })
 
   it('throws when the registry item is missing required fields', async () => {
