@@ -17,13 +17,10 @@ interface Env {
 }
 
 function fire(env: Env, url: string, init: RequestInit = {}): Promise<Response> {
-  // Cloudflare Worker fetch handlers receive (request, env, ctx). Our
-  // worker only reads `request` and `env`.
-  return worker.fetch(
-    new Request(url, init),
-    env,
-    {} as ExecutionContext
-  )
+  // The Worker's fetch handler is declared as (request, env) — the
+  // Cloudflare runtime passes a third `ctx` arg but our handler does
+  // not read it, so the inferred signature only takes two.
+  return worker.fetch(new Request(url, init), env)
 }
 
 describe('Worker top-level routing', () => {
