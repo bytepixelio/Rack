@@ -85,24 +85,30 @@ Package the registry in tar.gz format.
 ### Using tar Command
 
 ```bash
-# Navigate to the parent directory of the Registry
-cd /path/to/registries
+# Enter the Registry directory itself (not its parent) so registry.json
+# lands at the archive root, not under a my-tool/ folder.
+cd /path/to/registries/my-tool
 
-# Package (ensure registry.json is in the root)
-tar -czf my-tool-1.0.0.tar.gz my-tool/
+# Package the directory's contents
+# COPYFILE_DISABLE=1 prevents macOS tar from adding AppleDouble (._*)
+# metadata files; the server will reject any file not declared in
+# registry.json.
+COPYFILE_DISABLE=1 tar -czf ../my-tool-1.0.0.tar.gz .
 
 # Verify package contents
-tar -tzf my-tool-1.0.0.tar.gz
+tar -tzf ../my-tool-1.0.0.tar.gz
 
-# Expected output
-# my-tool/registry.json
-# my-tool/templates/src/config.ts
+# Expected output (registry.json at the archive root)
+# ./
+# ./registry.json
+# ./templates/src/config.ts
 # ...
 ```
 
 ::: warning Package Structure Requirements
-- `registry.json` must be in the first-level directory of the archive
-- All `files[].path` references must point to regular files included in the package (not directories or symlinks)
+- `registry.json` must sit at the archive root (`registry.json`, not `my-tool/registry.json`)
+- Only files declared in `registry.json` (`files[].path`, `languages.*.files[].path`, custom `mergeStrategy.script`) may appear in the archive — anything else will be rejected
+- All `files[].path` references must point to regular files in the package; symlinks and other non-regular entries are rejected
 - `files[].path` values must be relative POSIX paths using only `A-Z a-z 0-9 . _ @ + -` per segment; percent-encoding, `?`, `#`, and backslash are not allowed
 - Recommended naming format: `<name>-<version>.tar.gz`
 :::
