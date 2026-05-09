@@ -90,9 +90,11 @@ async function fetchItem(
     // Template files still need a versioned base path, so append item.version.
     const registryUrl = parsed.version ? url : `${url}/${item.version}`
 
+    const canonicalId = `${parsed.namespace}/${parsed.path}`
+
     return {
       ...applyLanguageOverrides(item, options.language ?? parsed.language),
-      identifier,
+      identifier: canonicalId,
       registryUrl
     }
   } catch (error) {
