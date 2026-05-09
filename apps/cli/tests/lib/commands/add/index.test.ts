@@ -124,4 +124,20 @@ describe('add command', () => {
     await runCommand(registerAddCommand, ['add', '@rack/vue'])
     expect(addRegistryMock).toHaveBeenCalled()
   })
+
+  it('rejects an unparseable identifier without touching rack.json', async () => {
+    await expect(
+      runCommand(registerAddCommand, ['add', 'not valid'])
+    ).rejects.toThrow('__exit__')
+    expect(readOrCreateMock).not.toHaveBeenCalled()
+    expect(addRegistryMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a preset identifier without touching rack.json', async () => {
+    await expect(
+      runCommand(registerAddCommand, ['add', '@presets/tutorial'])
+    ).rejects.toThrow('__exit__')
+    expect(readOrCreateMock).not.toHaveBeenCalled()
+    expect(addRegistryMock).not.toHaveBeenCalled()
+  })
 })
