@@ -37,16 +37,17 @@ describe('SchemaValidatorService', () => {
     ).resolves.toBeUndefined()
   })
 
-  it('should throw for invalid data with error details', async () => {
+  it('should throw a 400 ValidationError for invalid data', async () => {
     await writeFile(
       join(tempDir, 'schema', 'registry-item.json'),
       JSON.stringify(VALID_SCHEMA)
     )
     const validator = new SchemaValidatorService(join(tempDir, 'schema'))
 
-    await expect(validator.validate({ name: 123 })).rejects.toThrow(
-      'Schema validation failed'
-    )
+    await expect(validator.validate({ name: 123 })).rejects.toMatchObject({
+      code: 'SCHEMA_VALIDATION_FAILED',
+      statusCode: 400
+    })
   })
 
   it('should cache the validator across calls', async () => {

@@ -10,12 +10,12 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
-          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?)?(?::(js|ts))?$",
+          "description": "Full format: @namespace/path (optional @version, optional :language)"
         },
         {
-          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
-          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?)?(?::(js|ts))?$",
+          "description": "Shorthand: path (optional @version, optional :language, resolves to @rack/path)"
         }
       ]
     }
@@ -32,8 +32,8 @@
     },
     "language": {
       "type": "string",
-      "minLength": 1,
-      "description": "Active language variant for installed registries (e.g. js, ts)"
+      "enum": ["js", "ts"],
+      "description": "Active language variant for installed registries (js or ts)"
     },
     "template": {
       "type": "string",

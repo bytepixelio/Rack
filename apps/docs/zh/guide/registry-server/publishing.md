@@ -85,24 +85,30 @@ Registry 上传后, 服务器将其存储到 `<namespace>/<segments>/<version>/`
 ### 使用 tar 命令
 
 ```bash
-# 进入 Registry 目录的父目录
-cd /path/to/registries
+# 进入 Registry 目录本身（不是父目录），让 registry.json 落在
+# 压缩包根，而不是 my-tool/ 子目录下。
+cd /path/to/registries/my-tool
 
-# 打包 (确保 registry.json 在根目录)
-tar -czf my-tool-1.0.0.tar.gz my-tool/
+# 打包目录内容
+# COPYFILE_DISABLE=1 阻止 macOS tar 注入 AppleDouble (._*) 元数据
+# 文件 —— 服务端会拒收任何未在 registry.json 中声明的文件。
+COPYFILE_DISABLE=1 tar -czf ../my-tool-1.0.0.tar.gz .
 
 # 验证包内容
-tar -tzf my-tool-1.0.0.tar.gz
+tar -tzf ../my-tool-1.0.0.tar.gz
 
-# 预期输出
-# my-tool/registry.json
-# my-tool/templates/src/config.ts
+# 预期输出 (registry.json 直接位于压缩包根)
+# ./
+# ./registry.json
+# ./templates/src/config.ts
 # ...
 ```
 
 ::: warning 包结构要求
-- `registry.json` 必须在压缩包的第一层目录中
-- 所有 `files[].path` 引用的文件必须包含在包中
+- `registry.json` 必须位于压缩包根（`registry.json`，不是 `my-tool/registry.json`）
+- 压缩包内只能出现在 `registry.json` 中声明的文件（`files[].path`、`languages.*.files[].path`、自定义 `mergeStrategy.script`），其余文件会被拒收
+- 所有 `files[].path` 引用必须指向包内的普通文件 (不能是目录或符号链接)
+- `files[].path` 必须是相对 POSIX 路径, 每段只允许 `A-Z a-z 0-9 . _ @ + -`; 不允许百分号编码、`?`、`#` 和反斜杠
 - 推荐使用 `<name>-<version>.tar.gz` 命名格式
 :::
 

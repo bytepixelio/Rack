@@ -34,13 +34,24 @@ export interface ConflictInfo {
 /**
  * Validate that no conflicts exist among registry items.
  *
- * @param items - Registry items to validate
+ * @param items              - Registry items to validate
+ * @param installedIdentifiers - Identifiers already in rack.json (used as
+ *                              lightweight fallback when full fetch fails)
  * @throws {ConflictError} If any registry conflicts with another
  */
-export function validateNoConflicts(items: ResolvedRegistryItem[]): void {
+export function validateNoConflicts(
+  items: ResolvedRegistryItem[],
+  installedIdentifiers: string[] = []
+): void {
   const nameToId = new Map(
     items.map((item) => [canonicalize(item.identifier), item.identifier])
   )
+
+  for (const id of installedIdentifiers) {
+    const key = canonicalize(id)
+    if (!nameToId.has(key)) nameToId.set(key, id)
+  }
+
   const conflicts: ConflictInfo[] = []
 
   for (const item of items) {

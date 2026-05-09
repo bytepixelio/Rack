@@ -30,45 +30,76 @@ export default {
       )
     }
 
-    const { pathname } = new URL(request.url)
+    const response = await dispatch(request, env)
 
-    if (pathname === '/health') {
-      return handleHealth(env.BUCKET)
+    // RFC 9110 §9.3.2: HEAD must return the same headers/status as GET
+    // but no body. The route handlers reuse the GET shape (and may have
+    // pulled an R2 body stream); re-pack the response with body=null so
+    // we never ship bytes nor leave a dangling body open.
+    if (request.method === 'HEAD') {
+      return new Response(null, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      })
     }
 
-    const presetMatch = pathname.match(/^\/presets\/([^/]+)$/)
-    if (presetMatch) {
-      return handlePreset(env.BUCKET, presetMatch[1])
-    }
-
-    const schemaMatch = pathname.match(/^\/schemas\/([^/]+)$/)
-    if (schemaMatch) {
-      return handleSchema(env.BUCKET, schemaMatch[1])
-    }
-
-    if (pathname === '/namespaces') {
-      return handleNamespaces(env.BUCKET, env.ADMIN_TOKEN, request)
-    }
-
-    const nsMatch = pathname.match(/^\/namespaces\/([^/]+)\/registries$/)
-    if (nsMatch) {
-      return handleNamespaceRegistries(
-        env.BUCKET,
-        env.ADMIN_TOKEN,
-        request,
-        nsMatch[1]
-      )
-    }
-
-    if (pathname.startsWith('/registries/')) {
-      return handleRegistry(
-        env.BUCKET,
-        env.ADMIN_TOKEN,
-        request,
-        pathname.slice('/registries/'.length)
-      )
-    }
-
-    return notFound('NOT_FOUND', 'Route not found')
+    return response
   }
 } satisfies ExportedHandler<Env>
+
+/** Route a GET/HEAD request to the right handler. */
+async function dispatch(request: Request, env: Env): Promise<Response> {
+  const { pathname } = new URL(request.url)
+
+  if (pathname === '/health') {
+    return handleHealth(env.BUCKET)
+  }
+
+  const presetMatch = pathname.match(/^\/presets\/([^/]+)$/)
+  if (presetMatch) {
+    return handlePreset(env.BUCKET, presetMatch[1])
+  }
+
+  const schemaMatch = pathname.match(/^\/schemas\/([^/]+)$/)
+  if (schemaMatch) {
+    return handleSchema(env.BUCKET, schemaMatch[1])
+  }
+
+  if (pathname === '/namespaces') {
+    return handleNamespaces(env.BUCKET, env.ADMIN_TOKEN, request)
+  }
+
+  const nsMatch = pathname.match(/^\/namespaces\/([^/]+)\/registries$/)
+  if (nsMatch) {
+    // CLI sends `@rack` percent-encoded (`%40rack`); Worker URL parsing
+    // does not auto-decode path segments, so callers would otherwise
+    // hit the `must start with @` validation in handleNamespaceRegistries.
+    let namespace: string
+    try {
+      namespace = decodeURIComponent(nsMatch[1])
+    } catch {
+      return json(
+        { code: 'INVALID_NAMESPACE', message: 'Invalid namespace encoding' },
+        400
+      )
+    }
+    return handleNamespaceRegistries(
+      env.BUCKET,
+      env.ADMIN_TOKEN,
+      request,
+      namespace
+    )
+  }
+
+  if (pathname.startsWith('/registries/')) {
+    return handleRegistry(
+      env.BUCKET,
+      env.ADMIN_TOKEN,
+      request,
+      pathname.slice('/registries/'.length)
+    )
+  }
+
+  return notFound('NOT_FOUND', 'Route not found')
+}

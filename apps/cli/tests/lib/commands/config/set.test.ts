@@ -135,7 +135,31 @@ describe('config set', () => {
 
   it('exits on invalid namespace', async () => {
     await expect(
-      runCommand(program, ['config', 'set', 'bad', '--url', 'x'])
+      runCommand(program, ['config', 'set', 'bad', '--url', 'https://x.com'])
     ).rejects.toThrow('__exit__')
+  })
+
+  it('exits when creating a brand-new namespace without --url', async () => {
+    loadMock.mockResolvedValue({ registries: {} })
+    await expect(
+      runCommand(program, ['config', 'set', '@acme', '--token', 'T'])
+    ).rejects.toThrow('__exit__')
+    expect(setMock).not.toHaveBeenCalled()
+  })
+
+  it('exits when --url is not http(s)://', async () => {
+    loadMock.mockResolvedValue({ registries: {} })
+    await expect(
+      runCommand(program, ['config', 'set', '@acme', '--url', 'a.com'])
+    ).rejects.toThrow('__exit__')
+    expect(setMock).not.toHaveBeenCalled()
+  })
+
+  it('still allows --token-only updates on an existing namespace', async () => {
+    loadMock.mockResolvedValue({
+      registries: { '@acme': { url: 'https://a.com', headers: {} } }
+    })
+    await runCommand(program, ['config', 'set', '@acme', '--token', 'T'])
+    expect(setMock).toHaveBeenCalled()
   })
 })

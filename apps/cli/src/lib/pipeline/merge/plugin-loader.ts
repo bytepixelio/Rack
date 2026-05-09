@@ -155,9 +155,11 @@ async function resolveRemotePlugin(
  * @throws {Error} If path traversal is detected
  */
 function resolveLocalPlugin(scriptPath: string, registryRoot: string): string {
-  const resolved = path.resolve(registryRoot, scriptPath)
+  const root = path.resolve(registryRoot)
+  const resolved = path.resolve(root, scriptPath)
+  const relative = path.relative(root, resolved)
 
-  if (!resolved.startsWith(path.resolve(registryRoot))) {
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
     throw new Error(
       `Invalid plugin path: ${scriptPath} (path traversal detected)`
     )

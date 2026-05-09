@@ -19,6 +19,7 @@ import { registry } from '../../../src/lib/registry/client.js'
 import { rackrc } from '../../../src/lib/rackrc.js'
 import * as httpMod from '../../../src/lib/infra/http.js'
 import {
+  AppError,
   HttpError,
   RegistryNotFoundError
 } from '../../../src/lib/utils/errors.js'
@@ -68,6 +69,22 @@ describe('registry/client fetchItem', () => {
     expect(item.registryUrl).toBe(
       'https://r.example.com/registries/@rack/vue/1.0.0'
     )
+  })
+
+  it('preserves @version and :language suffixes in canonical identifier', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@RACK/Vue@1.0.0:js')
+    expect(item.identifier).toBe('@rack/vue@1.0.0:js')
+  })
+
+  it('omits version/language suffix when identifier had none', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue')
+    expect(item.identifier).toBe('@rack/vue')
   })
 
   it('strips trailing slashes from the registry base URL', async () => {
@@ -121,17 +138,67 @@ describe('registry/client fetchItem', () => {
     http.get.mockResolvedValue({
       data: {
         ...baseItem,
-        files: [{ path: 'tailwind.config.ts' }],
+        files: [
+          { path: 'tailwind.config.ts', target: 'tailwind.config.ts', type: 'registry:config' }
+        ],
         languages: {
-          js: { files: [{ path: 'tailwind.config.js' }] }
+          js: {
+            files: [
+              { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+            ]
+          }
         }
       }
     })
     const item = await registry.fetchItem('@rack/vue:js')
-    expect(item.files).toEqual([{ path: 'tailwind.config.js' }])
+    expect(item.files).toEqual([
+      { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+    ])
   })
 
-  it('prefers explicit options.language over identifier suffix', async () => {
+  it('appends language files and preserves common files with different targets', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        files: [
+          { path: 'index.html', target: 'index.html', type: 'registry:entry' },
+          { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' }
+        ],
+        languages: {
+          js: {
+            files: [
+              { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+            ]
+          }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue:js')
+    expect(item.files).toEqual([
+      { path: 'index.html', target: 'index.html', type: 'registry:entry' },
+      { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' },
+      { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+    ])
+  })
+
+  it('does not merge disallowed language block fields like scripts', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        scripts: { dev: 'vite' },
+        languages: {
+          ts: { scripts: { dev: 'vite --host' }, dependencies: { x: '1' } } as any
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue', { language: 'ts' })
+    expect(item.scripts).toEqual({ dev: 'vite' })
+    expect(item.dependencies).toEqual({ x: '1' })
+  })
+
+  it('prefers identifier suffix over explicit options.language', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({
       data: {
@@ -143,7 +210,7 @@ describe('registry/client fetchItem', () => {
       }
     })
     const item = await registry.fetchItem('@rack/vue:js', { language: 'ts' })
-    expect(item.dependencies).toEqual({ t: '1' })
+    expect(item.dependencies).toEqual({ j: '1' })
   })
 
   it('throws when the registry item is missing required fields', async () => {
@@ -225,6 +292,24 @@ describe('registry/client fetchPreset', () => {
       registry.fetchPreset('@presets/missing')
     ).rejects.toBeInstanceOf(RegistryNotFoundError)
   })
+
+  it('rejects multi-segment preset paths', async () => {
+    await expect(
+      registry.fetchPreset('@presets/team/vue-app')
+    ).rejects.toBeInstanceOf(AppError)
+  })
+
+  it('rejects preset with @version suffix', async () => {
+    await expect(
+      registry.fetchPreset('@presets/tutorial@1.0.0')
+    ).rejects.toBeInstanceOf(AppError)
+  })
+
+  it('rejects preset with :language suffix', async () => {
+    await expect(
+      registry.fetchPreset('@presets/tutorial:ts')
+    ).rejects.toBeInstanceOf(AppError)
+  })
 })
 
 describe('registry/client fetchFile', () => {
@@ -256,12 +341,20 @@ describe('registry/client fetchFile', () => {
     ['../evil', 'leading ../'],
     ['./../evil', './ then ../'],
     ['a/../../evil', 'mid-path traversal'],
-    ['%2e%2e/evil', 'encoded ../'],
-    ['a/%2e%2e/evil', 'encoded mid-path traversal'],
-    ['/etc/passwd', 'absolute path']
-  ])('rejects unsafe file path: %s (%s)', async (path) => {
+    ['%2e%2e/evil', 'percent not allowed'],
+    ['a/%2e%2e/evil', 'percent not allowed'],
+    ['/etc/passwd', 'absolute path'],
+    ['templates\\..\\registry.json', 'backslash'],
+    ['templates%5c..%5cregistry.json', 'percent not allowed'],
+    ['templates%5C..%5Cregistry.json', 'percent not allowed'],
+    ['templates/%ZZ/file.txt', 'percent not allowed'],
+    ['templates/%2g/file.txt', 'percent not allowed'],
+    ['templates/file%', 'percent not allowed'],
+    ['templates/a?b.txt', 'query character'],
+    ['templates/a#b.txt', 'fragment character']
+  ])('rejects invalid file path: %s (%s)', async (path) => {
     await expect(registry.fetchFile(registryUrl, path)).rejects.toThrow(
-      /Unsafe file path/
+      /Invalid file path/
     )
   })
 

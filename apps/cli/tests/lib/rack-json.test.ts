@@ -68,6 +68,71 @@ describe('rack-json', () => {
     expect(err.errorCode).toBe('INVALID')
   })
 
+  it('read throws INVALID when items is not an array', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: 'runtimes/node' })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('items')
+  })
+
+  it('read throws INVALID when items contains an unparseable identifier', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['quality/eslint:py'] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('invalid identifier')
+  })
+
+  it('read throws INVALID when items contains uppercase identifier', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['@Rack/React'] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('invalid identifier')
+  })
+
+  it('read throws INVALID when items contains non-strings', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['@rack/vue', 42] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+  })
+
+  it('read throws INVALID when language is not js or ts', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', language: 'py' })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('language')
+  })
+
+  it('read throws INVALID when template is not a string', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', template: 123 })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('template')
+  })
+
   it('read returns the parsed config for a valid rack.json', async () => {
     const data = { name: 'demo', items: ['@rack/vue'] }
     await writeFile(join(tmp, 'rack.json'), JSON.stringify(data))

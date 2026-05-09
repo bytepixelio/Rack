@@ -9,10 +9,11 @@
 import { Command } from 'commander'
 import { addHelpText } from './help.js'
 import { addRegistry } from './pipeline.js'
+import { AppError } from '../../utils/errors.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
 import { Prompter } from '../../infra/prompts.js'
-import { parseNamespace } from '../../registry/identifier.js'
+import { isPreset, parseNamespace } from '../../registry/identifier.js'
 import {
   displayHeader,
   displayResults,
@@ -40,17 +41,36 @@ export function registerAddCommand(program: Command): void {
       try {
         displayHeader(identifier, logger)
 
-        const targetDir = process.cwd()
-        const { items: installedRegistries = [], language } =
-          await rackJson.readOrCreate(targetDir)
-
+        // Reject malformed identifiers and presets BEFORE touching
+        // disk — otherwise rackJson.readOrCreate would seed a stub
+        // rack.json in a directory that is not a Rack project just
+        // because the user typed `rk add @presets/foo` or a typo.
         const canonicalize = (id: string) => {
           const { namespace, path } = parseNamespace(id)
           return `${namespace}/${path}`
         }
 
-        if (installedRegistries.some((r) => canonicalize(r) === canonicalize(identifier))) {
-          displayAlreadyInstalled(identifier, logger)
+        // Throws InvalidNamespaceError on parse failure; surfaces with
+        // a code+hint via commandError below.
+        canonicalize(identifier)
+
+        if (isPreset(identifier)) {
+          throw new AppError(
+            'INVALID_USAGE',
+            `Preset is not supported in 'rk add'. Use 'rk init -t ${identifier}' or add individual registries.`
+          )
+        }
+
+        const targetDir = process.cwd()
+        const { items: installedRegistries = [], language } =
+          await rackJson.readOrCreate(targetDir)
+
+        const requestedKey = canonicalize(identifier)
+        const existingMatch = installedRegistries.find(
+          (r) => canonicalize(r) === requestedKey
+        )
+        if (existingMatch) {
+          displayAlreadyInstalled(identifier, existingMatch, logger)
           return
         }
 

@@ -27,19 +27,42 @@ export function displayHeader(registry: string, logger: Logger): void {
 /**
  * Notify the user that the registry is already installed.
  *
- * @param registry - Registry identifier that was already present
- * @param logger - Logger instance
+ * Distinguishes "exact match" (same identifier) from "canonical match
+ * with different version/language" — for the latter, surface the
+ * existing entry and tell the user how to swap variants, since add
+ * dedupes at the namespace/path level.
+ *
+ * @param requested - Identifier the user passed to `rk add`
+ * @param existing  - Identifier already in `rack.json.items`
+ * @param logger    - Logger instance
  */
 export function displayAlreadyInstalled(
-  registry: string,
+  requested: string,
+  existing: string,
   logger: Logger
 ): void {
+  if (existing === requested) {
+    logger.info(
+      chalk.yellow(
+        `⚠ Registry already installed: ${chalk.whiteBright(requested)}`
+      )
+    )
+    logger.info(chalk.gray('No changes made.'))
+    return
+  }
+
   logger.info(
     chalk.yellow(
-      `⚠ Registry already installed: ${chalk.whiteBright(registry)}`
+      `⚠ Registry already installed with a different variant: ${chalk.whiteBright(existing)}`
     )
   )
-  logger.info(chalk.gray('No changes made.'))
+  logger.info(
+    chalk.gray(
+      `You requested ${chalk.whiteBright(requested)}. ` +
+        'rk add only allows one variant per registry — remove the existing ' +
+        'entry from rack.json.items and rerun to switch.'
+    )
+  )
 }
 
 /**

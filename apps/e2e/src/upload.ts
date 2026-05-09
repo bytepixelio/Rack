@@ -54,7 +54,11 @@ async function buildPackage(fixtureDir: string): Promise<UploadPackage> {
   const dir = await mkdtemp(path.join(tmpdir(), 'rack-e2e-upload-'))
   const pkgPath = path.join(dir, 'pkg.tar.gz')
 
-  await execa('tar', ['-czf', pkgPath, '-C', fixtureDir, '.'])
+  // COPYFILE_DISABLE=1 keeps macOS tar from injecting AppleDouble (`._*`)
+  // metadata files that the upload allowlist would reject.
+  await execa('tar', ['-czf', pkgPath, '-C', fixtureDir, '.'], {
+    env: { COPYFILE_DISABLE: '1' }
+  })
 
   const buf = await readFile(pkgPath)
   const checksum = createHash('sha256').update(buf).digest('hex')

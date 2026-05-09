@@ -26,6 +26,8 @@ Rack/
 │   ├── e2e/                    # End-to-end tests - CLI + server integration
 │   └── docs/                   # Documentation site - VitePress build
 ├── packages/
+│   ├── auth-core/              # Shared namespace-token auth (parser + verifyAccess)
+│   ├── registry-core/          # Shared URL parser, cache/schema constants, storage keys
 │   └── storage/                # Registry storage and JSON Schema
 └── ...
 ```

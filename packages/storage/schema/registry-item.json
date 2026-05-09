@@ -10,12 +10,25 @@
       "type": "string",
       "oneOf": [
         {
-          "pattern": "^@[^/@\\s]+/[^@\\s]+(?:@[^\\s]+)?$",
-          "description": "Full format with namespace: @namespace/name or @namespace/name@version"
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?)?(?::(js|ts))?$",
+          "description": "Full format: @namespace/path (optional @version, optional :language)"
         },
         {
-          "pattern": "^[^@\\s/]+(?:/[^@\\s]+)*(?:@[^\\s]+)?$",
-          "description": "Shorthand without namespace: name or name@version (resolves to @rack/name)"
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*(?:@(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?)?(?::(js|ts))?$",
+          "description": "Shorthand: path (optional @version, optional :language, resolves to @rack/path)"
+        }
+      ]
+    },
+    "registryDependencyIdentifier": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?/[a-z0-9-]+(?:/[a-z0-9-]+)*$",
+          "description": "Full format: @namespace/path (no version or language allowed)"
+        },
+        {
+          "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)*$",
+          "description": "Shorthand: path (no version or language allowed, resolves to @rack/path)"
         }
       ]
     },
@@ -41,25 +54,28 @@
     },
     "mergeStrategy": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "type": { "$ref": "#/$defs/mergeStrategyKind" },
-        "strategy": { "$ref": "#/$defs/mergeStrategyName" },
-        "script": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Plugin script path (used when type=custom)"
-        }
-      },
       "required": ["type"],
       "oneOf": [
         {
-          "properties": { "type": { "const": "builtin" } },
-          "required": ["strategy"]
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "builtin" },
+            "strategy": { "$ref": "#/$defs/mergeStrategyName" }
+          },
+          "required": ["type", "strategy"]
         },
         {
-          "properties": { "type": { "const": "custom" } },
-          "required": ["script"]
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "custom" },
+            "script": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+              "description": "Plugin script path on the registry server. Same path-safety rules as files[].path: relative POSIX path with optional ./ prefix, no .. segments, no percent-encoding, no backslashes, no query/fragment."
+            }
+          },
+          "required": ["type", "script"]
         }
       ]
     },
@@ -81,12 +97,12 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?![/\\\\])",
-          "description": "Template path on the registry server (alternative to content). Must not contain .. segments or start with / or \\."
+          "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+          "description": "Template path on the registry server. For registry:asset files, path takes priority over content. For other file types, content takes priority over path. Relative POSIX path with optional ./ prefix. Each segment must match [A-Za-z0-9._@+-]. No percent-encoding, backslashes, query (?), or fragment (#) characters."
         },
         "content": {
           "type": "string",
-          "description": "Inline file content (alternative to path)"
+          "description": "Inline file content. For non-asset file types, content takes priority over path. At least one of content or path must be provided."
         },
         "executable": {
           "type": "boolean",
@@ -113,7 +129,7 @@
     },
     "namespace": {
       "type": "string",
-      "pattern": "^@[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "pattern": "^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$",
       "description": "Owner namespace, prefixed with @"
     },
     "path": {
@@ -135,7 +151,7 @@
     },
     "version": {
       "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
       "description": "Semantic version (semver)"
     },
     "description": {
@@ -176,8 +192,8 @@
     },
     "registryDependencies": {
       "type": "array",
-      "items": { "$ref": "#/$defs/registryIdentifier" },
-      "description": "Registries that must be installed before this one"
+      "items": { "$ref": "#/$defs/registryDependencyIdentifier" },
+      "description": "Registries that must be installed before this one (version pinning not supported)"
     },
     "dependencies": {
       "$ref": "#/$defs/dependencyMap",
@@ -196,15 +212,9 @@
       "$ref": "#/$defs/dependencyMap",
       "description": "Scripts to merge into package.json"
     },
-    "envVars": {
-      "type": "object",
-      "propertyNames": { "minLength": 1 },
-      "additionalProperties": { "type": "string" },
-      "description": "Environment variables to record (values may be empty placeholders)"
-    },
     "languages": {
       "type": "object",
-      "propertyNames": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "propertyNames": { "type": "string", "enum": ["js", "ts"] },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -221,7 +231,7 @@
     },
     "defaultLanguage": {
       "type": "string",
-      "pattern": "^[a-z0-9-]+$",
+      "enum": ["js", "ts"],
       "description": "Language key from `languages` to use when none is specified"
     }
   },

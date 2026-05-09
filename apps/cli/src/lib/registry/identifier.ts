@@ -11,6 +11,7 @@
  * ```
  */
 
+import { SEMVER_PATTERN } from '@rack/registry-core'
 import { DEFAULT_NAMESPACE } from '../../constants.js'
 import { InvalidNamespaceError } from '../utils/errors.js'
 
@@ -50,8 +51,8 @@ export interface ParsedNamespace {
  * parseNamespace('nextjs@14.0.0')
  * // { namespace: '@rack', path: 'nextjs', version: '14.0.0' }
  *
- * parseNamespace('@mycompany/runtime/node@1.0:ts')
- * // { namespace: '@mycompany', path: 'runtime/node', version: '1.0', language: 'ts' }
+ * parseNamespace('@mycompany/runtime/node@1.0.0:ts')
+ * // { namespace: '@mycompany', path: 'runtime/node', version: '1.0.0', language: 'ts' }
  * ```
  */
 export function parseNamespace(identifier: string): ParsedNamespace {
@@ -76,17 +77,49 @@ export function parseNamespace(identifier: string): ParsedNamespace {
 /**
  * Check if an identifier refers to a preset.
  *
+ * Goes through {@link parseNamespace} so casing matches the rest of
+ * the parser (`@Presets/vue` is normalized to `@presets`). Anything
+ * the parser rejects (e.g. empty, malformed) returns `false`.
+ *
  * @param identifier - Registry or preset identifier
- * @returns `true` if the identifier uses the `@presets/` namespace
+ * @returns `true` if the identifier resolves to the `@presets` namespace
  *
  * @example
  * ```ts
  * isPreset('@presets/vue')        // true
+ * isPreset('@Presets/vue')        // true (case-insensitive)
  * isPreset('@rack/tailwindcss')   // false
+ * isPreset('not valid')           // false (parse error)
  * ```
  */
 export function isPreset(identifier: string): boolean {
-  return identifier.startsWith('@presets/')
+  try {
+    return parseNamespace(identifier).namespace === '@presets'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Format a {@link ParsedNamespace} back into its canonical
+ * `@namespace/path[@version][:language]` string.
+ *
+ * Used when writing identifiers to `rack.json`: the namespace and path
+ * are normalized to lowercase by `parseNamespace`, but explicit
+ * `@version` and `:language` suffixes the user typed must round-trip.
+ *
+ * @param parsed - Parsed identifier components
+ * @returns Canonical identifier string
+ *
+ * @example
+ * formatCanonicalIdentifier(parseNamespace('@RACK/Vue@1.2.3:js'))
+ * // → '@rack/vue@1.2.3:js'
+ */
+export function formatCanonicalIdentifier(parsed: ParsedNamespace): string {
+  let id = `${parsed.namespace}/${parsed.path}`
+  if (parsed.version) id += `@${parsed.version}`
+  if (parsed.language) id += `:${parsed.language}`
+  return id
 }
 
 // ─── Internal ────────────────────────────────────────────────────────────────
@@ -99,8 +132,8 @@ export function isPreset(identifier: string): boolean {
  *
  * @example
  * ```ts
- * extractLanguage('@rack/vue@1.0:ts')
- * // { language: 'ts', rest: '@rack/vue@1.0' }
+ * extractLanguage('@rack/vue@1.0.0:ts')
+ * // { language: 'ts', rest: '@rack/vue@1.0.0' }
  *
  * extractLanguage('@rack/vue')
  * // { language: undefined, rest: '@rack/vue' }
@@ -178,6 +211,13 @@ function extractVersion(identifier: string): {
 
   if (!version) {
     throw new InvalidNamespaceError('Version cannot be empty', identifier)
+  }
+
+  if (!SEMVER_PATTERN.test(version)) {
+    throw new InvalidNamespaceError(
+      'Version must be a valid semver (e.g. 1.0.0)',
+      identifier
+    )
   }
 
   return { version, namePath }

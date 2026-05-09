@@ -176,3 +176,41 @@ export class ConfigError extends AppError {
     super('CONFIG_ERROR', message)
   }
 }
+
+// ─── Package ───────────────────────────────────────────────────────────────
+
+/**
+ * Error thrown when an existing project `package.json` cannot be parsed.
+ *
+ * Surfaced before any pipeline write so a corrupted manifest does not
+ * get silently overwritten with a freshly-synthesized empty file.
+ */
+export class PackageJsonInvalidError extends AppError {
+  constructor(
+    message: string,
+    /** Absolute path to the `package.json` that failed to parse. */
+    public readonly filePath: string
+  ) {
+    super('PACKAGE_JSON_INVALID', message)
+  }
+}
+
+// ─── File Apply ────────────────────────────────────────────────────────────
+
+/**
+ * Error thrown when a remote template file required by the manifest
+ * could not be fetched. Aborts the apply pipeline so the project is
+ * not left in a half-applied state where `package.json` / `rack.json`
+ * record a successful install but the source files are missing.
+ */
+export class FileFetchError extends AppError {
+  constructor(
+    message: string,
+    /** Manifest-relative source path that failed to fetch. */
+    public readonly sourcePath: string,
+    /** Project-relative target path that would have received the file. */
+    public readonly target: string
+  ) {
+    super('FILE_FETCH_FAILED', message)
+  }
+}

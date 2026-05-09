@@ -38,6 +38,13 @@ export const ERROR_HINTS: Record<string, string> = {
   PATH_TRAVERSAL:
     'Check files[].target in the registry — it must be a relative path ' +
     'within the project directory (no ".." or absolute paths).',
+  PACKAGE_JSON_INVALID:
+    'Open package.json and fix the JSON syntax (or remove the file ' +
+    'so a fresh one will be created), then re-run.',
+  FILE_FETCH_FAILED:
+    "Run 'rk doctor --json' to confirm the registry is reachable, " +
+    'then retry. The pipeline aborted before any project files were ' +
+    'written to keep your project consistent.',
   VALIDATION_ERROR: "See 'rk <command> --help' for valid options."
 }
 

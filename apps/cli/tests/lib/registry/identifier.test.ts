@@ -29,10 +29,10 @@ describe('registry/identifier', () => {
   })
 
   it('parseNamespace extracts :ts / :js language suffix', () => {
-    expect(parseNamespace('@rack/vue@1.0:ts')).toEqual({
+    expect(parseNamespace('@rack/vue@1.0.0:ts')).toEqual({
       namespace: '@rack',
       path: 'vue',
-      version: '1.0',
+      version: '1.0.0',
       language: 'ts'
     })
     expect(parseNamespace('@rack/vue:js')).toMatchObject({ language: 'js' })
@@ -62,6 +62,15 @@ describe('registry/identifier', () => {
     expect(() => parseNamespace('vue@')).toThrow(InvalidNamespaceError)
   })
 
+  it('parseNamespace rejects a non-semver version', () => {
+    expect(() => parseNamespace('runtimes/node@1/2')).toThrow(
+      InvalidNamespaceError
+    )
+    expect(() => parseNamespace('runtimes/node@latest')).toThrow(
+      InvalidNamespaceError
+    )
+  })
+
   it('parseNamespace rejects empty path segments', () => {
     expect(() => parseNamespace('@rack/a//b')).toThrow(InvalidNamespaceError)
   })
@@ -78,5 +87,15 @@ describe('registry/identifier', () => {
     expect(isPreset('@presets/vue')).toBe(true)
     expect(isPreset('@rack/vue')).toBe(false)
     expect(isPreset('vue')).toBe(false)
+  })
+
+  it('isPreset matches case-insensitively via parseNamespace', () => {
+    expect(isPreset('@Presets/vue')).toBe(true)
+    expect(isPreset('@PRESETS/vue')).toBe(true)
+  })
+
+  it('isPreset returns false for unparseable identifiers', () => {
+    expect(isPreset('')).toBe(false)
+    expect(isPreset('@no-slash')).toBe(false)
   })
 })

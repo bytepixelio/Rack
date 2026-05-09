@@ -33,7 +33,12 @@ async function createTestPackage(
   await writeFile(join(pkgDir, 'registry.json'), JSON.stringify(registryJson))
 
   const tarPath = join(dir, `package-${Date.now()}.tar.gz`)
-  execSync(`tar -czf ${tarPath} -C ${pkgDir} .`)
+  // COPYFILE_DISABLE=1 prevents macOS tar from injecting AppleDouble
+  // (`._*`) metadata files, which the upload allowlist would (correctly)
+  // reject as undeclared.
+  execSync(`tar -czf ${tarPath} -C ${pkgDir} .`, {
+    env: { ...process.env, COPYFILE_DISABLE: '1' }
+  })
 
   const content = await readFile(tarPath)
   const checksum = createHash('sha256').update(content).digest('hex')

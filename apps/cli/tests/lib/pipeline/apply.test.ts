@@ -56,14 +56,19 @@ describe('pipeline/apply', () => {
     expect(await readFile(join(tmp, 'out.txt'), 'utf8')).toBe('remote\n')
   })
 
-  it('skips a text file and records a warning when fetchFile throws', async () => {
+  it('aborts the pipeline with FileFetchError when a text file fetch fails', async () => {
     fetchFileMock.mockRejectedValue(new Error('no net'))
     const item = createItem({
       files: [{ type: 'config', target: 'out.txt', path: './out.txt' }]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
-    expect(changes[0].type).toBe('skipped')
-    expect(changes[0].warnings?.[0]).toMatch(/no net/)
+
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toMatchObject({
+      code: 'FILE_FETCH_FAILED',
+      target: 'out.txt',
+      sourcePath: './out.txt'
+    })
   })
 
   it('fetches binary assets via registry.fetchBinaryFile', async () => {
@@ -98,15 +103,20 @@ describe('pipeline/apply', () => {
     expect(changes[0].type).toBe('modified')
   })
 
-  it('skips a binary asset and records a warning when fetchBinaryFile throws', async () => {
+  it('aborts the pipeline with FileFetchError when a binary asset fetch fails', async () => {
     fetchBinaryMock.mockRejectedValue(new Error('cdn down'))
     const item = createItem({
       files: [
         { type: 'registry:asset', target: 'logo.png', path: './logo.png' }
       ]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
-    expect(changes[0].type).toBe('skipped')
+
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toMatchObject({
+      code: 'FILE_FETCH_FAILED',
+      target: 'logo.png'
+    })
   })
 
   it('skips a text file with neither content nor path', async () => {

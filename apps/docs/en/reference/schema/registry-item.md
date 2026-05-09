@@ -43,9 +43,6 @@ aside: false
     "dev": "vite",
     "build": "vite build"
   },
-  "envVars": {
-    "VITE_APP_TITLE": "My React App"
-  },
   "languages": {
     "js": {
       "files": [
@@ -273,11 +270,11 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 - **Type**: `string[]`
 - **Required**: No
-- **Description**: Conflicting registries that cannot be installed together
+- **Description**: Conflicting registries that cannot be installed together. Each entry follows the same `@namespace/name[@version][:language]` shape as `preset.registries` — schema accepts the version and language suffixes, but conflict comparison is canonical (namespace + path), so suffixes there serve as documentation rather than narrowing.
 
 ```json
 {
-  "conflicts": ["frameworks/vue"]
+  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
 }
 ```
 
@@ -285,7 +282,7 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 - **Type**: `string[]`
 - **Required**: No
-- **Description**: Other registries to be automatically installed
+- **Description**: Other registries to be automatically installed. Version pinning (`@version` suffix) is not supported; dependencies always resolve to the latest version.
 
 ```json
 {
@@ -352,20 +349,22 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 | -------------- | ------- | -------- | -------------------------------------------- |
 | target         | string  | Yes      | Target file path                             |
 | type           | string  | Yes      | `FileObject` type                            |
-| content        | string  | No       | Inline file content, mutually exclusive with path |
-| path           | string  | No       | External file path, mutually exclusive with content |
+| content        | string  | No       | Inline file content. For non-asset files, content takes priority over path when both are provided |
+| path           | string  | No       | Template file path on the server. For `registry:asset`, path takes priority over content when both are provided |
 | executable     | boolean | No       | Whether executable permission is needed      |
 | mergeStrategy  | object  | No       | Merge strategy configuration                 |
+
+**`path` format requirements**: relative POSIX path with an optional `./` prefix. Each segment must contain only `A-Z a-z 0-9 . _ @ + -`. The following are **not** allowed: percent-encoding (`%`), query (`?`), fragment (`#`), backslash (`\`), absolute paths, empty segments, or `.`/`..` segments. The referenced file must exist in the uploaded package and must be a regular file (not a directory or symlink).
 
 For `registry:asset`, prefer using `path`. When `path` is used, the CLI writes the target file in binary mode and applies overwrite behavior.
 
 **`mergeStrategy` configuration**
 
-| Field     | Type   | Required | Description                                    |
-| --------- | ------ | -------- | ---------------------------------------------- |
-| type      | string | Yes      | Strategy type: `builtin` or `custom`           |
-| strategy  | string | No       | Built-in strategy name (only when `type: "builtin"`): `json`, `ignore`, `env`, `overwrite` |
-| script    | string | No       | Plugin script path (only when `type: "custom"`) |
+| Field     | Type   | Required                       | Description                                    |
+| --------- | ------ | ------------------------------ | ---------------------------------------------- |
+| type      | string | Yes                            | Strategy type: `builtin` or `custom`           |
+| strategy  | string | Yes when `type` is `"builtin"` | Built-in strategy name: `json`, `ignore`, `env`, `overwrite`. Not allowed when `type` is `"custom"` |
+| script    | string | Yes when `type` is `"custom"`  | Plugin script path. Not allowed when `type` is `"builtin"` |
 
 **Example**:
 
@@ -436,26 +435,11 @@ Using custom plugin:
 }
 ```
 
-### `envVars`
-
-- **Type**: `Record<string, string>`
-- **Required**: No
-- **Description**: Environment variable configuration
-
-```json
-{
-  "envVars": {
-    "VITE_APP_TITLE": "My React App",
-    "NODE_ENV": "development"
-  }
-}
-```
-
 ### `languages`
 
-- **Type**: `object`
+- **Type**: `object` (keys must be `"js"` or `"ts"`)
 - **Required**: No
-- **Description**: Language-specific configuration
+- **Description**: Language-specific configuration. Only JavaScript (`js`) and TypeScript (`ts`) variants are currently supported
 
 ```json
 {
@@ -496,7 +480,7 @@ Using custom plugin:
 - `devDependencies` - language-specific development dependencies
 - `files` - language-specific files
 
-> Fields like `scripts`, `envVars`, `registryDependencies` must live at the registry's top-level (common) configuration; they cannot be placed inside `languages.X`.
+> Fields like `scripts`, `registryDependencies` must live at the registry's top-level (common) configuration; they cannot be placed inside `languages.X`.
 
 **Design principles**
 
@@ -505,7 +489,7 @@ Using custom plugin:
 
 ### `defaultLanguage`
 
-- **Type**: `string` (matches `^[a-z0-9-]+$`, typically `"js"` or `"ts"`)
+- **Type**: `string` (must be `"js"` or `"ts"`)
 - **Required**: No (recommended when `languages` is present)
 - **Description**: Default language used when none is explicitly specified. The CLI resolves the variant in the order: `:language` suffix on the command line > `language` field in `rack.json` > `defaultLanguage` > `"ts"`.
 

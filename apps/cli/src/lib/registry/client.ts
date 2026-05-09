@@ -15,13 +15,19 @@
 import { merge } from 'lodash-es'
 import { rackrc } from '../rackrc.js'
 import { HttpClient } from '../infra/http.js'
-import { HttpError, RegistryNotFoundError } from '../utils/errors.js'
-import { parseNamespace, type ParsedNamespace } from './identifier.js'
+import { validateFilePath } from '@rack/registry-core'
+import { AppError, HttpError, RegistryNotFoundError } from '../utils/errors.js'
+import {
+  parseNamespace,
+  formatCanonicalIdentifier,
+  type ParsedNamespace
+} from './identifier.js'
 
 import type { Logger } from '../infra/logger.js'
 import type {
   Preset,
   Language,
+  RegistryFile,
   RegistryItem,
   ResolvedRegistryItem
 } from './types.js'
@@ -88,9 +94,18 @@ async function fetchItem(
     // Template files still need a versioned base path, so append item.version.
     const registryUrl = parsed.version ? url : `${url}/${item.version}`
 
+    // Preserve user-supplied @version / :language so the value written
+    // back to rack.json.items round-trips, while normalizing namespace
+    // and path casing.
+    const canonicalId = formatCanonicalIdentifier(parsed)
+
+    // Identifier `:language` suffix wins over the project-wide language
+    // (passed in via `options.language` from rack.json), matching the
+    // documented precedence: identifier suffix > rack.json.language >
+    // item.defaultLanguage > 'ts'.
     return {
-      ...applyLanguageOverrides(item, options.language ?? parsed.language),
-      identifier,
+      ...applyLanguageOverrides(item, parsed.language ?? options.language),
+      identifier: canonicalId,
       registryUrl
     }
   } catch (error) {
@@ -113,6 +128,20 @@ async function fetchItem(
  */
 async function fetchPreset(identifier: string): Promise<Preset> {
   const parsed = parseNamespace(identifier)
+
+  if (parsed.path.includes('/')) {
+    throw new AppError(
+      'INVALID_PRESET',
+      `Preset name must be a single segment, got: ${parsed.path}`
+    )
+  }
+
+  if (parsed.version || parsed.language) {
+    throw new AppError(
+      'INVALID_PRESET',
+      'Presets do not support @version or :language suffixes'
+    )
+  }
 
   const resolved = await rackrc.getRegistry(parsed.namespace)
   if (!resolved) {
@@ -273,21 +302,7 @@ function buildRegistryUrl(parsed: ParsedNamespace, baseUrl: string): string {
  * @throws {Error} If the path contains traversal segments or is absolute
  */
 function resolveFileUrl(registryUrl: string, filePath: string): string {
-  const decoded = decodeURIComponent(filePath)
-
-  if (/^[/\\]/.test(decoded)) {
-    throw new Error(`Unsafe file path: ${filePath}`)
-  }
-
-  const normalized = decoded.startsWith('./') ? decoded.slice(2) : decoded
-  const segments = normalized.split('/')
-
-  for (const seg of segments) {
-    if (seg === '' || seg === '.' || seg === '..') {
-      throw new Error(`Unsafe file path: ${filePath}`)
-    }
-  }
-
+  const { normalized } = validateFilePath(filePath)
   const base = stripTrailingSlash(registryUrl)
   return `${base}/files/${normalized}`
 }
@@ -330,7 +345,8 @@ function rethrowAsFileNotFound(
  *
  * Picks the language variant (`language` → `item.defaultLanguage` → `'ts'`),
  * then deep-merges the matching `languages[lang]` block into the base item.
- * Returns the original item unchanged when no overrides exist.
+ * `files` are merged by `target`: language files with a matching target
+ * replace the base entry; others are appended.
  */
 function applyLanguageOverrides(
   item: RegistryItem,
@@ -338,5 +354,50 @@ function applyLanguageOverrides(
 ): RegistryItem {
   const lang = language ?? item.defaultLanguage ?? 'ts'
   const overrides = item.languages?.[lang]
-  return overrides ? (merge({}, item, overrides) as RegistryItem) : item
+  if (!overrides) return item
+
+  const merged = { ...item }
+
+  if (overrides.dependencies) {
+    merged.dependencies = merge({}, item.dependencies, overrides.dependencies)
+  }
+  if (overrides.devDependencies) {
+    merged.devDependencies = merge({}, item.devDependencies, overrides.devDependencies)
+  }
+  if (overrides.files?.length) {
+    merged.files = mergeFilesByTarget(item.files ?? [], overrides.files)
+  }
+
+  return merged
+}
+
+/**
+ * Merge two file lists by `target`.
+ *
+ * Base files whose target matches a language file are replaced in-place;
+ * language files with no matching base entry are appended.
+ *
+ * @param base - Common files from the top-level `files` array
+ * @param overrides - Language-specific files
+ */
+function mergeFilesByTarget(
+  base: RegistryFile[],
+  overrides: RegistryFile[]
+): RegistryFile[] {
+  const overrideMap = new Map(overrides.map(f => [f.target, f]))
+  const seen = new Set<string>()
+
+  const result = base.map(f => {
+    if (overrideMap.has(f.target)) {
+      seen.add(f.target)
+      return overrideMap.get(f.target)!
+    }
+    return f
+  })
+
+  for (const f of overrides) {
+    if (!seen.has(f.target)) result.push(f)
+  }
+
+  return result
 }

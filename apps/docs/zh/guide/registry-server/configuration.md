@@ -151,7 +151,7 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 
 | 设置                  | 值         | 说明                                           |
 | --------------------- | ---------- | ---------------------------------------------- |
-| Cache-Control max-age | `60` 秒    | 所有响应的 `Cache-Control: public, max-age=60` |
+| Cache-Control         | 按路由分层 | 详见[运维文档 - 响应缓存](./operations.md#响应缓存) |
 | 压缩                  | 始终启用   | 支持 `gzip`, `deflate`, `br` 编码              |
 | 速率限制最大请求数    | `1200` 次  | 每个时间窗口的最大请求数                       |
 | 速率限制时间窗口      | `1 minute` | 速率限制的时间窗口                             |
@@ -166,7 +166,7 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 认证配置文件 (仓库根 `config/auth.json`, 与 [Cloudflare Worker](https://github.com/bytepixelio/Rack/blob/main/apps/registry-worker/README.md) 共用同一份) 是命名空间访问的唯一入口:
 
 - 命名空间必须作为顶层键存在; 不在 `auth.json` 中的命名空间一律返回 403 Forbidden, 且不会出现在 `GET /namespaces` 列表中。
-- 值为空数组 `[]` 或 `null` → 匿名读取 (上传仍被拒绝, 除非使用 Admin Token)。这类命名空间在发现接口中对所有人可见。
+- 值必须是数组。空数组 `[]` → 匿名读取 (上传仍被拒绝, 除非使用 Admin Token)。这类命名空间在发现接口中对所有人可见。非数组值（如 `null`、字符串）或非空数组中所有条目均缺少有效 `token` 字段都属于配置错误, 加载时会抛出异常。
 - 配置了 Token 的命名空间（非空数组）仅对携带有效 Token（或 Admin Token）的调用者可见。
 - 数组内每个对象代表一个 Token, 字段如下:
 

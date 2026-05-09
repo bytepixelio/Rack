@@ -115,7 +115,7 @@ Rack 支持语言变体, 即同一个 Registry 根据项目使用的语言 (`Jav
 }
 ```
 
-> 如果某个 `script` 或 `envVar` 只与特定语言相关, 请将它放在 Registry 的顶层 (通用) 配置中, 或拆分为独立 Registry。语言块不会接受这些字段。
+> 如果某个 `script` 只与特定语言相关, 请将它放在 Registry 的顶层 (通用) 配置中, 或拆分为独立 Registry。语言块仅接受 `dependencies`、`devDependencies` 和 `files`。
 
 #### `defaultLanguage`
 
