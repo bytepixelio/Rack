@@ -290,18 +290,20 @@ describe('registry/client fetchFile', () => {
     ['../evil', 'leading ../'],
     ['./../evil', './ then ../'],
     ['a/../../evil', 'mid-path traversal'],
-    ['%2e%2e/evil', 'encoded ../'],
-    ['a/%2e%2e/evil', 'encoded mid-path traversal'],
+    ['%2e%2e/evil', 'percent not allowed'],
+    ['a/%2e%2e/evil', 'percent not allowed'],
     ['/etc/passwd', 'absolute path'],
-    ['templates\\..\\registry.json', 'backslash traversal'],
-    ['templates%5c..%5cregistry.json', 'encoded backslash traversal'],
-    ['templates%5C..%5Cregistry.json', 'uppercase encoded backslash'],
-    ['templates/%ZZ/file.txt', 'malformed percent escape'],
-    ['templates/%2g/file.txt', 'invalid hex after percent'],
-    ['templates/file%', 'trailing bare percent']
-  ])('rejects unsafe file path: %s (%s)', async (path) => {
+    ['templates\\..\\registry.json', 'backslash'],
+    ['templates%5c..%5cregistry.json', 'percent not allowed'],
+    ['templates%5C..%5Cregistry.json', 'percent not allowed'],
+    ['templates/%ZZ/file.txt', 'percent not allowed'],
+    ['templates/%2g/file.txt', 'percent not allowed'],
+    ['templates/file%', 'percent not allowed'],
+    ['templates/a?b.txt', 'query character'],
+    ['templates/a#b.txt', 'fragment character']
+  ])('rejects invalid file path: %s (%s)', async (path) => {
     await expect(registry.fetchFile(registryUrl, path)).rejects.toThrow(
-      /Unsafe file path/
+      /Invalid file path/
     )
   })
 

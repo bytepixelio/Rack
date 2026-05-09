@@ -88,19 +88,22 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
         // 9. Validate schema
         await upload.validateSchema(tempExtractDir)
 
-        // 10. Install (atomic rename + versions.json update)
+        // 10. Validate file paths and existence
+        await upload.validateFilePaths(tempExtractDir)
+
+        // 11. Install (atomic rename + versions.json update)
         await upload.install(tempExtractDir, namespace, name, version, segments)
 
-        // 11. Clean up temp files (local rename already moved extractDir,
+        // 12. Clean up temp files (local rename already moved extractDir,
         //     so cleanup is a safe no-op; R2 mode still needs it removed)
         await upload.cleanup(tempTarPath, tempExtractDir)
         tempTarPath = undefined
         tempExtractDir = undefined
 
-        // 12. Emit webhook events
+        // 13. Emit webhook events
         upload.emitEvents(namespace, name, version, segments)
 
-        // 13. Success
+        // 14. Success
         return reply.code(201).send({
           name,
           version,

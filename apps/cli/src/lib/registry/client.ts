@@ -15,6 +15,7 @@
 import { merge } from 'lodash-es'
 import { rackrc } from '../rackrc.js'
 import { HttpClient } from '../infra/http.js'
+import { validateFilePath } from '@rack/registry-core'
 import { HttpError, RegistryNotFoundError } from '../utils/errors.js'
 import { parseNamespace, type ParsedNamespace } from './identifier.js'
 
@@ -274,26 +275,7 @@ function buildRegistryUrl(parsed: ParsedNamespace, baseUrl: string): string {
  * @throws {Error} If the path contains traversal segments or is absolute
  */
 function resolveFileUrl(registryUrl: string, filePath: string): string {
-  let decoded: string
-  try {
-    decoded = decodeURIComponent(filePath)
-  } catch {
-    throw new Error(`Unsafe file path: ${filePath}`)
-  }
-
-  if (decoded.startsWith('/') || decoded.includes('\\')) {
-    throw new Error(`Unsafe file path: ${filePath}`)
-  }
-
-  const normalized = decoded.startsWith('./') ? decoded.slice(2) : decoded
-  const segments = normalized.split('/')
-
-  for (const seg of segments) {
-    if (seg === '' || seg === '.' || seg === '..') {
-      throw new Error(`Unsafe file path: ${filePath}`)
-    }
-  }
-
+  const { normalized } = validateFilePath(filePath)
   const base = stripTrailingSlash(registryUrl)
   return `${base}/files/${normalized}`
 }

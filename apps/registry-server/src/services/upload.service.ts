@@ -16,7 +16,7 @@ import { join, dirname } from 'path'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
 import { createHash, randomUUID } from 'crypto'
-import { deriveSegments } from '@rack/registry-core'
+import { validateFilePath, deriveSegments } from '@rack/registry-core'
 import { createReadStream, createWriteStream } from 'fs'
 import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
 import {
@@ -241,6 +241,56 @@ export class UploadService {
     const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
     await this.validator.validate(JSON.parse(raw))
     this.logger.info('Schema validation passed')
+  }
+
+  /**
+   * Validate that every `files[].path` in the manifest is a legal path
+   * and points to an existing regular file in the extracted directory.
+   *
+   * @param extractedDir - Path to the extracted package
+   * @throws {ValidationError} If any path is invalid or missing
+   */
+  async validateFilePaths(extractedDir: string): Promise<void> {
+    const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
+    const manifest = JSON.parse(raw) as {
+      files?: { path?: string }[]
+      languages?: Record<string, { files?: { path?: string }[] }>
+    }
+
+    const paths: string[] = []
+
+    // 1. Collect top-level files
+    if (manifest.files) {
+      for (const f of manifest.files) {
+        if (f.path) paths.push(f.path)
+      }
+    }
+
+    // 2. Collect language variant files
+    if (manifest.languages) {
+      for (const lang of Object.values(manifest.languages)) {
+        if (lang.files) {
+          for (const f of lang.files) {
+            if (f.path) paths.push(f.path)
+          }
+        }
+      }
+    }
+
+    // 3. Validate each path and check existence
+    for (const filePath of paths) {
+      const { normalized } = validateFilePath(filePath)
+      const fullPath = join(extractedDir, normalized)
+
+      if (!await this.storage.exists(fullPath)) {
+        throw new ValidationError(
+          'FILE_NOT_FOUND',
+          `File referenced in registry.json does not exist in package: ${filePath}`
+        )
+      }
+    }
+
+    this.logger.info({ count: paths.length }, 'File path validation passed')
   }
 
   /**

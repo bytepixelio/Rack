@@ -73,6 +73,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@rack/registry-core':
+        specifier: workspace:*
+        version: link:../../packages/registry-core
       axios:
         specifier: 1.16.0
         version: 1.16.0
