@@ -145,6 +145,33 @@ async function read(targetDir: string): Promise<RackJsonConfig> {
     )
   }
 
+  if (obj.items !== undefined) {
+    if (!Array.isArray(obj.items) || !obj.items.every(isString)) {
+      throw new RackJsonError(
+        'rack.json field "items" must be an array of strings',
+        'INVALID'
+      )
+    }
+  }
+
+  if (obj.language !== undefined) {
+    if (obj.language !== 'js' && obj.language !== 'ts') {
+      throw new RackJsonError(
+        'rack.json field "language" must be "js" or "ts"',
+        'INVALID'
+      )
+    }
+  }
+
+  if (obj.template !== undefined) {
+    if (!isString(obj.template)) {
+      throw new RackJsonError(
+        'rack.json field "template" must be a string',
+        'INVALID'
+      )
+    }
+  }
+
   return obj as unknown as RackJsonConfig
 }
 
