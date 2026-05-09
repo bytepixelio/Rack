@@ -49,8 +49,12 @@ export function registerAddCommand(program: Command): void {
           return `${namespace}/${path}`
         }
 
-        if (installedRegistries.some((r) => canonicalize(r) === canonicalize(identifier))) {
-          displayAlreadyInstalled(identifier, logger)
+        const requestedKey = canonicalize(identifier)
+        const existingMatch = installedRegistries.find(
+          (r) => canonicalize(r) === requestedKey
+        )
+        if (existingMatch) {
+          displayAlreadyInstalled(identifier, existingMatch, logger)
           return
         }
 

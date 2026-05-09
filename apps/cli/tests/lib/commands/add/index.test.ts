@@ -92,6 +92,16 @@ describe('add command', () => {
     expect(updateMock).not.toHaveBeenCalled()
   })
 
+  it('short-circuits when canonical name matches but version differs', async () => {
+    readOrCreateMock.mockResolvedValue({
+      items: ['@rack/vue@1.0.0'],
+      language: 'ts'
+    })
+    await runCommand(registerAddCommand, ['add', '@rack/vue@2.0.0'])
+    expect(addRegistryMock).not.toHaveBeenCalled()
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+
   it('exits with error when addRegistry rejects', async () => {
     readOrCreateMock.mockResolvedValue({ items: [], language: 'ts' })
     addRegistryMock.mockRejectedValue(new Error('boom'))
