@@ -49,7 +49,12 @@ describe('every preset scaffolds via rk init --ci', () => {
 
       expect(manifest.name).toBe(projectName)
       expect(manifest.template).toBe(preset.id)
-      expect(manifest.items).toEqual(expect.arrayContaining(preset.registries))
+      const canonicalRegistries = preset.registries.map((r: string) =>
+        r.startsWith('@') ? r : `@rack/${r}`
+      )
+      expect(manifest.items).toEqual(
+        expect.arrayContaining(canonicalRegistries)
+      )
       expect(manifest.items.length).toBeGreaterThanOrEqual(
         preset.registries.length
       )
