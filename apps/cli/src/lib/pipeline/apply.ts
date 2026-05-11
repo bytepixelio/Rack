@@ -18,7 +18,7 @@
  */
 
 import path from 'node:path'
-import { rm, readFile as readBuffer } from 'node:fs/promises'
+import { rm, stat, readFile as readBuffer } from 'node:fs/promises'
 import { merge } from './merge/index.js'
 import { registry } from '../registry/client.js'
 import {
@@ -57,6 +57,12 @@ interface FilePlan {
    * when the target did not exist (rollback = delete).
    */
   originalContent: Buffer | null
+  /**
+   * Original permission bits (mode & 0o777) captured alongside content
+   * so rollback can chmod back. `null` when the target did not exist
+   * — rollback deletes the file and mode is irrelevant.
+   */
+  originalMode: number | null
   /** `true` if any contributor set `executable: true`. */
   executable: boolean
 }
@@ -148,6 +154,7 @@ async function planWrites(
           content: buffer,
           existedBefore: existing.existedBefore,
           originalContent: existing.originalContent,
+          originalMode: existing.originalMode,
           executable: existing.executable || file.executable === true
         })
         changes.push({
@@ -184,6 +191,7 @@ async function planWrites(
         content: result.content,
         existedBefore: existing.existedBefore,
         originalContent: existing.originalContent,
+        originalMode: existing.originalMode,
         executable: existing.executable || file.executable === true
       })
       changes.push({
@@ -204,16 +212,40 @@ async function planWrites(
  * Bytes are captured as a raw `Buffer` so a pre-existing binary (PNG,
  * font, etc.) can be restored on rollback without UTF-8 round-trip
  * corruption. Text mergers decode to UTF-8 on demand in {@link mergeText}.
+ *
+ * Permission bits are captured alongside the content so rollback can
+ * chmod back — Node's `writeFile` preserves existing mode on truncate,
+ * so without this snapshot a `chmod 0o755` during commit would survive
+ * a content-restoring rollback.
  */
 async function snapshotTarget(targetPath: string): Promise<{
   existedBefore: boolean
   originalContent: Buffer | null
+  originalMode: number | null
   executable: false
   content: null
 }> {
   const existedBefore = await pathExists(targetPath)
-  const originalContent = existedBefore ? await readBuffer(targetPath) : null
-  return { existedBefore, originalContent, executable: false, content: null }
+  if (!existedBefore) {
+    return {
+      existedBefore: false,
+      originalContent: null,
+      originalMode: null,
+      executable: false,
+      content: null
+    }
+  }
+  const [originalContent, stats] = await Promise.all([
+    readBuffer(targetPath),
+    stat(targetPath)
+  ])
+  return {
+    existedBefore: true,
+    originalContent,
+    originalMode: stats.mode & 0o777,
+    executable: false,
+    content: null
+  }
 }
 
 /** Fetch a binary asset, mapping any failure to FileFetchError. */
@@ -334,8 +366,16 @@ async function rollback(committed: FilePlan[], logger: Logger): Promise<void> {
     try {
       if (!plan.existedBefore) {
         await rm(plan.targetPath, { force: true })
-      } else if (plan.originalContent !== null) {
+        continue
+      }
+      if (plan.originalContent !== null) {
         await writeFile(plan.targetPath, plan.originalContent)
+      }
+      // `writeFile` on an existing file preserves whatever mode the
+      // commit phase ended up with — restore the captured original
+      // so a chmod-during-commit doesn't survive the rollback.
+      if (plan.originalMode !== null) {
+        await chmod(plan.targetPath, plan.originalMode)
       }
     } catch (rollbackError) {
       logger.warn(

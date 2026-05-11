@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { readFile, writeFile, stat } from 'node:fs/promises'
+import { chmod, readFile, writeFile, stat } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../helpers/tmp.js'
 import { createItem, createMockLogger } from '../../helpers/mocks.js'
 import { PathTraversalError } from '../../../src/lib/utils/errors.js'
@@ -301,6 +301,37 @@ describe('pipeline/apply', () => {
     expect(changes).toHaveLength(2)
     // overwrite strategy → last contributor wins.
     expect(await readFile(join(tmp, 'shared.txt'), 'utf8')).toBe('second\n')
+  })
+
+  it('restores pre-existing file permissions when a chmod ran during commit', async () => {
+    // Pre-existing non-executable script. A registry promotes it to
+    // executable: true in commit phase (chmod 0o755). A later plan
+    // fails → rollback. writeFile preserves the commit-time mode on
+    // an existing file, so without an explicit chmod-back the mode
+    // would stick at 0o755.
+    const scriptPath = join(tmp, 'script.sh')
+    await writeFile(scriptPath, 'old')
+    await chmod(scriptPath, 0o644)
+    await writeFile(join(tmp, 'occupied'), 'i am a file')
+
+    const item = createItem({
+      files: [
+        {
+          type: 'config',
+          target: 'script.sh',
+          content: 'new',
+          executable: true
+        },
+        { type: 'config', target: 'occupied/x.txt', content: 'doomed' }
+      ]
+    })
+
+    await expect(
+      applyFiles([item], tmp, undefined, createMockLogger())
+    ).rejects.toThrow()
+
+    expect(await readFile(scriptPath, 'utf8')).toBe('old')
+    expect((await stat(scriptPath)).mode & 0o777).toBe(0o644)
   })
 
   it('restores pre-existing binary files byte-for-byte on rollback', async () => {
