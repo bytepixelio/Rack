@@ -44,6 +44,55 @@ describe('pipeline/resolve-versions resolveDependencies', () => {
     expect(res.dependencies.x).toBe('^1.5.0')
   })
 
+  it('AND-joins ranges when neither is a subset, preserving upper bounds', () => {
+    const items = [
+      createItem({ identifier: 'a', dependencies: { x: '^1.0.0' } }),
+      createItem({ identifier: 'b', dependencies: { x: '<1.5.0' } })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('^1.0.0 <1.5.0')
+    expect(res.conflicts[0].strategy).toBe('compatible')
+  })
+
+  it('AND-joins open lower + upper bound ranges', () => {
+    const items = [
+      createItem({ identifier: 'a', dependencies: { x: '>=1.0.0' } }),
+      createItem({ identifier: 'b', dependencies: { x: '<2.0.0' } })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('>=1.0.0 <2.0.0')
+  })
+
+  it('AND-joins three ranges when no single one is a subset of the rest', () => {
+    const items = [
+      createItem({ identifier: 'a', dependencies: { x: '^1.0.0' } }),
+      createItem({ identifier: 'b', dependencies: { x: '^1.5.0' } }),
+      createItem({ identifier: 'c', dependencies: { x: '<1.8.0' } })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('^1.0.0 ^1.5.0 <1.8.0')
+    expect(res.conflicts[0].strategy).toBe('compatible')
+  })
+
+  it('returns the narrowest range when one is a subset of all others', () => {
+    const items = [
+      createItem({ identifier: 'a', dependencies: { x: '^3.3.0' } }),
+      createItem({ identifier: 'b', dependencies: { x: '^3.4.0' } }),
+      createItem({ identifier: 'c', dependencies: { x: '>=3.0.0' } })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('^3.4.0')
+  })
+
+  it('returns an exact version when it is the narrowest', () => {
+    const items = [
+      createItem({ identifier: 'a', dependencies: { x: '^1.0.0' } }),
+      createItem({ identifier: 'b', dependencies: { x: '1.5.0' } })
+    ]
+    const res = resolveDependencies(items)
+    expect(res.dependencies.x).toBe('1.5.0')
+  })
+
   it('falls back to priority when ranges are incompatible', () => {
     const items = [
       createItem({
