@@ -97,4 +97,41 @@ describe('pkg', () => {
     const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
     expect(data.devDependencies).toEqual({ d: '1' })
   })
+
+  it('update promotes a stale devDependency to runtime when the new batch needs it as a dependency', async () => {
+    await writeFile(
+      join(tmp, 'package.json'),
+      JSON.stringify({
+        name: 'app',
+        version: '1.0.0',
+        devDependencies: { foo: '^1.0.0', other: '^1.0.0' }
+      })
+    )
+
+    await pkg.update(tmp, { dependencies: { foo: '^1.2.0' } })
+
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.dependencies).toEqual({ foo: '^1.2.0' })
+    expect(data.devDependencies).toEqual({ other: '^1.0.0' })
+  })
+
+  it('update keeps a package in dependencies when a later batch declares it as dev (runtime wins)', async () => {
+    await writeFile(
+      join(tmp, 'package.json'),
+      JSON.stringify({
+        name: 'app',
+        version: '1.0.0',
+        dependencies: { foo: '^1.0.0' },
+        devDependencies: { tsx: '^4.0.0' }
+      })
+    )
+
+    await pkg.update(tmp, {
+      devDependencies: { foo: '^1.2.0', vitest: '^1.0.0' }
+    })
+
+    const data = JSON.parse(await readFile(join(tmp, 'package.json'), 'utf8'))
+    expect(data.dependencies).toEqual({ foo: '^1.2.0' })
+    expect(data.devDependencies).toEqual({ tsx: '^4.0.0', vitest: '^1.0.0' })
+  })
 })
