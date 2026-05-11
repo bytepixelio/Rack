@@ -28,7 +28,11 @@ import type { RegistryStore } from '@rack/registry-core'
  */
 async function loadAuthConfig(bucket: R2Bucket) {
   const obj = await bucket.get('.auth/auth.json')
-  return parseAuthConfig(obj ? await obj.json<unknown>() : {})
+  const config = parseAuthConfig(obj ? await obj.json<unknown>() : {})
+  for (const e of config.errors) {
+    console.error(`auth.json namespace rejected: ${e.namespace} — ${e.reason}`)
+  }
+  return config
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────

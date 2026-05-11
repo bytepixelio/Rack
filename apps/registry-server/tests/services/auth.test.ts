@@ -66,4 +66,27 @@ describe('AuthService', () => {
 
     await expect(auth.load()).rejects.toThrow()
   })
+
+  it('isolates per-namespace parse errors and exposes them on getConfigErrors', async () => {
+    await writeFile(
+      authPath,
+      JSON.stringify({
+        '@good': [{ token: 'abc', publish: true }],
+        '@bad': 'not-an-array'
+      })
+    )
+    const auth = new AuthService(authPath)
+    await auth.load()
+
+    // @good still works, @bad is silently rejected from allowedNamespaces
+    expect(auth.isNamespaceAllowed('@good')).toBe(true)
+    expect(auth.isNamespaceAllowed('@bad')).toBe(false)
+
+    const errors = auth.getConfigErrors()
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatchObject({
+      namespace: '@bad',
+      reason: expect.stringContaining('must map to an array')
+    })
+  })
 })

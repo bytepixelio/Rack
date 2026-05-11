@@ -12,6 +12,7 @@ export type {
   TokenRecord,
   AccessResult,
   RawAuthConfig,
+  AuthConfigError,
   RawNamespaceToken
 } from './types.js'
 
