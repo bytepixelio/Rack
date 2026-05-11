@@ -63,7 +63,7 @@
   },
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
-    "turbo": "2.9.9"
+    "turbo": "2.9.12"
   },
   "pnpm": {
     "overrides": {
