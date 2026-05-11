@@ -414,11 +414,12 @@ export function merge(
 
 #### Plugin Paths
 
-- **Local Registry**: `script` path is relative to the registry root directory
-- **Remote Registry**: Plugins are downloaded to a temporary directory for execution
+- **Local Registry**: `script` path is relative to the registry root directory; plugins may `import` neighboring helper files normally
+- **Remote Registry**: the plugin is downloaded to a temporary directory for execution and **must be a self-contained single file**. The CLI fetches only the entry script referenced by `script` and **does not** recursively download files referenced by relative imports — e.g. `import { mergeJson } from './utils.js'` will fail to load because `utils.js` is never fetched. If you need shared helpers, inline them into the same script. The temporary directory is removed automatically after the plugin finishes (success or failure)
 
 #### Notes
 
 - Plugins support both ES Modules and CommonJS
 - Plugins can be synchronous or asynchronous functions
 - Plugin paths are validated for security to prevent path traversal attacks
+- Remote plugins cannot `import` / `require` neighboring helper files (see "Plugin Paths"); local registries don't have this restriction
