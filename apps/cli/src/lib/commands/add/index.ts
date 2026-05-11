@@ -70,7 +70,7 @@ export function registerAddCommand(program: Command): void {
         )
         if (existingMatch) {
           // Same canonical id but a different version is an upgrade
-          // request — Rack does not yet support that, so refuse loudly
+          // request — Rack does not support that, so refuse loudly
           // instead of silently keeping the old version (which is what
           // exit-0 "already installed" would imply to CI). Identical
           // versions (including both omitted) fall through to the

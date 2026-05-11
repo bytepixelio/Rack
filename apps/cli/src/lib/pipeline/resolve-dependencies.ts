@@ -37,7 +37,7 @@ import type { ResolvedRegistryItem } from './types.js'
  *
  * When the canonical id matches but the version specifier differs (e.g.
  * `@rack/a@1.0.0` installed vs `@rack/a@2.0.0` requested by a transitive
- * dep), throws {@link VersionMismatchError} — Rack does not yet support
+ * dep), throws {@link VersionMismatchError} — Rack does not support
  * upgrading installed registries, and silently picking either version
  * would be wrong.
  *
