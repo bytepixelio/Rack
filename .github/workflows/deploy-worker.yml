@@ -39,7 +39,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Post-deploy health check
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused https://registry.rackjs.com/health
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            https://registry.rackjs.com/health
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            https://registry.rackjs.com/schemas/registry-item.json -o /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            https://registry.rackjs.com/presets/node/preset.json -o /dev/null
 
   post-deploy-smoke:
     needs: deploy
