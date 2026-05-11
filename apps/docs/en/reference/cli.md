@@ -18,14 +18,14 @@ rk init -t <template> [-n <project-name>] [--ci] [-f] [--skip-install] [--skip-g
 
 ### Options
 
-| Option                      | Description                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `-t, --template <template>` | **Required.** Template ID, e.g. `@presets/tutorial-project` or a single registry identifier |
-| `-n, --name <project-name>` | Specify the project name in advance (interactive prompt when omitted)                       |
-| `-f, --force`               | Force overwrite an existing target directory                                                |
-| `--ci`                      | Run in CI mode (non-interactive; also skips dependency install and Git init)                |
-| `--skip-install`            | Skip dependency installation                                                                |
-| `--skip-git`                | Skip Git repository initialization                                                          |
+| Option                      | Description                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `-t, --template <template>` | **Required.** Template ID, e.g. `@presets/tutorial-project` or a single registry identifier    |
+| `-n, --name <project-name>` | Specify the project name in advance (interactive prompt when omitted)                          |
+| `-f, --force`               | Force overwrite an existing target directory                                                   |
+| `--ci`                      | Run in CI mode (non-interactive; also skips dependency install and Git init; `-n` is required) |
+| `--skip-install`            | Skip dependency installation                                                                   |
+| `--skip-git`                | Skip Git repository initialization                                                             |
 
 ## `rk add`
 

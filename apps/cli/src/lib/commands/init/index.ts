@@ -75,6 +75,16 @@ export function registerInitCommand(program: Command): void {
 
         if (ci) displayCIMode(logger)
 
+        // CI mode is non-interactive, so we cannot prompt for the project
+        // name. Failing fast here prevents CI scripts from silently falling
+        // back to `my-project` when `-n` is forgotten.
+        if (ci && !options.name) {
+          throw new AppError(
+            'VALIDATION_ERROR',
+            'CI mode requires --name <project-name>; prompts are disabled with --ci.'
+          )
+        }
+
         const projectName = options.name ?? (await promptProjectName(prompter))
         const targetDir = path.resolve(cwd, projectName)
 
