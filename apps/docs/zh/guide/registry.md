@@ -109,7 +109,7 @@ Registry 之间可以声明依赖和冲突关系。
 2. **解析依赖** - 检查 `registryDependencies`, 递归下载所有依赖的 Registry
 3. **检测冲突** - 验证没有 `conflicts` 中声明的 Registry 已安装
 4. **合并文件** - 根据优先级规则智能合并文件 (详见 [文件合并策略](/zh/guide/file-merge))
-5. **安装依赖** - 执行 `npm install` 或 `pnpm install` 安装 npm 包
+5. **安装依赖** - 执行 `npm install` 安装 npm 包
 6. **更新配置** - 将所有应用的 Registry（包括传递依赖）记录到 `rack.json` 的 `items` 数组中
 
 ## Registry 来源
