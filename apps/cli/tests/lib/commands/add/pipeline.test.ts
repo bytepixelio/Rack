@@ -155,4 +155,47 @@ describe('add/pipeline addRegistry', () => {
       expect.stringContaining('Conflict check is degraded')
     )
   })
+
+  it('does not warn when fetched count differs but every requested canonical id is present', async () => {
+    const logger = createMockLogger()
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    // Two requested entries collapse to the same canonical key, so the
+    // single fetched item satisfies both — `missing` ends up empty even
+    // though `fetched.length !== requested.length`.
+    fetchItemsMock.mockResolvedValue([createItem({ identifier: '@rack/b' })])
+
+    await addRegistry(
+      {
+        identifier: '@rack/a',
+        targetDir: '/t',
+        installedRegistries: ['@rack/b', '@RACK/b']
+      },
+      logger
+    )
+
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Conflict check is degraded')
+    )
+  })
+
+  it('pluralizes the degraded warning when multiple installed fetches fail', async () => {
+    const logger = createMockLogger()
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    fetchItemsMock.mockResolvedValue([createItem({ identifier: '@rack/b' })])
+
+    await addRegistry(
+      {
+        identifier: '@rack/a',
+        targetDir: '/t',
+        installedRegistries: ['@rack/b', '@rack/missing-1', '@rack/missing-2']
+      },
+      logger
+    )
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /could not fetch installed registries .*these registries/
+      )
+    )
+  })
 })
