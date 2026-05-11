@@ -82,6 +82,26 @@ describe('pkg', () => {
     expect(data.scripts).toBeUndefined()
   })
 
+  it('read returns null when package.json is missing', async () => {
+    expect(await pkg.read(tmp)).toBeNull()
+  })
+
+  it('read returns parsed contents for a valid package.json', async () => {
+    await writeFile(
+      join(tmp, 'package.json'),
+      JSON.stringify({ name: 'foo', version: '1.2.3' })
+    )
+    expect(await pkg.read(tmp)).toEqual({ name: 'foo', version: '1.2.3' })
+  })
+
+  it('read throws PackageJsonInvalidError when the file is corrupt', async () => {
+    await writeFile(join(tmp, 'package.json'), '{ broken')
+    await expect(pkg.read(tmp)).rejects.toMatchObject({
+      code: 'PACKAGE_JSON_INVALID',
+      filePath: join(tmp, 'package.json')
+    })
+  })
+
   it('install runs `npm install` in the target directory', async () => {
     await pkg.install(tmp)
     expect(execFileMock).toHaveBeenCalledWith('npm', ['install'], { cwd: tmp })

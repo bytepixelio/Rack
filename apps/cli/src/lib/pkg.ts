@@ -27,6 +27,32 @@ export interface PackageJson {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
+ * Read and parse `package.json` from a project directory.
+ *
+ * Returns `null` when the file does not exist (a fresh project). Refuses
+ * to silently treat a corrupted file as missing — wiping scripts /
+ * dependencies / packageManager / exports on the next write would be
+ * unrecoverable, so a broken manifest surfaces as a typed error and the
+ * caller must fix or remove the file before retrying.
+ *
+ * @param projectDir - Project directory containing package.json
+ * @returns          Parsed contents, or `null` if the file is missing
+ * @throws {PackageJsonInvalidError} If the file exists but cannot be parsed
+ */
+async function read(projectDir: string): Promise<PackageJson | null> {
+  const filePath = path.join(projectDir, 'package.json')
+  if (!(await pathExists(filePath))) return null
+  try {
+    return await readJSON<PackageJson>(filePath)
+  } catch (error) {
+    throw new PackageJsonInvalidError(
+      `package.json exists but could not be parsed: ${getErrorMessage(error)}`,
+      filePath
+    )
+  }
+}
+
+/**
  * Update package.json with new dependencies and scripts.
  * Reads the existing file (or creates a new one), merges the provided
  * fields, and writes back. Only non-empty fields are merged.
@@ -40,21 +66,7 @@ async function update(
   fields: Pick<PackageJson, 'dependencies' | 'devDependencies' | 'scripts'>
 ): Promise<PackageJson> {
   const filePath = path.join(projectDir, 'package.json')
-
-  let current: PackageJson = {}
-  if (await pathExists(filePath)) {
-    try {
-      current = await readJSON<PackageJson>(filePath)
-    } catch (error) {
-      // Refuse to silently rewrite a broken package.json — that would
-      // wipe scripts, dependencies, packageManager, exports, etc. The
-      // user must fix or remove the file before re-running.
-      throw new PackageJsonInvalidError(
-        `package.json exists but could not be parsed: ${getErrorMessage(error)}`,
-        filePath
-      )
-    }
-  }
+  const current: PackageJson = (await read(projectDir)) ?? {}
 
   if (!current.name) current.name = path.basename(projectDir)
   if (!current.version) current.version = '1.0.0'
@@ -111,6 +123,7 @@ async function install(projectDir: string): Promise<void> {
 // ─── Namespace Export ────────────────────────────────────────────────────────
 
 export const pkg = {
+  read,
   update,
   install
 }

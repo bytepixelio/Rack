@@ -1,9 +1,12 @@
 /**
- * `rk init` pipeline — fetch, resolve, and apply a preset or single registry.
+ * `rk init` pipeline — fetch a preset / single registry, plan, then write.
  *
- * Self-contained pipeline for the init command. Coordinates phases:
- * fetch → resolve → validate → sort → apply → collect → merge.
- * Returns a {@link PipelineResult}; throws {@link AppError} on failure.
+ * The pipeline is thin: it expands the template into root items via
+ * {@link fetchTemplate}, hands transitive resolution + conflict checks +
+ * sort to {@link buildInstallPlan}, pre-flights the workspace, and
+ * commits files + `package.json`. The {@link InstallPlan} returned by
+ * the planner names every role explicitly so the apply phase consumes
+ * `plan.toApply` directly instead of juggling parallel arrays.
  *
  * @example
  * ```ts
@@ -17,10 +20,9 @@
 
 import { pkg } from '../../pkg.js'
 import { fetchTemplate } from './fetch.js'
-import { sortItems } from '../../pipeline/sort.js'
 import { applyFiles } from '../../pipeline/apply.js'
-import { validateNoConflicts } from '../../pipeline/conflict.js'
-import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
+import { preflight } from '../../pipeline/preflight.js'
+import { buildInstallPlan } from '../../pipeline/install-plan.js'
 import {
   logConflicts,
   resolveDependencies
@@ -59,51 +61,51 @@ export async function initProject(
 
   // 1. Fetch. A `:js`/`:ts` suffix on a single-registry template, or on
   // any preset member, wins over `language` (the CLI-level default) for
-  // that item; the resolved choice is attached to each item so steps 2
-  // and 5 propagate the same variant downstream per branch.
+  // that item; the resolved choice is attached to each item so the
+  // planner and apply phase propagate the same variant downstream.
   logger.info('Starting initialization pipeline')
   const roots = await fetchTemplate(template, { language, logger })
   logger.info(`Fetched ${roots.length} registries`)
 
-  const initialRegistries = roots.map((item) => item.identifier)
+  // 2. Build the install plan — transitive resolution, conflict check,
+  // topo sort. `installedRegistries` is empty for `rk init` (fresh
+  // project), so `alreadyInstalled` is also empty.
+  const plan = await buildInstallPlan({ logger, requested: roots })
+  logger.info(
+    `Total registries (including dependencies): ${plan.toApply.length}`
+  )
 
-  // 2. Resolve dependencies (BFS) — each dep inherits its parent's
-  // resolvedLanguage rather than getting reset to a single project-wide
-  // value at every hop.
-  const resolved = await resolveRegistryDependencies(roots, logger)
-  logger.info(`Total registries (including dependencies): ${resolved.length}`)
+  // 3. Preflight — only meaningful when `--force` lands us in an
+  // existing directory; for a fresh init the file doesn't exist and the
+  // check is a cheap no-op.
+  await preflight(targetDir)
 
-  // 3. Validate conflicts
-  validateNoConflicts(resolved)
-
-  // 4. Sort
-  const items = sortItems(resolved)
-
-  // 5. Apply files
+  // 4. Apply files.
   logger.info('Applying files')
-  const fileChanges = await applyFiles(items, targetDir, logger)
+  const fileChanges = await applyFiles(plan.toApply, targetDir, logger)
 
-  // 6. Collect dependencies and scripts
-  const { dependencies, devDependencies, conflicts } =
-    resolveDependencies(items)
+  // 5. Collect dependencies and scripts.
+  const { dependencies, devDependencies, conflicts } = resolveDependencies(
+    plan.toApply
+  )
   logConflicts(conflicts, logger)
 
   const scripts: Record<string, string> = {}
-  for (const item of items) {
+  for (const item of plan.toApply) {
     if (item.scripts) Object.assign(scripts, item.scripts)
   }
 
-  // 7. Merge into package.json
+  // 6. Merge into package.json.
   await pkg.update(targetDir, { dependencies, devDependencies, scripts })
 
   return {
-    items,
-    scripts,
     targetDir,
     fileChanges,
+    scripts,
     dependencies,
     devDependencies,
-    initialRegistries,
-    appliedRegistries: items.map((i) => i.identifier)
+    items: plan.toApply,
+    appliedRegistries: plan.toRecord,
+    initialRegistries: plan.requested.map((item) => item.identifier)
   }
 }
