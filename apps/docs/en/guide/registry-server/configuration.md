@@ -90,7 +90,7 @@ When `STORAGE_BACKEND=local` (default), uploaded packages are stored on the loca
 | Variable           | Default                  | Description                                                              |
 | ------------------ | ------------------------ | ------------------------------------------------------------------------ |
 | `AUTH_CONFIG_PATH` | `../../config/auth.json` | Path to auth.json (repo-root `config/auth.json`, shared with the Worker) |
-| `ADMIN_TOKEN`      | _(not set)_              | System-level admin token for cross-namespace publishing                  |
+| `ADMIN_TOKEN`      | _(not set)_              | System-level admin token; bypasses namespace auth for reads and uploads  |
 
 **Example Configuration**
 
@@ -98,12 +98,12 @@ When `STORAGE_BACKEND=local` (default), uploaded packages are stored on the loca
 # Authentication configuration (defaults to repo-root config/auth.json, shared with the Worker)
 # AUTH_CONFIG_PATH=../../config/auth.json
 
-# Admin token (optional, enables cross-namespace publishing)
+# Admin token (optional, enables cross-namespace reads and publishes)
 ADMIN_TOKEN=your-secret-admin-token
 ```
 
 ::: tip Admin Token
-The `ADMIN_TOKEN` allows publishing to any namespace without per-namespace token configuration. When a request carries this token, it bypasses namespace-level auth checks during upload. This is useful for CI/CD systems that need to publish to multiple namespaces.
+`ADMIN_TOKEN` is a system-level master key. Holders may read (`GET /registries/*`, `GET /namespaces`) and publish to any namespace without per-namespace token configuration — when a request carries this token, both upload and read paths skip namespace-level auth checks. Useful for CI/CD systems that operate across multiple namespaces.
 :::
 
 ::: tip R2 mode requires auth.json to be synced to R2
