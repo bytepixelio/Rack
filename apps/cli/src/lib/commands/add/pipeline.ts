@@ -1,9 +1,13 @@
 /**
- * `rk add` pipeline — fetch, resolve, and apply a single registry.
+ * `rk add` pipeline — fetch a single root, plan the install, then write.
  *
- * Self-contained pipeline for the add command. Fetches the registry
- * and its dependencies, checks conflicts against installed registries,
- * applies files, and merges dependencies into package.json.
+ * The pipeline is thin: it fetches the user-requested registry, hands
+ * everything else (transitive resolution, conflict checks, sort) off to
+ * {@link buildInstallPlan}, pre-flights the workspace, and finally
+ * commits files + `package.json`. The {@link InstallPlan} returned by
+ * the planner names each registry's role explicitly so the apply phase
+ * never has to redo "which of these is a transitive dep that's already
+ * installed?" guesswork.
  *
  * @example
  * ```ts
@@ -16,12 +20,11 @@
 
 import { pkg } from '../../pkg.js'
 import { AppError } from '../../utils/errors.js'
-import { sortItems } from '../../pipeline/sort.js'
 import { registry } from '../../registry/client.js'
+import { isPreset } from '../../registry/identifier.js'
+import { preflight } from '../../pipeline/preflight.js'
 import { applyFiles } from '../../pipeline/apply.js'
-import { validateNoConflicts } from '../../pipeline/conflict.js'
-import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
-import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
+import { buildInstallPlan } from '../../pipeline/install-plan.js'
 import {
   logConflicts,
   resolveDependencies
@@ -69,96 +72,57 @@ export async function addRegistry(
     )
   }
 
-  // 1. Fetch the registry. The root's `:js`/`:ts` suffix (if any) wins
-  // over `language` (the project default from rack.json) inside fetchItem,
-  // and the resolved choice is attached to the returned item so steps 2
-  // and 5 propagate the same variant downstream.
+  // 1. Fetch the requested root. The root's `:js`/`:ts` suffix (if any)
+  // wins over `language` (the project default from rack.json) inside
+  // fetchItem, and the resolved choice is attached to the returned item
+  // so the planner and apply phase propagate the same variant downstream.
   logger.info(`Fetching registry: ${identifier}`)
   const root = await registry.fetchItem(identifier, { language })
 
-  // 2. Resolve dependencies (BFS). Each dep is fetched with its parent's
-  // resolvedLanguage, so a `:js` root pulls JS deps even when rack.json
-  // is TS. Skip transitive deps already installed — their files and
-  // package.json entries are on disk from a previous install. Conflict
-  // detection below still sees them via the separate
-  // `fetchItems(installedRegistries)` call.
-  const resolved = await resolveRegistryDependencies(
-    [root],
+  // 2. Build the install plan — transitive deps, already-installed
+  // fetches for conflict checking, conflict validation, topo sort.
+  const plan = await buildInstallPlan({
     logger,
-    installedRegistries
-  )
-  logger.info(`Fetched ${resolved.length} registries (including dependencies)`)
-
-  // 3. Conflict check (new + installed)
-  const installedItems = await registry.fetchItems(installedRegistries, {
     language,
-    logger
+    requested: [root],
+    installedRegistries
   })
-  warnDegradedConflictCheck(installedRegistries, installedItems, logger)
-  validateNoConflicts([...installedItems, ...resolved], installedRegistries)
+  logger.info(
+    `Fetched ${plan.toApply.length} registries (including dependencies)`
+  )
 
-  // 4. Sort
-  const items = sortItems(resolved)
+  // 3. Preflight — validate `package.json` parses before any disk write,
+  // so a corrupted manifest aborts the install *before* registry files
+  // land and leave the workspace in a partially-applied state.
+  await preflight(targetDir)
 
-  // 5. Apply files
+  // 4. Apply files.
   logger.info('Applying files')
-  const fileChanges = await applyFiles(items, targetDir, logger)
+  const fileChanges = await applyFiles(plan.toApply, targetDir, logger)
 
-  // 6. Collect dependencies and scripts
-  const { dependencies, devDependencies, conflicts } =
-    resolveDependencies(items)
+  // 5. Collect dependencies and scripts from the items that actually
+  // landed.
+  const { dependencies, devDependencies, conflicts } = resolveDependencies(
+    plan.toApply
+  )
   logConflicts(conflicts, logger)
 
   const scripts: Record<string, string> = {}
-  for (const item of items) {
+  for (const item of plan.toApply) {
     if (item.scripts) Object.assign(scripts, item.scripts)
   }
 
-  // 7. Merge into package.json
+  // 6. Merge into package.json.
   await pkg.update(targetDir, { dependencies, devDependencies, scripts })
 
   return {
-    items,
-    scripts,
     targetDir,
     fileChanges,
+    scripts,
     dependencies,
     devDependencies,
+    items: plan.toApply,
     initialRegistries: [identifier],
-    appliedRegistries: items.map((i) => i.identifier)
+    appliedRegistries: plan.toRecord
   }
-}
-
-// ─── Internal ───────────────────────────────────────────────────────────────
-
-/**
- * Surface a clear warning when one or more installed registries failed to
- * fetch — without it, an offline / unreachable registry whose `conflicts`
- * array would have blocked the new install silently passes the conflict
- * check via the identifier-only fallback in {@link validateNoConflicts}.
- */
-function warnDegradedConflictCheck(
-  requested: string[],
-  fetched: { identifier: string }[],
-  logger: Logger
-): void {
-  if (requested.length === 0 || fetched.length === requested.length) return
-
-  const fetchedKeys = new Set(
-    fetched.map((it) => canonicalizeIdentifier(it.identifier))
-  )
-  const missing = requested.filter(
-    (id) => !fetchedKeys.has(canonicalizeIdentifier(id))
-  )
-  if (missing.length === 0) return
-
-  logger.warn(
-    `Conflict check is degraded: could not fetch installed ${pluralize(missing.length, 'registry', 'registries')} ` +
-      `${missing.join(', ')}. Reciprocal "conflicts" declared by ` +
-      `${missing.length === 1 ? 'this registry' : 'these registries'} cannot be enforced.`
-  )
-}
-
-function pluralize(n: number, one: string, many: string): string {
-  return n === 1 ? one : many
 }
