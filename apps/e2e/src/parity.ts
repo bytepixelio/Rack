@@ -73,7 +73,12 @@ interface Env {
 interface R2BucketLike {
   get: (key: string) => Promise<R2ObjectBodyLike | null>
   head: (key: string) => Promise<R2ObjectLike | null>
-  list: (options?: { prefix?: string; delimiter?: string; cursor?: string; limit?: number }) => Promise<R2ListResultLike>
+  list: (options?: {
+    prefix?: string
+    delimiter?: string
+    cursor?: string
+    limit?: number
+  }) => Promise<R2ListResultLike>
 }
 
 interface R2ObjectBodyLike {
@@ -115,7 +120,10 @@ export const DEFAULT_SEED: SeedSpec = {
 // ─── Server seeding ──────────────────────────────────────────────────
 
 /** Materialize a seed onto a temp dir + return the Fastify `Config`. */
-export async function seedServer(spec: SeedSpec, adminToken: string): Promise<{ tempDir: string; config: Config }> {
+export async function seedServer(
+  spec: SeedSpec,
+  adminToken: string
+): Promise<{ tempDir: string; config: Config }> {
   const tempDir = await mkdtemp(path.join(tmpdir(), 'parity-server-'))
   const authPath = path.join(tempDir, 'auth.json')
 
@@ -213,7 +221,10 @@ export function createMockBucket(spec: SeedSpec): R2BucketLike {
 /** Boot Fastify, fire the case, tear it down. Returns the inject response. */
 export async function fireServer(c: ParityCase): Promise<InjectResponse> {
   const adminToken = c.adminToken ?? ADMIN_TOKEN
-  const { tempDir, config } = await seedServer(c.seed ?? DEFAULT_SEED, adminToken)
+  const { tempDir, config } = await seedServer(
+    c.seed ?? DEFAULT_SEED,
+    adminToken
+  )
   const app = await buildApp(config)
   try {
     return await app.inject({
@@ -235,7 +246,10 @@ export function fireWorker(c: ParityCase): Promise<Response> {
   const request = new Request(`http://w${c.path}`, { method: 'GET', headers })
   // Cast: the Worker handler accepts the real R2Bucket interface; our
   // mock implements the read-only subset the routes actually call.
-  return (worker.fetch as (r: Request, e: unknown) => Promise<Response>)(request, env)
+  return (worker.fetch as (r: Request, e: unknown) => Promise<Response>)(
+    request,
+    env
+  )
 }
 
 // ─── Expectation resolver ────────────────────────────────────────────
