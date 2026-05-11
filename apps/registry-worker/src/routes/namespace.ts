@@ -6,32 +6,12 @@
  * are not leaked to anyone who cannot access them.
  */
 
-import { enforceNamespaceAccess } from '../lib/auth.js'
+import { loadAuthConfig, enforceNamespaceAccess } from '../lib/auth.js'
 import { json, badRequest, notFound } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
-import {
-  extractToken,
-  parseAuthConfig,
-  filterAllowedNamespaces
-} from '@rack/auth-core'
+import { extractToken, filterAllowedNamespaces } from '@rack/auth-core'
 
 import type { RegistryStore } from '@rack/registry-core'
-
-// ─── Internal ──────────────────────────────────────────────────────────────
-
-/**
- * Load auth config from R2. Intentionally does not share the module-level
- * cache in `../lib/auth.ts` — that cache is keyed to `enforceNamespaceAccess`
- * and its TTL contract. A one-off parse here is acceptable for listing.
- */
-async function loadAuthConfig(bucket: R2Bucket) {
-  const obj = await bucket.get('.auth/auth.json')
-  const config = parseAuthConfig(obj ? await obj.json<unknown>() : {})
-  for (const e of config.errors) {
-    console.error(`auth.json namespace rejected: ${e.namespace} — ${e.reason}`)
-  }
-  return config
-}
 
 // ─── Public API ────────────────────────────────────────────────────────────
 

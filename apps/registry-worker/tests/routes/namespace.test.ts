@@ -1,5 +1,5 @@
 import { beforeEach } from 'vitest'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { clearAuthCache } from '../../src/lib/auth.js'
 import { createMockBucket } from '../helpers/mock-bucket.js'
 import {
@@ -76,6 +76,22 @@ describe('GET /namespaces', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { namespaces: string[] }
     expect(body.namespaces).toEqual([])
+  })
+
+  it('reuses the shared TTL cache instead of re-reading .auth/auth.json', async () => {
+    const bucket = createMockBucket(
+      { '@rack/runtimes/node/versions.json': { versions: ['1.0.0'] } },
+      { authConfig: { '@rack': [] } }
+    )
+    const getSpy = vi.spyOn(bucket, 'get')
+
+    await handleNamespaces(bucket, undefined, mockRequest())
+    await handleNamespaces(bucket, undefined, mockRequest())
+
+    const authReads = getSpy.mock.calls.filter(
+      (call) => call[0] === '.auth/auth.json'
+    )
+    expect(authReads).toHaveLength(1)
   })
 })
 

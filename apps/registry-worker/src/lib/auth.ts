@@ -37,9 +37,20 @@ export function clearAuthCache(): void {
   cache = null
 }
 
-async function loadAuthConfig(
+/**
+ * Load and cache the parsed auth config from R2.
+ *
+ * Shared with the namespace-listing routes so the same cache services
+ * both rejection-path enforcement and discovery filtering — otherwise
+ * `/namespaces` would re-read `.auth/auth.json` on every request.
+ *
+ * @param bucket - R2 bucket holding `.auth/auth.json`
+ * @param now    - Wall-clock ms for cache freshness; defaults to `Date.now()`
+ *                 (override for deterministic tests)
+ */
+export async function loadAuthConfig(
   bucket: R2Bucket,
-  now: number
+  now: number = Date.now()
 ): Promise<AuthConfig> {
   if (cache && cache.expiresAt > now) return cache.config
 
