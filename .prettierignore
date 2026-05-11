@@ -1,0 +1,12 @@
+# Lockfiles
+pnpm-lock.yaml
+
+# Build & test artifacts
+**/dist/**
+**/coverage/**
+**/.vitepress/cache/**
+**/.vitepress/dist/**
+
+# Scaffold templates — content shipped to user projects, formatting belongs
+# to the consuming project, not to this repo.
+packages/storage/**/templates/**
