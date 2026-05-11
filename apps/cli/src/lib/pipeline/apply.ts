@@ -29,8 +29,8 @@ import {
 } from '../utils/errors.js'
 
 import type { Logger } from '../infra/logger.js'
-import type { FileChange, ResolvedRegistryItem } from './types.js'
 import type { Language, RegistryFile } from '../registry/types.js'
+import type { FileChange, ResolvedRegistryItem } from './types.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -72,9 +72,14 @@ interface FilePlan {
 /**
  * Apply files from all resolved registry items to the target directory.
  *
+ * Each item's `resolvedLanguage` (set during fetch) is threaded into
+ * its own merge calls so custom plugins receive the language context
+ * for the variant the item was loaded as — not a single project-wide
+ * value that may disagree with what `applyLanguageOverrides` actually
+ * merged into the item's `files`.
+ *
  * @param items - Resolved registry items (sorted by dependency + priority)
  * @param targetDir - Absolute path to the target project directory
- * @param language - Language variant for merge strategy resolution
  * @param logger - Logger instance
  * @returns Array of file change records (one per contributing file)
  * @throws {FileFetchError} If any manifest-declared file fails to fetch
@@ -83,15 +88,9 @@ interface FilePlan {
 export async function applyFiles(
   items: ResolvedRegistryItem[],
   targetDir: string,
-  language: Language | undefined,
   logger: Logger
 ): Promise<FileChange[]> {
-  const { plans, changes } = await planWrites(
-    items,
-    targetDir,
-    language,
-    logger
-  )
+  const { plans, changes } = await planWrites(items, targetDir, logger)
   await commitWrites(plans, logger)
   return changes
 }
@@ -134,7 +133,6 @@ function resolveWithinTarget(targetDir: string, target: string): string {
 async function planWrites(
   items: ResolvedRegistryItem[],
   targetDir: string,
-  language: Language | undefined,
   logger: Logger
 ): Promise<{ plans: FilePlan[]; changes: FileChange[] }> {
   const plans = new Map<string, FilePlan>()
@@ -178,7 +176,7 @@ async function planWrites(
         typeof currentForMerge === 'string'
           ? currentForMerge
           : (currentForMerge?.toString('utf8') ?? null),
-        language,
+        item.resolvedLanguage,
         logger
       )
 
@@ -276,7 +274,7 @@ async function mergeText(
   file: RegistryFile,
   registryUrl: string,
   currentContent: string | null,
-  language: Language | undefined,
+  language: Language,
   logger: Logger
 ): Promise<
   | {
