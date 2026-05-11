@@ -367,7 +367,37 @@ describe('R2UploadBackend', () => {
       })
 
     await expect(backend.deletePrefix('p')).rejects.toThrow(
-      /Failed to delete 1 object\(s\) under "p": b: no permission/
+      /Failed to delete 1 object\(s\) under "p\/": b: no permission/
+    )
+  })
+
+  it('should normalize prefix with a trailing slash to avoid sibling-version matches', async () => {
+    // Without normalization, listing `@rack/node/1.0.0` byte-prefix
+    // would also catch `@rack/node/1.0.0-beta.1/...` and
+    // `@rack/node/1.0.0+build/...` — a rollback of 1.0.0 would wipe
+    // those neighbors' files. The fix is a trailing slash so listing
+    // is bound to the directory boundary.
+    mockSend.mockResolvedValueOnce({ Contents: [] })
+
+    await backend.deletePrefix('@rack/node/1.0.0')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        _type: 'ListObjects',
+        Prefix: '@rack/node/1.0.0/'
+      })
+    )
+  })
+
+  it('should leave an already-trailing-slash prefix unchanged', async () => {
+    mockSend.mockResolvedValueOnce({ Contents: [] })
+
+    await backend.deletePrefix('@rack/node/1.0.0/')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ Prefix: '@rack/node/1.0.0/' })
     )
   })
 })

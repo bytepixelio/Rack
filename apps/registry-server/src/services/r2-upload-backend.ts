@@ -127,28 +127,35 @@ export class R2UploadBackend {
   }
 
   /**
-   * Delete every object whose key starts with `prefix`.
+   * Delete every object under the directory keyed by `prefix`.
    *
    * Used to roll back a partially-uploaded version when a later step
    * (versions.json regeneration, etc.) fails. Caller is expected to
    * swallow errors — a rollback failure should not mask the original.
+   *
+   * The prefix is normalized to end with `/` so that rolling back
+   * `@rack/node/1.0.0` cannot incidentally match keys under
+   * `@rack/node/1.0.0-beta.1/` or `@rack/node/1.0.0+build.42/`
+   * (S3 / R2 list semantics are byte-prefix, not directory-aware).
    *
    * Uses `DeleteObjects` batch API so a typical N-file version rolls
    * back in `ceil(N / 1000)` round trips instead of N. R2 honors the
    * same 1000-key limit as S3, which lines up with `ListObjectsV2`'s
    * default page size — each list page maps to one batch delete.
    *
-   * @param prefix - Key prefix to wipe (e.g. `@rack/node/1.0.0`)
+   * @param prefix - Directory-style key prefix (e.g. `@rack/node/1.0.0`);
+   *                 a trailing `/` is appended if missing
    * @throws {Error} When any individual key fails to delete; the
    *                aggregated key:reason list is included in the message
    */
   async deletePrefix(prefix: string): Promise<void> {
+    const directoryPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`
     let continuationToken: string | undefined
 
     do {
       const list = await this.client.send(
         new ListObjectsV2Command({
-          Prefix: prefix,
+          Prefix: directoryPrefix,
           Bucket: this.bucketName,
           ContinuationToken: continuationToken
         })
@@ -174,7 +181,7 @@ export class R2UploadBackend {
             (e) => `${e.Key ?? '<unknown>'}: ${e.Message ?? 'unknown error'}`
           ).join('; ')
           throw new Error(
-            `Failed to delete ${result.Errors.length} object(s) under "${prefix}": ${detail}`
+            `Failed to delete ${result.Errors.length} object(s) under "${directoryPrefix}": ${detail}`
           )
         }
       }
