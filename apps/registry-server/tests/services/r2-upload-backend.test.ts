@@ -149,6 +149,17 @@ describe('R2UploadBackend', () => {
     expect(keys[keys.length - 1]).toBe('@rack/node/1.0.0/registry.json')
   })
 
+  it('should throw when uploadDirectory is called without registry.json', async () => {
+    const dir = join(tempDir, 'package-no-manifest')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'smoke.json'), '{}')
+
+    await expect(
+      backend.uploadDirectory(dir, '@rack/node/1.0.0')
+    ).rejects.toThrow(/registry\.json/)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
   // ─── writeFile ────────────────────────────────────────────────────────────
 
   it('should write content to R2', async () => {
@@ -358,6 +369,15 @@ describe('R2UploadBackend', () => {
     expect(mockSend).toHaveBeenCalledTimes(1)
   })
 
+  it('should treat a missing Contents field as an empty page', async () => {
+    // S3/R2 may omit Contents entirely on an empty bucket prefix.
+    mockSend.mockResolvedValueOnce({})
+
+    await backend.deletePrefix('no-contents-field')
+
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
   it('should throw when DeleteObjects returns per-key errors', async () => {
     mockSend
       .mockResolvedValueOnce({
@@ -369,6 +389,20 @@ describe('R2UploadBackend', () => {
 
     await expect(backend.deletePrefix('p')).rejects.toThrow(
       /Failed to delete 1 object\(s\) under "p\/": b: no permission/
+    )
+  })
+
+  it('should fall back to placeholders when DeleteObjects error lacks Key or Message', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [{ Key: 'a' }]
+      })
+      .mockResolvedValueOnce({
+        Errors: [{ Code: 'InternalError' }]
+      })
+
+    await expect(backend.deletePrefix('p')).rejects.toThrow(
+      /Failed to delete 1 object\(s\) under "p\/": <unknown>: unknown error/
     )
   })
 
