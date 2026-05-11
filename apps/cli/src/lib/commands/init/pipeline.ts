@@ -57,15 +57,20 @@ export async function initProject(
 ): Promise<PipelineResult> {
   const { template, targetDir } = params
 
-  // 1. Fetch
+  // 1. Fetch. A `:js`/`:ts` suffix on a single-registry template, or on
+  // any preset member, wins over `language` (the CLI-level default) for
+  // that item; the resolved choice is attached to each item so steps 2
+  // and 5 propagate the same variant downstream per branch.
   logger.info('Starting initialization pipeline')
   const roots = await fetchTemplate(template, { language, logger })
   logger.info(`Fetched ${roots.length} registries`)
 
   const initialRegistries = roots.map((item) => item.identifier)
 
-  // 2. Resolve dependencies (BFS)
-  const resolved = await resolveRegistryDependencies(roots, language, logger)
+  // 2. Resolve dependencies (BFS) — each dep inherits its parent's
+  // resolvedLanguage rather than getting reset to a single project-wide
+  // value at every hop.
+  const resolved = await resolveRegistryDependencies(roots, logger)
   logger.info(`Total registries (including dependencies): ${resolved.length}`)
 
   // 3. Validate conflicts
@@ -76,7 +81,7 @@ export async function initProject(
 
   // 5. Apply files
   logger.info('Applying files')
-  const fileChanges = await applyFiles(items, targetDir, language, logger)
+  const fileChanges = await applyFiles(items, targetDir, logger)
 
   // 6. Collect dependencies and scripts
   const { dependencies, devDependencies, conflicts } =

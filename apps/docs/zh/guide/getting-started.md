@@ -22,10 +22,10 @@ rk version
 
 ### 使用预设模版
 
-最简单的方式是使用预设模版初始化项目。
+最简单的方式是使用预设模版初始化项目。当前官方源提供 `@presets/node` 与 `@presets/node-library` 两个预设。
 
 ```bash
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 ```
 
 Rack 会询问项目名称, 然后自动完成以下操作。
@@ -49,11 +49,11 @@ cd my-project
 然后逐个添加需要的 Registry。
 
 ```bash
-# 添加框架
-rk add frameworks/vue
+# 添加测试框架
+rk add testing/vitest
 
-# 添加构建工具
-rk add build/vite
+# 添加 lint 工具
+rk add quality/eslint
 ```
 
 > `rk init` 必须通过 `-t/--template` 指定模板, 模板可以是 Preset (`@presets/...`) 也可以是单个 Registry。`rk add` 可以在任意已有的项目目录运行, 没有 `rack.json` 时会按目录名生成最小配置后再继续。
