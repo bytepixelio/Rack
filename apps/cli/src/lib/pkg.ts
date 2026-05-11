@@ -61,11 +61,34 @@ async function update(
 
   const { dependencies, devDependencies, scripts } = fields
 
+  // Runtime-wins placement across calls: `resolveDependencies` already keeps
+  // a single batch from writing the same package to both fields, but a stale
+  // entry from an earlier `rk add` can survive on the other side. Reconcile
+  // it here so multi-call results match a single-batch preset install.
   if (dependencies && Object.keys(dependencies).length > 0) {
+    const nextDev = { ...current.devDependencies }
+    for (const name of Object.keys(dependencies)) delete nextDev[name]
     current.dependencies = { ...current.dependencies, ...dependencies }
+    current.devDependencies = nextDev
   }
   if (devDependencies && Object.keys(devDependencies).length > 0) {
-    current.devDependencies = { ...current.devDependencies, ...devDependencies }
+    const nextRuntime = { ...current.dependencies }
+    const nextDev = { ...current.devDependencies }
+    for (const [name, version] of Object.entries(devDependencies)) {
+      if (name in nextRuntime) nextRuntime[name] = version
+      else nextDev[name] = version
+    }
+    current.dependencies = nextRuntime
+    current.devDependencies = nextDev
+  }
+  if (current.dependencies && Object.keys(current.dependencies).length === 0) {
+    delete current.dependencies
+  }
+  if (
+    current.devDependencies &&
+    Object.keys(current.devDependencies).length === 0
+  ) {
+    delete current.devDependencies
   }
   if (scripts && Object.keys(scripts).length > 0) {
     current.scripts = { ...current.scripts, ...scripts }
