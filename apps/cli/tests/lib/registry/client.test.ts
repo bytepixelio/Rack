@@ -148,6 +148,38 @@ describe('registry/client fetchItem', () => {
     expect(item.dependencies).toEqual({ j: '1' })
   })
 
+  it('attaches resolvedLanguage from identifier suffix (suffix wins over options.language)', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: { ...baseItem, defaultLanguage: 'ts' } })
+
+    const item = await registry.fetchItem('@rack/vue:js', { language: 'ts' })
+    expect(item.resolvedLanguage).toBe('js')
+  })
+
+  it('attaches resolvedLanguage from options.language when no suffix', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: { ...baseItem, defaultLanguage: 'ts' } })
+
+    const item = await registry.fetchItem('@rack/vue', { language: 'js' })
+    expect(item.resolvedLanguage).toBe('js')
+  })
+
+  it('falls back to defaultLanguage for resolvedLanguage when nothing else provided', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: { ...baseItem, defaultLanguage: 'js' } })
+
+    const item = await registry.fetchItem('@rack/vue')
+    expect(item.resolvedLanguage).toBe('js')
+  })
+
+  it("defaults resolvedLanguage to 'ts' when nothing on item or call provides one", async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue')
+    expect(item.resolvedLanguage).toBe('ts')
+  })
+
   it('applies language override from identifier suffix (:lang)', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({

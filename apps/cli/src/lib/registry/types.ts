@@ -114,4 +114,12 @@ export interface ResolvedRegistryItem extends RegistryItem {
   identifier: string
   /** Full URL of the registry.json file (used for resolving external file paths). */
   registryUrl: string
+  /**
+   * Language variant actually picked for this item — the result of the
+   * `identifier :language > options.language > item.defaultLanguage > 'ts'`
+   * precedence resolved inside `fetchItem`. Pipeline phases use this to
+   * propagate the choice into transitive dep fetches and per-item merge
+   * plugin context, so a `:js` suffix on a root genuinely flows downstream.
+   */
+  resolvedLanguage: Language
 }

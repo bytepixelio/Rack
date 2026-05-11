@@ -54,6 +54,7 @@ export function createItem(
     namespace: '@rack',
     identifier: '@rack/demo',
     registryUrl: 'https://registry.example.com/registries/@rack/demo/1.0.0',
+    resolvedLanguage: 'ts',
     ...overrides
   }
 }

@@ -102,11 +102,18 @@ async function fetchItem(
     // Identifier `:language` suffix wins over the project-wide language
     // (passed in via `options.language` from rack.json), matching the
     // documented precedence: identifier suffix > rack.json.language >
-    // item.defaultLanguage > 'ts'.
+    // item.defaultLanguage > 'ts'. The resolved value is attached to the
+    // returned item so callers can propagate it into transitive dep
+    // fetches and per-item merge context — without it, a `:js` suffix
+    // only affected the root and silently lost on every downstream step.
+    const resolvedLanguage: Language =
+      parsed.language ?? options.language ?? item.defaultLanguage ?? 'ts'
+
     return {
-      ...applyLanguageOverrides(item, parsed.language ?? options.language),
+      ...applyLanguageOverrides(item, resolvedLanguage),
       identifier: canonicalId,
-      registryUrl
+      registryUrl,
+      resolvedLanguage
     }
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) {
@@ -343,17 +350,17 @@ function rethrowAsFileNotFound(
 /**
  * Apply language-specific overrides to a registry item.
  *
- * Picks the language variant (`language` → `item.defaultLanguage` → `'ts'`),
- * then deep-merges the matching `languages[lang]` block into the base item.
- * `files` are merged by `target`: language files with a matching target
- * replace the base entry; others are appended.
+ * The caller resolves the language (see precedence comment in `fetchItem`)
+ * and passes it in; this helper just deep-merges the matching
+ * `languages[lang]` block into the base item. `files` are merged by
+ * `target`: language files with a matching target replace the base
+ * entry; others are appended.
  */
 function applyLanguageOverrides(
   item: RegistryItem,
-  language?: Language
+  language: Language
 ): RegistryItem {
-  const lang = language ?? item.defaultLanguage ?? 'ts'
-  const overrides = item.languages?.[lang]
+  const overrides = item.languages?.[language]
   if (!overrides) return item
 
   const merged = { ...item }
