@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test:e2e": "vitest run",
-    "lint": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "rackjs-cli": "workspace:*",
