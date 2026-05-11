@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
+import { InvalidNamespaceError } from '../../../src/lib/utils/errors.js'
 import {
   isPreset,
   parseNamespace
 } from '../../../src/lib/registry/identifier.js'
-import { InvalidNamespaceError } from '../../../src/lib/utils/errors.js'
 
 describe('registry/identifier', () => {
   it('parseNamespace falls back to @rack for bare names', () => {

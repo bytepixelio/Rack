@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { join } from 'node:path'
-import { writeFile, chmod } from 'node:fs/promises'
-import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
+import { chmod, writeFile } from 'node:fs/promises'
 import { rackJson } from '../../src/lib/rack-json.js'
+import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
 import { RackJsonError } from '../../src/lib/utils/errors.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 describe('rack-json', () => {
   let tmp: string
@@ -98,7 +98,38 @@ describe('rack-json', () => {
     const err = await rackJson.read(tmp).catch((e) => e)
     expect(err).toBeInstanceOf(RackJsonError)
     expect(err.errorCode).toBe('INVALID')
-    expect(err.message).toContain('invalid identifier')
+    expect(err.message).toContain('non-canonical identifier')
+  })
+
+  it('read accepts items with prerelease and build metadata versions', async () => {
+    const data = {
+      name: 'demo',
+      items: ['@rack/vue@1.0.0-beta.1', '@rack/node@2.0.0+build.42']
+    }
+    await writeFile(join(tmp, 'rack.json'), JSON.stringify(data))
+    const cfg = await rackJson.read(tmp)
+    expect(cfg.items).toEqual([
+      '@rack/vue@1.0.0-beta.1',
+      '@rack/node@2.0.0+build.42'
+    ])
+  })
+
+  it('read accepts items with language suffix and rejects on case mismatch', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'demo', items: ['@rack/vue@1.0.0:ts'] })
+    )
+    const cfg = await rackJson.read(tmp)
+    expect(cfg.items).toEqual(['@rack/vue@1.0.0:ts'])
+
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'demo', items: ['@rack/VUE@1.0.0:ts'] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('non-canonical identifier')
   })
 
   it('read throws INVALID when items contains non-strings', async () => {

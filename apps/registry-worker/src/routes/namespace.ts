@@ -6,30 +6,12 @@
  * are not leaked to anyone who cannot access them.
  */
 
-import { enforceNamespaceAccess } from '../lib/auth.js'
-import { json, badRequest, notFound } from '../lib/response.js'
+import { json, notFound, badRequest } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
-import {
-  extractToken,
-  verifyAccess,
-  parseAuthConfig,
-  isNamespaceAllowed,
-  isNamespaceAnonymous
-} from '@rack/auth-core'
+import { loadAuthConfig, enforceNamespaceAccess } from '../lib/auth.js'
+import { extractToken, filterAllowedNamespaces } from '@rack/auth-core'
 
 import type { RegistryStore } from '@rack/registry-core'
-
-// ─── Internal ──────────────────────────────────────────────────────────────
-
-/**
- * Load auth config from R2. Intentionally does not share the module-level
- * cache in `../lib/auth.ts` — that cache is keyed to `enforceNamespaceAccess`
- * and its TTL contract. A one-off parse here is acceptable for listing.
- */
-async function loadAuthConfig(bucket: R2Bucket) {
-  const obj = await bucket.get('.auth/auth.json')
-  return parseAuthConfig(obj ? await obj.json<unknown>() : {})
-}
 
 // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -52,13 +34,7 @@ export async function handleNamespaces(
   )
   const isAdmin = !!(adminToken && token === adminToken)
 
-  const namespaces = isAdmin
-    ? all
-    : all.filter((ns) => {
-        if (!isNamespaceAllowed(config, ns)) return false
-        if (isNamespaceAnonymous(config, ns)) return true
-        return verifyAccess(config, ns, token).allowed
-      })
+  const namespaces = filterAllowedNamespaces(config, all, token, { isAdmin })
 
   return json({ namespaces }, 200, CACHE_HEADERS.short)
 }

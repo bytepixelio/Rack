@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os'
 import { rm, mkdtemp } from 'node:fs/promises'
 import { startServer } from '../src/server.js'
 import { buildCategorizedUploadPackage } from '../src/upload.js'
-import { it, expect, describe, afterAll, beforeAll } from 'vitest'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
 
 import type { TestServer } from '../src/server.js'
 import type { UploadPackage } from '../src/upload.js'

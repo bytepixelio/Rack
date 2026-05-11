@@ -1,8 +1,8 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { it, expect, describe, afterEach, beforeEach } from 'vitest'
 import { StorageService } from '../../src/services/storage.service.js'
-import { chmod, mkdtemp, mkdir, symlink, writeFile, rm } from 'fs/promises'
+import { rm, chmod, mkdir, mkdtemp, symlink, writeFile } from 'fs/promises'
 
 describe('StorageService', () => {
   let tempDir: string

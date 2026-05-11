@@ -1,8 +1,23 @@
 /**
  * Pure parser that turns raw auth.json data into a validated {@link AuthConfig}.
+ *
+ * Validation is **per-namespace fail-closed**: top-level shape errors
+ * (auth.json itself is not a plain object) still throw, but a single
+ * malformed namespace entry only excludes that namespace from
+ * `allowedNamespaces` and records the reason in `config.errors`.
+ *
+ * This contains the blast radius — one typo in `expiresAt` rejects
+ * exactly the affected namespace instead of failing every request
+ * across the deployment. Callers should surface `config.errors` to
+ * logs / monitoring so the broken namespace is still visible.
  */
 
-import type { AuthConfig, TokenRecord, RawAuthConfig } from './types.js'
+import type {
+  AuthConfig,
+  TokenRecord,
+  RawAuthConfig,
+  AuthConfigError
+} from './types.js'
 
 /**
  * Parse an `expiresAt` value into a Date.
@@ -38,18 +53,65 @@ function parseExpiresAt(value: unknown, namespace: string): Date | undefined {
 }
 
 /**
+ * Parse a single namespace's token array.
+ *
+ * @returns `null` for anonymous namespace (empty array), or the token map
+ * @throws {Error} On any validation failure for this namespace
+ */
+function parseNamespaceTokens(
+  namespace: string,
+  rawTokens: unknown
+): Map<string, TokenRecord> | null {
+  if (!Array.isArray(rawTokens)) {
+    throw new Error(
+      `Namespace "${namespace}" must map to an array of token entries`
+    )
+  }
+
+  if (rawTokens.length === 0) return null
+
+  const tokenMap = new Map<string, TokenRecord>()
+
+  for (const entry of rawTokens) {
+    if (!entry || typeof entry !== 'object') continue
+    if (typeof entry.token !== 'string' || !entry.token.trim()) continue
+
+    const key = entry.token.trim()
+    tokenMap.set(key, {
+      token: key,
+      publish: entry.publish === true,
+      mark: typeof entry.mark === 'string' ? entry.mark : undefined,
+      expiresAt: parseExpiresAt(entry.expiresAt, namespace)
+    })
+  }
+
+  if (tokenMap.size === 0) {
+    throw new Error(
+      `Namespace "${namespace}" has token entries but none contain a valid "token" string`
+    )
+  }
+
+  return tokenMap
+}
+
+/**
  * Parse and validate raw auth.json data.
  *
+ * Per-namespace failures are isolated to `config.errors`; only top-level
+ * shape errors throw. Surface `config.errors` to logs so silently-skipped
+ * namespaces remain visible to operators.
+ *
  * @param raw - Parsed JSON from auth.json (any shape)
- * @returns Validated, in-memory auth config
+ * @returns Validated auth config (`errors` may be non-empty)
  * @throws {Error} When the top-level value is not a plain object
  *
  * @example
  * parseAuthConfig({ '@rack': [] })
- * // → every namespace '@rack' allowed, no tokens required
+ * // → '@rack' allowed, no tokens required, errors: []
  *
- * parseAuthConfig({ '@priv': [{ token: 's', publish: true }] })
- * // → namespace '@priv' gated by token 's'
+ * parseAuthConfig({ '@priv': [{ token: 's', publish: true }], '@oops': 'bad' })
+ * // → '@priv' gated by token 's'; '@oops' absent from allowedNamespaces;
+ * //   errors: [{ namespace: '@oops', reason: '... must map to an array ...' }]
  */
 export function parseAuthConfig(raw: unknown): AuthConfig {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -59,46 +121,25 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
   const config = raw as RawAuthConfig
   const allowedNamespaces = new Set<string>()
   const tokens = new Map<string, Map<string, TokenRecord>>()
+  const errors: AuthConfigError[] = []
 
   for (const [namespace, rawTokens] of Object.entries(config)) {
-    if (!Array.isArray(rawTokens)) {
-      throw new Error(
-        `Namespace "${namespace}" must map to an array of token entries`
-      )
-    }
-
-    allowedNamespaces.add(namespace)
-
-    if (rawTokens.length === 0) continue
-
-    const tokenMap = new Map<string, TokenRecord>()
-
-    for (const entry of rawTokens) {
-      if (!entry || typeof entry !== 'object') continue
-      if (typeof entry.token !== 'string' || !entry.token.trim()) continue
-
-      const key = entry.token.trim()
-      tokenMap.set(key, {
-        token: key,
-        publish: entry.publish === true,
-        mark: typeof entry.mark === 'string' ? entry.mark : undefined,
-        expiresAt: parseExpiresAt(entry.expiresAt, namespace)
+    try {
+      const tokenMap = parseNamespaceTokens(namespace, rawTokens)
+      allowedNamespaces.add(namespace)
+      if (tokenMap) tokens.set(namespace, tokenMap)
+    } catch (error) {
+      errors.push({
+        namespace,
+        reason: error instanceof Error ? error.message : String(error)
       })
     }
-
-    if (tokenMap.size === 0) {
-      throw new Error(
-        `Namespace "${namespace}" has token entries but none contain a valid "token" string`
-      )
-    }
-
-    tokens.set(namespace, tokenMap)
   }
 
-  return { tokens, allowedNamespaces }
+  return { errors, tokens, allowedNamespaces }
 }
 
-/** Empty config — all namespaces forbidden, no tokens. */
+/** Empty config — all namespaces forbidden, no tokens, no errors. */
 export function emptyAuthConfig(): AuthConfig {
-  return { tokens: new Map(), allowedNamespaces: new Set() }
+  return { errors: [], tokens: new Map(), allowedNamespaces: new Set() }
 }

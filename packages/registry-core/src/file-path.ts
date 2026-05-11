@@ -23,7 +23,7 @@ export interface ValidatedFilePath {
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-const SEGMENT_RE = /^[A-Za-z0-9._@+\-]+$/
+const SEGMENT_RE = /^[A-Za-z0-9._@+-]+$/
 
 // ─── Public API ─────────────────────────────────────────────────────
 
@@ -43,7 +43,11 @@ export function validateFilePath(filePath: string): ValidatedFilePath {
     throw new Error(`Invalid file path: path is empty`)
   }
 
-  if (filePath.includes('%') || filePath.includes('?') || filePath.includes('#')) {
+  if (
+    filePath.includes('%') ||
+    filePath.includes('?') ||
+    filePath.includes('#')
+  ) {
     throw new Error(`Invalid file path: ${filePath} (contains %, ?, or #)`)
   }
 
@@ -69,7 +73,9 @@ export function validateFilePath(filePath: string): ValidatedFilePath {
     }
 
     if (!SEGMENT_RE.test(seg)) {
-      throw new Error(`Invalid file path: ${filePath} (invalid segment "${seg}")`)
+      throw new Error(
+        `Invalid file path: ${filePath} (invalid segment "${seg}")`
+      )
     }
   }
 

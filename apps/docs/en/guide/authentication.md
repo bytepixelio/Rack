@@ -45,6 +45,7 @@ rk config set @company --url https://registry.company.com --token your-token-her
 ```
 
 **Command output:**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -80,6 +81,7 @@ rk config set @company --url https://registry.company.com \
 ```
 
 **Command output:**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -118,6 +120,7 @@ rk config set @company --url https://registry.company.com \
 ```
 
 **Command output:**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -152,10 +155,10 @@ Configuration for @company:
 
 Authentication also affects namespace discovery endpoints. Token-gated namespaces are hidden from unauthenticated callers so that namespace names and registry lists are not leaked.
 
-| Endpoint                          | Behavior                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| `GET /namespaces`                 | Returns only namespaces the caller can access; gated namespaces are omitted |
-| `GET /namespaces/:ns/registries`  | Requires valid token for non-anonymous namespaces; returns 401/403 otherwise |
+| Endpoint                         | Behavior                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `GET /namespaces`                | Returns only namespaces the caller can access; gated namespaces are omitted  |
+| `GET /namespaces/:ns/registries` | Requires valid token for non-anonymous namespaces; returns 401/403 otherwise |
 
 ```bash
 # Anonymous — only sees public namespaces

@@ -20,11 +20,11 @@ import { fetchTemplate } from './fetch.js'
 import { sortItems } from '../../pipeline/sort.js'
 import { applyFiles } from '../../pipeline/apply.js'
 import { validateNoConflicts } from '../../pipeline/conflict.js'
+import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
 import {
   logConflicts,
   resolveDependencies
 } from '../../pipeline/resolve-versions.js'
-import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
 
 import type { Logger } from '../../infra/logger.js'
 import type { Language } from '../../registry/types.js'

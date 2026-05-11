@@ -1,7 +1,7 @@
 import { runCli } from '../src/cli.js'
 import { startServer } from '../src/server.js'
 import { createWorkspace } from '../src/workspace.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
 
 import type { TestServer } from '../src/server.js'
 

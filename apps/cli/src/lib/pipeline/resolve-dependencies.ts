@@ -3,32 +3,16 @@
  *
  * Given a set of initial registry items, fetches all transitive
  * `registryDependencies` and returns the complete deduplicated list.
- * Identifiers are canonicalized via {@link parseNamespace} so that
+ * Identifiers are canonicalized via {@link canonicalizeIdentifier} so that
  * different forms (e.g. `utils`, `@rack/utils`) are deduplicated.
  */
 
 import { registry } from '../registry/client.js'
-import { parseNamespace } from '../registry/identifier.js'
+import { canonicalizeIdentifier } from '../registry/identifier.js'
 
 import type { Logger } from '../infra/logger.js'
 import type { Language } from '../registry/types.js'
 import type { ResolvedRegistryItem } from './types.js'
-
-// ─── Internal ───────────────────────────────────────────────────────────────
-
-/**
- * Normalize an identifier to `namespace/path` for deduplication.
- *
- * @example
- * ```ts
- * canonicalize('@rack/utils') // → '@rack/utils'
- * canonicalize('utils')       // → '@rack/utils'
- * ```
- */
-function canonicalize(identifier: string): string {
-  const { namespace, path } = parseNamespace(identifier)
-  return `${namespace}/${path}`
-}
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -57,15 +41,17 @@ export async function resolveRegistryDependencies(
   language: Language | undefined,
   logger: Logger
 ): Promise<ResolvedRegistryItem[]> {
-  const resolved = new Map(items.map((i) => [canonicalize(i.identifier), i]))
+  const resolved = new Map(
+    items.map((i) => [canonicalizeIdentifier(i.identifier), i])
+  )
 
   for (const current of resolved.values()) {
     for (const depId of current.registryDependencies ?? []) {
-      if (resolved.has(canonicalize(depId))) continue
+      if (resolved.has(canonicalizeIdentifier(depId))) continue
 
       logger.debug(`Fetching dependency: ${depId}`)
       resolved.set(
-        canonicalize(depId),
+        canonicalizeIdentifier(depId),
         await registry.fetchItem(depId, { language })
       )
     }

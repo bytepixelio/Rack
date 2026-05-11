@@ -13,12 +13,18 @@
  */
 
 import path from 'node:path'
-import { isPlainObject, isString } from 'lodash-es'
-import { pathExists, readJSON, writeJSON } from './infra/fs.js'
-import { parseNamespace } from './registry/identifier.js'
+import { DEFAULT_NAMESPACE } from '../constants.js'
+import { isString, isPlainObject } from 'lodash-es'
+import { readJSON, writeJSON, pathExists } from './infra/fs.js'
 import { RackJsonError, getErrorMessage } from './utils/errors.js'
+import {
+  parseNamespace,
+  canonicalizeIdentifier,
+  formatCanonicalIdentifier
+} from './registry/identifier.js'
 
 import type { Language } from './registry/types.js'
+import type { ParsedNamespace } from './registry/identifier.js'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -60,20 +66,12 @@ function rackJsonPath(targetDir: string): string {
 }
 
 /**
- * Normalize an identifier to `namespace/path` for deduplication.
- */
-function canonicalize(identifier: string): string {
-  const { namespace, path: p } = parseNamespace(identifier)
-  return `${namespace}/${p}`
-}
-
-/**
  * Deduplicate identifiers by canonical form, keeping the first occurrence.
  */
 function uniqByCanonical(items: string[]): string[] {
   const seen = new Set<string>()
   return items.filter((id) => {
-    const key = canonicalize(id)
+    const key = canonicalizeIdentifier(id)
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -153,21 +151,28 @@ async function read(targetDir: string): Promise<RackJsonConfig> {
       )
     }
     for (const item of obj.items) {
+      let parsed: ParsedNamespace
       try {
-        const parsed = parseNamespace(item as string)
-        const canonical = `${parsed.namespace}/${parsed.path}`
-        const inputBase = (item as string)
-          .replace(/:(js|ts)$/, '')
-          .replace(/@[^/]+$/, '')
-        const inputCanonical = inputBase.startsWith('@')
-          ? inputBase
-          : `@rack/${inputBase}`
-        if (inputCanonical !== canonical) {
-          throw new Error('not canonical')
-        }
+        parsed = parseNamespace(item as string)
       } catch {
         throw new RackJsonError(
           `rack.json field "items" contains invalid identifier: ${item}`,
+          'INVALID'
+        )
+      }
+      // Schema (`rack.json#/$defs/registryIdentifier`) accepts two forms:
+      //   - full:      `@namespace/path[@version][:language]`
+      //   - shorthand: `path[@version][:language]` (only for @rack)
+      // Both must round-trip exactly — `formatCanonicalIdentifier` is the
+      // source of truth, so any case-folding or whitespace difference fails.
+      const full = formatCanonicalIdentifier(parsed)
+      const shorthand =
+        parsed.namespace === DEFAULT_NAMESPACE
+          ? full.slice(DEFAULT_NAMESPACE.length + 1)
+          : null
+      if (item !== full && item !== shorthand) {
+        throw new RackJsonError(
+          `rack.json field "items" contains non-canonical identifier: ${item}`,
           'INVALID'
         )
       }

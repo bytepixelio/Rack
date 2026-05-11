@@ -17,10 +17,16 @@ import {
   emptyAuthConfig,
   parseAuthConfig,
   isNamespaceAllowed,
-  isNamespaceAnonymous
+  isNamespaceAnonymous,
+  filterAllowedNamespaces
 } from '@rack/auth-core'
 
-import type { AuthConfig, AccessResult } from '@rack/auth-core'
+import type {
+  AuthConfig,
+  AccessResult,
+  AuthConfigError,
+  FilterNamespacesOptions
+} from '@rack/auth-core'
 
 export class AuthService {
   private readonly filePath: string
@@ -57,6 +63,18 @@ export class AuthService {
     this.config = parseAuthConfig(JSON.parse(raw))
   }
 
+  /**
+   * Per-namespace parse errors from the last `load()`.
+   *
+   * Each entry means that namespace was rejected (not in
+   * {@link isNamespaceAllowed}) due to a malformed token array,
+   * `expiresAt`, etc. Callers should surface these to monitoring so
+   * the operator notices the silent skip.
+   */
+  getConfigErrors(): readonly AuthConfigError[] {
+    return this.config.errors
+  }
+
   /** Whether a namespace is declared in auth.json. */
   isNamespaceAllowed(namespace: string): boolean {
     return isNamespaceAllowed(this.config, namespace)
@@ -74,5 +92,19 @@ export class AuthService {
    */
   verifyAccess(namespace: string, tokenValue: string | null): AccessResult {
     return verifyAccess(this.config, namespace, tokenValue)
+  }
+
+  /**
+   * Reduce a list of namespaces to those the given token may see.
+   * Thin wrapper around {@link filterAllowedNamespaces} — the
+   * Worker calls the auth-core function directly; both runtimes share
+   * the same decision logic.
+   */
+  filterNamespaces(
+    namespaces: string[],
+    tokenValue: string | null,
+    options?: FilterNamespacesOptions
+  ): string[] {
+    return filterAllowedNamespaces(this.config, namespaces, tokenValue, options)
   }
 }

@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import {
   AppError,
   HttpError,
   MergeError,
   ConfigError,
+  TimeoutError,
   ConflictError,
   RackJsonError,
-  TimeoutError,
   getErrorMessage,
   InvalidNamespaceError,
-  CircularDependencyError,
-  RegistryNotFoundError
+  RegistryNotFoundError,
+  CircularDependencyError
 } from '../../../src/lib/utils/errors.js'
 
 describe('utils/errors', () => {

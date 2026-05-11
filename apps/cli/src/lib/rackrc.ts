@@ -15,8 +15,8 @@
 import path from 'node:path'
 import { homedir } from 'node:os'
 import { ConfigError } from './utils/errors.js'
-import { isPlainObject, isString } from 'lodash-es'
-import { pathExists, readJSON, writeJSON } from './infra/fs.js'
+import { isString, isPlainObject } from 'lodash-es'
+import { readJSON, writeJSON, pathExists } from './infra/fs.js'
 import { DEFAULT_NAMESPACE, DEFAULT_REGISTRY_URL } from '../constants.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────

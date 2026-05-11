@@ -10,7 +10,7 @@ import fp from 'fastify-plugin'
 import { extractToken } from '@rack/auth-core'
 
 import type { AccessResult } from '@rack/auth-core'
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyRequest, FastifyInstance } from 'fastify'
 
 declare module 'fastify' {
   interface FastifyRequest {

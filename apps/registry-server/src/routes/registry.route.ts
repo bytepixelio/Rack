@@ -11,10 +11,10 @@
 import fp from 'fastify-plugin'
 import { CACHE_HEADERS, parseRegistryUrl } from '@rack/registry-core'
 import { getMimeType, streamFileResponse } from '../lib/file-stream.js'
-import { AppError, ValidationError, ForbiddenError } from '../lib/errors.js'
+import { AppError, ForbiddenError, ValidationError } from '../lib/errors.js'
 
 import type { RegistryService } from '../services/registry.service.js'
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyReply, FastifyRequest, FastifyInstance } from 'fastify'
 import type { RegistryLocator, RegistryResourceType } from '@rack/registry-core'
 
 /** Wildcard route params. */

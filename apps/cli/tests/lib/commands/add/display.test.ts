@@ -1,11 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { it, vi, expect, describe } from 'vitest'
+import { createMockLogger } from '../../../helpers/mocks.js'
 import {
   displayHeader,
   displayResults,
   displayAlreadyInstalled
 } from '../../../../src/lib/commands/add/display.js'
+
 import type { PipelineResult } from '../../../../src/lib/pipeline/types.js'
-import { createMockLogger } from '../../../helpers/mocks.js'
 
 function pipelineResult(
   overrides: Partial<PipelineResult> = {}

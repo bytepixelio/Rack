@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../src/lib/rackrc.js', () => ({
   rackrc: {
@@ -15,15 +15,15 @@ vi.mock('../../../src/lib/infra/http.js', () => {
   }
 })
 
-import { registry } from '../../../src/lib/registry/client.js'
 import { rackrc } from '../../../src/lib/rackrc.js'
 import * as httpMod from '../../../src/lib/infra/http.js'
+import { createMockLogger } from '../../helpers/mocks.js'
+import { registry } from '../../../src/lib/registry/client.js'
 import {
   AppError,
   HttpError,
   RegistryNotFoundError
 } from '../../../src/lib/utils/errors.js'
-import { createMockLogger } from '../../helpers/mocks.js'
 
 const http = (
   httpMod as unknown as {
@@ -139,12 +139,20 @@ describe('registry/client fetchItem', () => {
       data: {
         ...baseItem,
         files: [
-          { path: 'tailwind.config.ts', target: 'tailwind.config.ts', type: 'registry:config' }
+          {
+            path: 'tailwind.config.ts',
+            target: 'tailwind.config.ts',
+            type: 'registry:config'
+          }
         ],
         languages: {
           js: {
             files: [
-              { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+              {
+                path: 'tailwind.config.js',
+                target: 'tailwind.config.ts',
+                type: 'registry:config'
+              }
             ]
           }
         }
@@ -152,7 +160,11 @@ describe('registry/client fetchItem', () => {
     })
     const item = await registry.fetchItem('@rack/vue:js')
     expect(item.files).toEqual([
-      { path: 'tailwind.config.js', target: 'tailwind.config.ts', type: 'registry:config' }
+      {
+        path: 'tailwind.config.js',
+        target: 'tailwind.config.ts',
+        type: 'registry:config'
+      }
     ])
   })
 
@@ -168,7 +180,11 @@ describe('registry/client fetchItem', () => {
         languages: {
           js: {
             files: [
-              { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+              {
+                path: 'tailwind.config.js',
+                target: 'tailwind.config.js',
+                type: 'registry:config'
+              }
             ]
           }
         }
@@ -178,7 +194,11 @@ describe('registry/client fetchItem', () => {
     expect(item.files).toEqual([
       { path: 'index.html', target: 'index.html', type: 'registry:entry' },
       { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' },
-      { path: 'tailwind.config.js', target: 'tailwind.config.js', type: 'registry:config' }
+      {
+        path: 'tailwind.config.js',
+        target: 'tailwind.config.js',
+        type: 'registry:config'
+      }
     ])
   })
 
@@ -189,7 +209,12 @@ describe('registry/client fetchItem', () => {
         ...baseItem,
         scripts: { dev: 'vite' },
         languages: {
-          ts: { scripts: { dev: 'vite --host' }, dependencies: { x: '1' } } as any
+          ts: {
+            scripts: { dev: 'vite --host' },
+            dependencies: { x: '1' }
+            // Intentionally malformed language overlay (extra `scripts`
+            // key) — the test verifies the CLI drops disallowed fields.
+          } as unknown as Record<string, unknown>
         }
       }
     })

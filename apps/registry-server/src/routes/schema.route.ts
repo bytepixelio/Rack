@@ -6,7 +6,7 @@
 
 import { NotFoundError } from '../lib/errors.js'
 import { resolveSchemaPath } from '../lib/path.js'
-import { CACHE_HEADERS, SCHEMA_FILES } from '@rack/registry-core'
+import { SCHEMA_FILES, CACHE_HEADERS } from '@rack/registry-core'
 import { getMimeType, streamFileResponse } from '../lib/file-stream.js'
 
 import type { FastifyInstance } from 'fastify'

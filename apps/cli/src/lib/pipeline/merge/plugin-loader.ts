@@ -21,7 +21,7 @@ import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
-import { writeFile, mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { registry } from '../../registry/client.js'
 
 import type { MergeParams, MergeResult } from './index.js'

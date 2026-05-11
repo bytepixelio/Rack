@@ -50,25 +50,25 @@ Suite behavior in remote mode:
 
 ### `src/` — infrastructure
 
-| File            | Role                                                                    |
-| --------------- | ----------------------------------------------------------------------- |
+| File            | Role                                                                       |
+| --------------- | -------------------------------------------------------------------------- |
 | `server.ts`     | Start in-process Fastify on port 0; returns ephemeral URL + optional token |
-| `cli.ts`        | Run built `apps/cli/dist/bin.js` via execa                              |
-| `workspace.ts`  | `mkdtemp` sandbox with `home/.rackrc` + empty `work/` cwd               |
-| `discover.ts`   | Glob `packages/storage` for registries and presets                      |
-| `baseline.ts`   | Verify `files[].target` + deps / devDeps / scripts merge                |
-| `assertions.ts` | `smoke.json` loader + executor (files / json / text)                    |
-| `upload.ts`     | Build smoke tar.gz + POST multipart to `/registries`                    |
+| `cli.ts`        | Run built `apps/cli/dist/bin.js` via execa                                 |
+| `workspace.ts`  | `mkdtemp` sandbox with `home/.rackrc` + empty `work/` cwd                  |
+| `discover.ts`   | Glob `packages/storage` for registries and presets                         |
+| `baseline.ts`   | Verify `files[].target` + deps / devDeps / scripts merge                   |
+| `assertions.ts` | `smoke.json` loader + executor (files / json / text)                       |
+| `upload.ts`     | Build smoke tar.gz + POST multipart to `/registries`                       |
 
 ### `tests/` — test files
 
-| File                | Scope                                                      |
-| ------------------- | ---------------------------------------------------------- |
-| `materials.test.ts` | Every `@rack/*` module via `rk add`; idempotency           |
-| `presets.test.ts`   | Every preset via `rk init --ci`; composed-state checks    |
-| `pipeline.test.ts`  | Toy fixtures for pipeline mechanics (e.g. dep chain)       |
-| `errors.test.ts`    | Negative paths (unknown id, invalid namespace)             |
-| `uploads.test.ts`   | `POST /registries` surface: admin token, duplicate, auth   |
+| File                | Scope                                                    |
+| ------------------- | -------------------------------------------------------- |
+| `materials.test.ts` | Every `@rack/*` module via `rk add`; idempotency         |
+| `presets.test.ts`   | Every preset via `rk init --ci`; composed-state checks   |
+| `pipeline.test.ts`  | Toy fixtures for pipeline mechanics (e.g. dep chain)     |
+| `errors.test.ts`    | Negative paths (unknown id, invalid namespace)           |
+| `uploads.test.ts`   | `POST /registries` surface: admin token, duplicate, auth |
 
 ### `fixtures/storage/` — toy modules
 
@@ -106,7 +106,7 @@ Schema:
 ```json
 {
   "files": {
-    "exist":  ["tsconfig.json"],
+    "exist": ["tsconfig.json"],
     "absent": ["tsconfig.build.json"]
   },
   "json": {
@@ -123,12 +123,12 @@ Schema:
 
 Matchers inside `json.<file>.<dotPath>`:
 
-| Form                      | Meaning                                    |
-| ------------------------- | ------------------------------------------ |
-| Literal value             | deep-equal                                 |
-| `{ "exists": true }`      | dot-path resolves to a non-undefined value |
-| `{ "contains": "foo" }`   | string includes / array includes           |
-| `{ "matches": "^pat$" }`  | regex test on string                       |
+| Form                     | Meaning                                    |
+| ------------------------ | ------------------------------------------ |
+| Literal value            | deep-equal                                 |
+| `{ "exists": true }`     | dot-path resolves to a non-undefined value |
+| `{ "contains": "foo" }`  | string includes / array includes           |
+| `{ "matches": "^pat$" }` | regex test on string                       |
 
 `smoke.json` runs automatically in both `rk add <id>` solo context and
 preset composition context, so merge-strategy regressions that drop a

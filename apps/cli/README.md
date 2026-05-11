@@ -153,13 +153,13 @@ Global CLI config. JSON; missing file falls back to defaults.
 
 `@namespace/path@version:language` — all segments except `path` are optional.
 
-| Example               | namespace  | path            | version  | language |
-| --------------------- | ---------- | --------------- | -------- | -------- |
-| `node-ts`             | `@rack`    | `node-ts`       | —        | —        |
-| `@rack/runtimes/node` | `@rack`    | `runtimes/node` | —        | —        |
-| `nextjs@14.0.0`       | `@rack`    | `nextjs`        | `14.0.0` | —        |
+| Example                 | namespace  | path            | version  | language |
+| ----------------------- | ---------- | --------------- | -------- | -------- |
+| `node-ts`               | `@rack`    | `node-ts`       | —        | —        |
+| `@rack/runtimes/node`   | `@rack`    | `runtimes/node` | —        | —        |
+| `nextjs@14.0.0`         | `@rack`    | `nextjs`        | `14.0.0` | —        |
 | `@company/app@1.0.0:ts` | `@company` | `app`           | `1.0.0`  | `ts`     |
-| `@presets/vue-ts`     | `@presets` | `vue-ts`        | —        | —        |
+| `@presets/vue-ts`       | `@presets` | `vue-ts`        | —        | —        |
 
 Remote URL pattern: `{base}/registries/{namespace}/{path}/{version}` (registry) and `{base}/presets/{name}` (preset, single-segment name only). Template files are served at `{base}/registries/{namespace}/{path}/{version}/files/*`.
 

@@ -123,12 +123,12 @@ Auth gating is applied to `/registries/*` and listing endpoints (`/namespaces`, 
 
 `@rack/registry-core`'s `parseRegistryUrl` is the single place URL conventions are decoded. It returns one of four `RegistryResourceType` values; the route then maps each to an R2 key. The mapping is intentionally identical to `registry-server/src/lib/path.ts`.
 
-| Type        | URL example                         | R2 key                                    | Cache tier  |
-| ----------- | ----------------------------------- | ----------------------------------------- | ----------- |
-| `versions`  | `/@rack/foo/versions`               | `@rack/foo/versions.json`                 | `short`     |
-| `latest`    | `/@rack/foo`                        | `versions.json` → `{v}/registry.json`     | `short`     |
-| `versioned` | `/@rack/foo/1.0.0`                  | `@rack/foo/1.0.0/registry.json`           | `immutable` |
-| `file`      | `/@rack/foo/1.0.0/files/index.ts`   | `@rack/foo/1.0.0/index.ts`                | `immutable` |
+| Type        | URL example                       | R2 key                                | Cache tier  |
+| ----------- | --------------------------------- | ------------------------------------- | ----------- |
+| `versions`  | `/@rack/foo/versions`             | `@rack/foo/versions.json`             | `short`     |
+| `latest`    | `/@rack/foo`                      | `versions.json` → `{v}/registry.json` | `short`     |
+| `versioned` | `/@rack/foo/1.0.0`                | `@rack/foo/1.0.0/registry.json`       | `immutable` |
+| `file`      | `/@rack/foo/1.0.0/files/index.ts` | `@rack/foo/1.0.0/index.ts`            | `immutable` |
 
 Parsing rules:
 
@@ -218,12 +218,12 @@ Implementation lives in `lib/auth.ts`. Three points worth calling out:
 
 Defined in `@rack/registry-core`'s `CACHE_HEADERS`. Each route picks one tier explicitly:
 
-| Tier        | Value                                 | Used for                       | Why                                                                                |
-| ----------- | ------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------- |
-| `none`      | `no-store`                            | errors, `/health`              | A transient 404 (upload in flight) must not stick                                  |
-| `short`     | `public, max-age=60`                  | listings, `latest`, `versions` | Must reflect new releases within ~1 minute                                         |
-| `long`      | `public, max-age=86400`               | schemas, presets               | Change rarely but not content-addressed                                            |
-| `immutable` | `public, max-age=31536000, immutable` | versioned files & registries   | URL is content-addressed: `@rack/foo/1.0.0/...` cannot change semantics over time  |
+| Tier        | Value                                 | Used for                       | Why                                                                               |
+| ----------- | ------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------- |
+| `none`      | `no-store`                            | errors, `/health`              | A transient 404 (upload in flight) must not stick                                 |
+| `short`     | `public, max-age=60`                  | listings, `latest`, `versions` | Must reflect new releases within ~1 minute                                        |
+| `long`      | `public, max-age=86400`               | schemas, presets               | Change rarely but not content-addressed                                           |
+| `immutable` | `public, max-age=31536000, immutable` | versioned files & registries   | URL is content-addressed: `@rack/foo/1.0.0/...` cannot change semantics over time |
 
 Cloudflare zone-level Cache Rules are intentionally **not** used. Mixing them with these `Cache-Control` headers leads to non-obvious overrides, including the worst case of caching error responses.
 
@@ -263,14 +263,14 @@ If those invariants break (e.g. a partial upload), reads return `404 NOT_FOUND`.
 
 Three things must stay in lockstep with `apps/registry-server`. Drift causes silent inconsistencies — the Worker would happily serve content the server would have rejected, or vice versa.
 
-| Thing                          | Shared package / Worker file   | Server file                                |
-| ------------------------------ | ------------------------------ | ------------------------------------------ |
-| URL → resource type parsing    | `@rack/registry-core` parser   | `src/lib/path.ts`                          |
-| URL → R2 key mapping           | `routes/registry.ts`           | `src/services/storage.service.ts`          |
-| Auth model (parse + verify)    | `@rack/auth-core`              | `src/services/auth.service.ts` (delegates) |
-| Schema whitelist               | `@rack/registry-core` constants | `src/routes/schema.route.ts`              |
-| Cache tiers                    | `@rack/registry-core` constants | `@rack/registry-core` constants           |
-| Allowed methods (`GET`/`HEAD`) | `index.ts` 405                 | server defaults                            |
+| Thing                          | Shared package / Worker file    | Server file                                |
+| ------------------------------ | ------------------------------- | ------------------------------------------ |
+| URL → resource type parsing    | `@rack/registry-core` parser    | `src/lib/path.ts`                          |
+| URL → R2 key mapping           | `routes/registry.ts`            | `src/services/storage.service.ts`          |
+| Auth model (parse + verify)    | `@rack/auth-core`               | `src/services/auth.service.ts` (delegates) |
+| Schema whitelist               | `@rack/registry-core` constants | `src/routes/schema.route.ts`               |
+| Cache tiers                    | `@rack/registry-core` constants | `@rack/registry-core` constants            |
+| Allowed methods (`GET`/`HEAD`) | `index.ts` 405                  | server defaults                            |
 
 `@rack/auth-core` and `@rack/registry-core` deliberately exist to make these couplings structural — neither side can drift unilaterally without breaking shared tests in the respective `packages/*/tests/` directories.
 

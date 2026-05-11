@@ -8,7 +8,7 @@
  */
 
 import worker from '../src/index.js'
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { createMockBucket } from './helpers/mock-bucket.js'
 
 interface Env {
@@ -16,7 +16,11 @@ interface Env {
   ADMIN_TOKEN?: string
 }
 
-function fire(env: Env, url: string, init: RequestInit = {}): Promise<Response> {
+function fire(
+  env: Env,
+  url: string,
+  init: RequestInit = {}
+): Promise<Response> {
   // The Worker's fetch handler is declared as (request, env) — the
   // Cloudflare runtime passes a third `ctx` arg but our handler does
   // not read it, so the inferred signature only takes two.
@@ -71,10 +75,7 @@ describe('Worker top-level routing', () => {
   it('returns 404 for unknown route', async () => {
     const bucket = createMockBucket({})
 
-    const res = await fire(
-      { BUCKET: bucket },
-      'https://w.example.com/unknown'
-    )
+    const res = await fire({ BUCKET: bucket }, 'https://w.example.com/unknown')
 
     expect(res.status).toBe(404)
   })
@@ -95,7 +96,9 @@ describe('Worker top-level routing', () => {
     )
 
     expect(head.status).toBe(get.status)
-    expect(head.headers.get('content-type')).toBe(get.headers.get('content-type'))
+    expect(head.headers.get('content-type')).toBe(
+      get.headers.get('content-type')
+    )
     // Body must be empty — `await response.text()` on a HEAD-stripped
     // response yields '' even though the headers still describe the
     // underlying file.

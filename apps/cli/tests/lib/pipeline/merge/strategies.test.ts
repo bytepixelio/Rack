@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
+import { MergeError } from '../../../../src/lib/utils/errors.js'
+import { mergeInternals } from '../../../../src/lib/pipeline/merge/index.js'
 import {
   envMerge,
   jsonMerge,
   ignoreMerge,
   overwriteMerge
 } from '../../../../src/lib/pipeline/merge/strategies.js'
-import { mergeInternals } from '../../../../src/lib/pipeline/merge/index.js'
-import { MergeError } from '../../../../src/lib/utils/errors.js'
 
 describe('merge/strategies jsonMerge', () => {
   it('deep-merges two JSON objects', () => {

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { readdir, readFile, access } from 'node:fs/promises'
+import { access, readdir, readFile } from 'node:fs/promises'
 
 export interface Preset {
   /** Preset identifier usable with `rk init -t`, e.g. `@presets/node`. */

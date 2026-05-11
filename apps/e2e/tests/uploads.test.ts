@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { rm, mkdtemp } from 'node:fs/promises'
 import { startServer } from '../src/server.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { buildUploadPackage, uploadPackage } from '../src/upload.js'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
+import { uploadPackage, buildUploadPackage } from '../src/upload.js'
 
 import type { TestServer } from '../src/server.js'
 import type { UploadOptions, UploadPackage } from '../src/upload.js'

@@ -64,18 +64,31 @@ export interface TokenRecord {
   publish: boolean
 }
 
+/** A single namespace entry that failed to parse. */
+export interface AuthConfigError {
+  /** The namespace key whose config was rejected. */
+  namespace: string
+  /** Human-readable description of what went wrong. */
+  reason: string
+}
+
 /**
  * Parsed, validated auth config ready for runtime verification.
  *
- * - `allowedNamespaces`: every namespace declared in auth.json, including
- *   anonymous ones (empty token array). A namespace NOT in this set is
- *   forbidden.
+ * - `allowedNamespaces`: every namespace declared in auth.json *that
+ *   parsed cleanly*, including anonymous ones (empty token array).
+ *   A namespace NOT in this set is forbidden — so a namespace whose
+ *   config fails validation is fail-closed (entries land in `errors`
+ *   instead of being silently accepted).
  * - `tokens`: only namespaces with at least one valid token. A namespace
- *   with `[]` is anonymous (absent from this map). A non-empty array
- *   that yields zero valid tokens is a config error and causes
- *   `parseAuthConfig` to throw.
+ *   with `[]` is anonymous (absent from this map).
+ * - `errors`: per-namespace parse failures. Top-level shape errors
+ *   (auth.json is not an object) still cause `parseAuthConfig` to
+ *   throw — only namespace-scoped errors are isolated here so one
+ *   bad entry does not take down the entire deployment.
  */
 export interface AuthConfig {
+  errors: AuthConfigError[]
   allowedNamespaces: Set<string>
   tokens: Map<string, Map<string, TokenRecord>>
 }

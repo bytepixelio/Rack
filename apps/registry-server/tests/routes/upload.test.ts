@@ -3,9 +3,10 @@ import { tmpdir } from 'os'
 import { createHash } from 'crypto'
 import { execSync } from 'child_process'
 import { buildApp } from '../../src/app.js'
+import { rm, mkdir, mkdtemp, readFile, writeFile } from 'fs/promises'
+import { it, vi, expect, afterAll, describe, beforeAll } from 'vitest'
+
 import type { Config } from '../../src/types.js'
-import { mkdtemp, mkdir, writeFile, rm, readFile } from 'fs/promises'
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 const TEST_ADMIN_TOKEN = 'test-admin-token'
 

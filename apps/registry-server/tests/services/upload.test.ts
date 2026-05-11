@@ -5,14 +5,7 @@ import { AuthService } from '../../src/services/auth.service.js'
 import { UploadService } from '../../src/services/upload.service.js'
 import { StorageService } from '../../src/services/storage.service.js'
 import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
-import {
-  rm,
-  mkdir,
-  mkdtemp,
-  readFile,
-  symlink,
-  writeFile
-} from 'fs/promises'
+import { rm, mkdir, mkdtemp, symlink, readFile, writeFile } from 'fs/promises'
 
 import type { FastifyBaseLogger } from 'fastify'
 import type { WebhookService } from '../../src/services/webhook.service.js'
@@ -390,7 +383,11 @@ describe('UploadService', () => {
       join(dir, 'registry.json'),
       JSON.stringify({
         files: [
-          { path: 'src/missing.ts', target: 'src/missing.ts', type: 'registry:lib' }
+          {
+            path: 'src/missing.ts',
+            target: 'src/missing.ts',
+            type: 'registry:lib'
+          }
         ]
       })
     )
@@ -455,9 +452,7 @@ describe('UploadService', () => {
     await writeFile(
       join(dir, 'registry.json'),
       JSON.stringify({
-        files: [
-          { path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }
-        ]
+        files: [{ path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }]
       })
     )
     await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
@@ -469,10 +464,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-extra')
     await mkdir(dir, { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await writeFile(join(dir, 'secrets.txt'), 'leaked')
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
@@ -484,10 +476,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-extra-sub')
     await mkdir(join(dir, 'sub'), { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await writeFile(join(dir, 'sub', 'leak.env'), 'API_KEY=...')
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
@@ -499,10 +488,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-symlink')
     await mkdir(dir, { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await symlink('/etc/hosts', join(dir, 'shadow'))
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
@@ -547,7 +533,11 @@ describe('UploadService', () => {
         languages: {
           ts: {
             files: [
-              { path: 'tsconfig.json', target: 'tsconfig.json', type: 'registry:config' }
+              {
+                path: 'tsconfig.json',
+                target: 'tsconfig.json',
+                type: 'registry:config'
+              }
             ]
           }
         }
@@ -556,6 +546,45 @@ describe('UploadService', () => {
     await writeFile(join(dir, 'tsconfig.json'), '{}')
 
     await expect(upload.validateExtractedTree(dir)).resolves.toBeUndefined()
+  })
+
+  // ─── manifest reuse ───────────────────────────────────────────────────────
+
+  it('validateSchema returns the parsed manifest', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'schema-return')
+    await mkdir(dir, { recursive: true })
+    const data = {
+      files: [{ path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }]
+    }
+    await writeFile(join(dir, 'registry.json'), JSON.stringify(data))
+
+    const manifest = await upload.validateSchema(dir)
+    expect(manifest).toEqual(data)
+  })
+
+  it('validateFilePaths uses provided manifest without reading registry.json', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'manifest-arg-paths')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    // intentionally no registry.json on disk — would fail if method tried to read it
+
+    await expect(
+      upload.validateFilePaths(dir, { files: [{ path: 'src/a.ts' }] })
+    ).resolves.toBeUndefined()
+  })
+
+  it('validateExtractedTree uses provided manifest without reading registry.json', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'manifest-arg-tree')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    // intentionally no registry.json on disk — fails if method tries to read
+
+    await expect(
+      upload.validateExtractedTree(dir, { files: [{ path: 'src/a.ts' }] })
+    ).resolves.toBeUndefined()
   })
 
   // ─── validateNamespace ───────────────────────────────────────────────────
@@ -611,9 +640,9 @@ describe('UploadService', () => {
 
     // The just-renamed version dir must be gone so a retry is not blocked
     // by VERSION_EXISTS and so callers do not see a half-published version.
-    expect(
-      await storage.exists(join(tempDir, '@rack', 'node', '3.0.0'))
-    ).toBe(false)
+    expect(await storage.exists(join(tempDir, '@rack', 'node', '3.0.0'))).toBe(
+      false
+    )
 
     vi.mocked(storage.findVersions).mockRestore()
   })

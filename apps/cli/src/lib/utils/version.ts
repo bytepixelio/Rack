@@ -7,7 +7,7 @@
 
 import semver from 'semver'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { readJSON, pathExists } from '../infra/fs.js'
 
 interface PackageJson {

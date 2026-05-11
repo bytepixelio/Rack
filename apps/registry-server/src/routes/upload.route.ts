@@ -85,15 +85,16 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
           }
         }
 
-        // 9. Validate schema
-        await upload.validateSchema(tempExtractDir)
+        // 9. Validate schema (also returns the parsed manifest so the
+        //    next two steps can reuse it without re-reading registry.json)
+        const manifest = await upload.validateSchema(tempExtractDir)
 
         // 10. Validate file paths and existence
-        await upload.validateFilePaths(tempExtractDir)
+        await upload.validateFilePaths(tempExtractDir, manifest)
 
         // 11. Reject symlinks / non-regular entries and any file not
         //     declared in the manifest allowlist
-        await upload.validateExtractedTree(tempExtractDir)
+        await upload.validateExtractedTree(tempExtractDir, manifest)
 
         // 12. Install (atomic rename + versions.json update)
         await upload.install(tempExtractDir, namespace, name, version, segments)
