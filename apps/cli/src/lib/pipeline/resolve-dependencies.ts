@@ -8,7 +8,11 @@
  */
 
 import { registry } from '../registry/client.js'
-import { canonicalizeIdentifier } from '../registry/identifier.js'
+import { VersionMismatchError } from '../utils/errors.js'
+import {
+  parseNamespace,
+  canonicalizeIdentifier
+} from '../registry/identifier.js'
 
 import type { Logger } from '../infra/logger.js'
 import type { Language } from '../registry/types.js'
@@ -31,6 +35,12 @@ import type { ResolvedRegistryItem } from './types.js'
  * separate `fetchItems(installedRegistries)` path, so reciprocal
  * conflicts remain enforceable.
  *
+ * When the canonical id matches but the version specifier differs (e.g.
+ * `@rack/a@1.0.0` installed vs `@rack/a@2.0.0` requested by a transitive
+ * dep), throws {@link VersionMismatchError} — Rack does not yet support
+ * upgrading installed registries, and silently picking either version
+ * would be wrong.
+ *
  * @param items     - Initial registry items (always included in the result)
  * @param language  - Language variant for fetching dependencies
  * @param logger    - Logger instance
@@ -38,6 +48,8 @@ import type { ResolvedRegistryItem } from './types.js'
  *                    transitive appearance is suppressed. Defaults to empty.
  * @returns All registries including transitive dependencies (deduplicated),
  *          excluding any whose canonical id appears in `installed`.
+ * @throws {VersionMismatchError} If a transitive dep targets a different
+ *          version of an already-installed registry.
  *
  * @example
  * ```ts
@@ -56,8 +68,10 @@ export async function resolveRegistryDependencies(
   logger: Logger,
   installed: Iterable<string> = []
 ): Promise<ResolvedRegistryItem[]> {
-  const satisfied = new Set<string>()
-  for (const id of installed) satisfied.add(canonicalizeIdentifier(id))
+  // Keep the original installed identifier per canonical key so we can
+  // compare versions later — `canonicalizeIdentifier` strips `@version`.
+  const satisfied = new Map<string, string>()
+  for (const id of installed) satisfied.set(canonicalizeIdentifier(id), id)
 
   const resolved = new Map(
     items.map((i) => [canonicalizeIdentifier(i.identifier), i])
@@ -67,7 +81,14 @@ export async function resolveRegistryDependencies(
     for (const depId of current.registryDependencies ?? []) {
       const key = canonicalizeIdentifier(depId)
       if (resolved.has(key)) continue
-      if (satisfied.has(key)) {
+
+      const installedId = satisfied.get(key)
+      if (installedId !== undefined) {
+        const installedVersion = parseNamespace(installedId).version
+        const requestedVersion = parseNamespace(depId).version
+        if (installedVersion !== requestedVersion) {
+          throw new VersionMismatchError(installedId, depId)
+        }
         logger.debug(`Skipping already-installed dependency: ${depId}`)
         continue
       }

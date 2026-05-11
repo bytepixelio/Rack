@@ -6,6 +6,7 @@ vi.mock('../../../src/lib/registry/client.js', () => ({
 
 import { registry } from '../../../src/lib/registry/client.js'
 import { createItem, createMockLogger } from '../../helpers/mocks.js'
+import { VersionMismatchError } from '../../../src/lib/utils/errors.js'
 import { resolveRegistryDependencies } from '../../../src/lib/pipeline/resolve-dependencies.js'
 
 const fetchItemMock = registry.fetchItem as unknown as ReturnType<typeof vi.fn>
@@ -96,20 +97,63 @@ describe('pipeline/resolve-dependencies', () => {
     expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
   })
 
-  it('matches installed identifiers by canonical form', async () => {
+  it('matches installed identifiers by canonical form (case + language)', async () => {
     const a = createItem({
       identifier: '@rack/a',
       registryDependencies: ['@rack/utils']
     })
     fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/utils' }))
 
-    // Installed list carries version + language suffixes and a different
-    // case; canonical form still collapses to `@rack/utils`.
+    // Different case and a language suffix on the installed entry; both
+    // sides have no version so canonical form collapses to `@rack/utils`.
     const got = await resolveRegistryDependencies(
       [a],
       'ts',
       createMockLogger(),
-      ['@RACK/utils@1.0.0:ts']
+      ['@RACK/utils:ts']
+    )
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+    expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
+  })
+
+  it('throws VersionMismatchError when installed version differs from transitive dep', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/b@2.0.0']
+    })
+
+    await expect(
+      resolveRegistryDependencies([a], 'ts', createMockLogger(), [
+        '@rack/b@1.0.0'
+      ])
+    ).rejects.toBeInstanceOf(VersionMismatchError)
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when installed is unpinned and transitive dep pins a version', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/b@2.0.0']
+    })
+
+    await expect(
+      resolveRegistryDependencies([a], 'ts', createMockLogger(), ['@rack/b'])
+    ).rejects.toBeInstanceOf(VersionMismatchError)
+  })
+
+  it('skips when installed and transitive dep pin the same version', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/b@1.0.0']
+    })
+
+    const got = await resolveRegistryDependencies(
+      [a],
+      'ts',
+      createMockLogger(),
+      ['@rack/b@1.0.0']
     )
 
     expect(fetchItemMock).not.toHaveBeenCalled()

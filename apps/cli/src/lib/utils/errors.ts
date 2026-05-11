@@ -121,6 +121,29 @@ export class CircularDependencyError extends AppError {
   }
 }
 
+/**
+ * Error thrown when a registry is already installed at a different version
+ * than the one the user (or a transitive dependency) requested.
+ *
+ * Rack does not yet support upgrading installed registries — `rk add`
+ * scaffolds files into the user's source tree, and silently swapping
+ * versions would either re-overwrite user-modified files or pick the
+ * wrong version. Surface the conflict instead of guessing.
+ */
+export class VersionMismatchError extends AppError {
+  constructor(
+    /** Identifier already recorded in rack.json (with or without explicit version). */
+    public readonly installed: string,
+    /** Identifier the caller requested. */
+    public readonly requested: string
+  ) {
+    super(
+      'VERSION_MISMATCH',
+      `Cannot add ${requested} — ${installed} is already installed at a different version.`
+    )
+  }
+}
+
 // ─── Merge ──────────────────────────────────────────────────────────────────
 
 /**
