@@ -276,7 +276,7 @@ aside: false
 {
   "conflicts": [
     "frameworks/vue",
-    "frameworks/react@^18.0.0",
+    "frameworks/react@18.0.0",
     "frameworks/svelte:ts"
   ]
 }

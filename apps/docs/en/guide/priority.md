@@ -53,10 +53,14 @@ The conventional ladder is documented in [Registry Types](/guide/registry#regist
 
 ### 1. Installation Order
 
-Rack sorts registries by ascending priority when you run `rk add` or `rk init`.
+Rack sorts registries by ascending priority when you run `rk add` or `rk init`. `rk add` takes a single registry per invocation, so installing several requires multiple commands (dependencies are still resolved and ordered by priority within each call):
 
 ```bash
-rk add runtimes/node frameworks/vue build/vite testing/vitest quality/eslint
+rk add runtimes/node
+rk add frameworks/vue
+rk add build/vite
+rk add testing/vitest
+rk add quality/eslint
 ```
 
 **Actual install order**

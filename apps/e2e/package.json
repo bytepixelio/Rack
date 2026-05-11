@@ -13,7 +13,7 @@
     "rackjs-cli": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "25.6.0",
+    "@types/node": "25.6.2",
     "execa": "9.6.1",
     "typescript": "5.9.2",
     "vitest": "3.2.4"

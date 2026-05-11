@@ -92,12 +92,53 @@ describe('add command', () => {
     expect(updateMock).not.toHaveBeenCalled()
   })
 
-  it('short-circuits when canonical name matches but version differs', async () => {
+  it('errors out when canonical name matches but version differs', async () => {
+    // Upgrade requests are refused with VERSION_MISMATCH — silently
+    // keeping the old version would mislead CI (exit 0 with no install
+    // of the requested 2.0.0).
     readOrCreateMock.mockResolvedValue({
       items: ['@rack/vue@1.0.0'],
       language: 'ts'
     })
-    await runCommand(registerAddCommand, ['add', '@rack/vue@2.0.0'])
+    await expect(
+      runCommand(registerAddCommand, ['add', '@rack/vue@2.0.0'])
+    ).rejects.toThrow('__exit__')
+    expect(exitSpy).toHaveBeenCalledWith(1)
+    expect(addRegistryMock).not.toHaveBeenCalled()
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+
+  it('errors out when installed has no version but request pins one', async () => {
+    // rack.json records `@rack/vue` (no version); request pins 2.0.0.
+    // The installed version is unknown so we can't tell if this is a
+    // no-op or an upgrade — refuse.
+    readOrCreateMock.mockResolvedValue({
+      items: ['@rack/vue'],
+      language: 'ts'
+    })
+    await expect(
+      runCommand(registerAddCommand, ['add', '@rack/vue@2.0.0'])
+    ).rejects.toThrow('__exit__')
+    expect(addRegistryMock).not.toHaveBeenCalled()
+  })
+
+  it('errors out when installed pins a version but request omits one', async () => {
+    readOrCreateMock.mockResolvedValue({
+      items: ['@rack/vue@1.0.0'],
+      language: 'ts'
+    })
+    await expect(
+      runCommand(registerAddCommand, ['add', '@rack/vue'])
+    ).rejects.toThrow('__exit__')
+    expect(addRegistryMock).not.toHaveBeenCalled()
+  })
+
+  it('short-circuits when versions match exactly (both pinned identical)', async () => {
+    readOrCreateMock.mockResolvedValue({
+      items: ['@rack/vue@1.0.0'],
+      language: 'ts'
+    })
+    await runCommand(registerAddCommand, ['add', '@rack/vue@1.0.0'])
     expect(addRegistryMock).not.toHaveBeenCalled()
     expect(updateMock).not.toHaveBeenCalled()
   })
