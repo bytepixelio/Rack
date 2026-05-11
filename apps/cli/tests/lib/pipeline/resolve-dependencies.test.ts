@@ -77,4 +77,59 @@ describe('pipeline/resolve-dependencies', () => {
     await resolveRegistryDependencies([a], 'js', createMockLogger())
     expect(fetchItemMock).toHaveBeenCalledWith('b', { language: 'js' })
   })
+
+  it('skips transitive deps that are already installed', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/b']
+    })
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/b' }))
+
+    const got = await resolveRegistryDependencies(
+      [a],
+      'ts',
+      createMockLogger(),
+      ['@rack/b']
+    )
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+    expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
+  })
+
+  it('matches installed identifiers by canonical form', async () => {
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/utils']
+    })
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/utils' }))
+
+    // Installed list carries version + language suffixes and a different
+    // case; canonical form still collapses to `@rack/utils`.
+    const got = await resolveRegistryDependencies(
+      [a],
+      'ts',
+      createMockLogger(),
+      ['@RACK/utils@1.0.0:ts']
+    )
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+    expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
+  })
+
+  it('keeps roots that happen to be in installed (caller controls roots)', async () => {
+    // A root passed in `items` is preserved even if its canonical id is
+    // also listed in `installed` — `installed` only suppresses transitive
+    // appearance via registryDependencies, not roots the caller chose.
+    const a = createItem({ identifier: '@rack/a' })
+
+    const got = await resolveRegistryDependencies(
+      [a],
+      'ts',
+      createMockLogger(),
+      ['@rack/a']
+    )
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+    expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
+  })
 })
