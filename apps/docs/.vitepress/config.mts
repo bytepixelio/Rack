@@ -17,10 +17,12 @@ export default defineConfig({
 
   themeConfig: {
     siteTitle: false,
-    
+
     logo: { dark: '/logo-dark.png', light: '/logo-light.png' },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/bytepixelio/Rack' }],
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/bytepixelio/Rack' }
+    ],
 
     footer: {
       message: 'Released under the MIT License.',

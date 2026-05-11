@@ -79,8 +79,10 @@ pnpm test
 # End-to-end tests
 pnpm test:e2e
 
-# Lint
+# Typecheck / Lint / Format
+pnpm typecheck
 pnpm lint
+pnpm format:check
 ```
 
 ## Deploy Registry Server

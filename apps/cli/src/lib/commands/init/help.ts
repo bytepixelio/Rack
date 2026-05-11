@@ -24,6 +24,7 @@ Template identifier:
 
 Notes:
   - Without --ci you will be prompted for the project name if -n is omitted.
+  - With --ci you must pass -n explicitly; init fails fast otherwise.
   - rack.json is written before install; the step is safe to re-run.
   - Dependency install and git init failures become warnings, not fatal.
 `

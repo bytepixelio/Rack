@@ -33,7 +33,10 @@ pnpm dev               # all apps
 pnpm build             # all apps
 pnpm test              # all apps
 pnpm test:e2e          # end-to-end tests (apps/e2e, runs CLI against real server)
-pnpm lint              # all apps
+pnpm typecheck         # tsc --noEmit per package (via turbo)
+pnpm lint              # eslint . across the repo
+pnpm format:check      # prettier --check .
+pnpm format            # prettier --write .
 pnpm clean             # clear build artifacts and node_modules
 pnpm commit            # commitizen — Conventional Commits enforced by commitlint
 ```
@@ -54,15 +57,15 @@ cd apps/cli && pnpm test -- tests/lib/commands/init          # from app dir
 pnpm changeset          # create a changeset (select package, bump type, summary)
 ```
 
-Push to main triggers `.github/workflows/ci.yml`: build → lint → test → changesets (version PR or npm publish).
+Push to main triggers `.github/workflows/ci.yml`: build → typecheck → lint → format:check → test → e2e → changesets (version PR or npm publish).
 
 ## Code style (project-specific additions)
 
 General code style (ESM + `.js`, import sort, no over-abstraction, no unused imports, Conventional Commits, etc.) lives in `~/.claude/CLAUDE.md`. The rules below are Rack-specific on top of that.
 
-- **Type-check command:** `tsc --noEmit --noUnusedLocals --noUnusedParameters` after writing code (the specific command this repo expects for the "no unused imports/variables" rule).
+- **Type-check command:** `pnpm typecheck` after writing code — runs `tsc --noEmit` per package via turbo. Every package's tsconfig has `noUnusedLocals` / `noUnusedParameters` enabled, so unused imports/variables fail typecheck.
 - **CLI tests must keep 100 % line/function/branch/statement coverage** on `src/**/*.ts` (enforced by `apps/cli/vitest.config.ts`). Server and e2e have no such threshold — e2e is protocol-level, not unit-level.
-- ESLint + Prettier wired through `eslint.config.js` at the root; Husky + lint-staged run on commit. Conventional Commits enforced by commitlint via `pnpm commit` (commitizen).
+- ESLint (`pnpm lint` = `eslint .`) and Prettier (`pnpm format:check` / `pnpm format`) cover the whole repo from the root flat `eslint.config.js` and `.prettierrc`. Husky `pre-commit` runs `lint-staged` (prettier + eslint --fix on staged files); `commit-msg` runs commitlint. Conventional Commits enforced via `pnpm commit` (commitizen) too.
 
 ## Where to look for X
 
