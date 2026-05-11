@@ -209,7 +209,6 @@ describe('add/pipeline addRegistry', () => {
     expect(applyMock).toHaveBeenCalledWith(
       [expect.objectContaining({ identifier: '@rack/b' })],
       '/t',
-      undefined,
       expect.anything()
     )
     // A is fetched once via fetchItems for conflict checking, but not via
