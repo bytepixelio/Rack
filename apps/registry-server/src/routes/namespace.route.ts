@@ -30,14 +30,11 @@ export default async function namespaceRoute(
   app.get('/namespaces', async (request, reply) => {
     const all = await app.storageService.findNamespaces()
 
-    // Admin token bypasses per-namespace filtering
-    const namespaces = request.isAdminToken()
-      ? all
-      : all.filter((ns) => {
-          if (!app.authService.isNamespaceAllowed(ns)) return false
-          if (app.authService.isNamespaceAnonymous(ns)) return true
-          return request.verifyNamespaceAccess(ns).allowed
-        })
+    const namespaces = app.authService.filterNamespaces(
+      all,
+      request.getAuthToken(),
+      { isAdmin: request.isAdminToken() }
+    )
 
     reply.header('Cache-Control', CACHE_HEADERS.short)
     return reply.send({ namespaces })

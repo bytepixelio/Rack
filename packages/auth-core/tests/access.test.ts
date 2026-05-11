@@ -3,7 +3,8 @@ import { parseAuthConfig } from '../src/parse.js'
 import {
   verifyAccess,
   isNamespaceAllowed,
-  isNamespaceAnonymous
+  isNamespaceAnonymous,
+  filterAllowedNamespaces
 } from '../src/access.js'
 
 describe('isNamespaceAllowed', () => {
@@ -134,5 +135,71 @@ describe('verifyAccess', () => {
     expect(beforeExpiry.allowed).toBe(true)
     expect(afterExpiry.allowed).toBe(false)
     expect(afterExpiry.error?.code).toBe('TOKEN_EXPIRED')
+  })
+})
+
+describe('filterAllowedNamespaces', () => {
+  const config = parseAuthConfig({
+    '@pub': [],
+    '@priv': [{ token: 'secret', publish: true }],
+    '@other': [{ token: 'different', publish: true }]
+  })
+  const all = ['@pub', '@priv', '@other', '@undeclared']
+
+  it('returns all inputs unchanged when isAdmin is true', () => {
+    expect(
+      filterAllowedNamespaces(config, all, null, { isAdmin: true })
+    ).toEqual(all)
+    expect(
+      filterAllowedNamespaces(config, all, 'random-token', { isAdmin: true })
+    ).toEqual(all)
+  })
+
+  it('drops undeclared namespaces', () => {
+    expect(filterAllowedNamespaces(config, all, null)).not.toContain(
+      '@undeclared'
+    )
+  })
+
+  it('keeps anonymous namespaces for any token', () => {
+    expect(filterAllowedNamespaces(config, all, null)).toContain('@pub')
+    expect(filterAllowedNamespaces(config, all, 'anything')).toContain('@pub')
+  })
+
+  it('hides token-gated namespaces from an unauthenticated caller', () => {
+    expect(filterAllowedNamespaces(config, all, null)).toEqual(['@pub'])
+  })
+
+  it('reveals only the token-gated namespaces the token authorizes', () => {
+    expect(filterAllowedNamespaces(config, all, 'secret')).toEqual([
+      '@pub',
+      '@priv'
+    ])
+    expect(filterAllowedNamespaces(config, all, 'different')).toEqual([
+      '@pub',
+      '@other'
+    ])
+  })
+
+  it('preserves the input order', () => {
+    const out = filterAllowedNamespaces(
+      config,
+      ['@other', '@pub', '@priv'],
+      'secret'
+    )
+    expect(out).toEqual(['@pub', '@priv'])
+  })
+
+  it('returns a fresh array (does not leak the caller list)', () => {
+    const out = filterAllowedNamespaces(config, all, null, { isAdmin: true })
+    expect(out).not.toBe(all)
+    expect(out).toEqual(all)
+  })
+
+  it('defaults options.isAdmin to false', () => {
+    // Omitted options object — must still apply per-namespace filtering
+    expect(filterAllowedNamespaces(config, all, null)).not.toContain(
+      '@undeclared'
+    )
   })
 })

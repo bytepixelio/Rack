@@ -21,5 +21,7 @@ export { parseAuthConfig, emptyAuthConfig } from './parse.js'
 export {
   verifyAccess,
   isNamespaceAllowed,
-  isNamespaceAnonymous
+  isNamespaceAnonymous,
+  filterAllowedNamespaces
 } from './access.js'
+export type { FilterNamespacesOptions } from './access.js'

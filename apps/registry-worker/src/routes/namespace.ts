@@ -11,10 +11,8 @@ import { json, badRequest, notFound } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 import {
   extractToken,
-  verifyAccess,
   parseAuthConfig,
-  isNamespaceAllowed,
-  isNamespaceAnonymous
+  filterAllowedNamespaces
 } from '@rack/auth-core'
 
 import type { RegistryStore } from '@rack/registry-core'
@@ -56,13 +54,7 @@ export async function handleNamespaces(
   )
   const isAdmin = !!(adminToken && token === adminToken)
 
-  const namespaces = isAdmin
-    ? all
-    : all.filter((ns) => {
-        if (!isNamespaceAllowed(config, ns)) return false
-        if (isNamespaceAnonymous(config, ns)) return true
-        return verifyAccess(config, ns, token).allowed
-      })
+  const namespaces = filterAllowedNamespaces(config, all, token, { isAdmin })
 
   return json({ namespaces }, 200, CACHE_HEADERS.short)
 }
