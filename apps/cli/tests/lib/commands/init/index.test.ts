@@ -118,6 +118,65 @@ describe('init command', () => {
     expect(manifest.items).toEqual(['@rack/vue', '@rack/postcss'])
   })
 
+  it('persists rack.json.language when template carries a :language suffix', async () => {
+    const { readFile } = await import('node:fs/promises')
+    await runCommand(registerInitCommand, [
+      'init',
+      '-t',
+      '@rack/vue:js',
+      '-n',
+      'demo'
+    ])
+    // Pipeline is invoked with the parsed language so transitive deps
+    // inherit it via the root's resolvedLanguage.
+    expect(initProjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ template: '@rack/vue:js' }),
+      'js',
+      expect.anything()
+    )
+    const manifest = JSON.parse(
+      await readFile(join(tmp, 'demo', 'rack.json'), 'utf8')
+    )
+    expect(manifest.language).toBe('js')
+  })
+
+  it('omits rack.json.language when the user did not pick one', async () => {
+    const { readFile } = await import('node:fs/promises')
+    await runCommand(registerInitCommand, [
+      'init',
+      '-t',
+      '@rack/vue',
+      '-n',
+      'demo'
+    ])
+    expect(initProjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ template: '@rack/vue' }),
+      undefined,
+      expect.anything()
+    )
+    const manifest = JSON.parse(
+      await readFile(join(tmp, 'demo', 'rack.json'), 'utf8')
+    )
+    expect(manifest.language).toBeUndefined()
+  })
+
+  it('ignores :language even when typed on a preset template (preset rejects it downstream)', async () => {
+    // Presets reject `:language` suffixes (fetchPreset throws); init must
+    // not surface a phantom rack.json.language for that combination either.
+    await runCommand(registerInitCommand, [
+      'init',
+      '-t',
+      '@presets/foo',
+      '-n',
+      'demo'
+    ])
+    expect(initProjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ template: '@presets/foo' }),
+      undefined,
+      expect.anything()
+    )
+  })
+
   it('skips install when --skip-install is set', async () => {
     await runCommand(registerInitCommand, [
       'init',
