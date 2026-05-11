@@ -37,14 +37,14 @@ Once built and linked globally, invoke as `rk`.
 rk init -t <template> [-n <name>] [--ci] [-f] [--skip-install] [--skip-git]
 ```
 
-| Flag             | Description                                              |
-| ---------------- | -------------------------------------------------------- |
-| `-t, --template` | **Required.** Preset or registry identifier to scaffold. |
-| `-n, --name`     | Project name (interactive prompt when omitted).          |
-| `--ci`           | Non-interactive mode; also skips install and git init.   |
-| `-f, --force`    | Overwrite an existing target directory.                  |
-| `--skip-install` | Skip `npm install` after scaffolding.                    |
-| `--skip-git`     | Skip `git init`.                                         |
+| Flag             | Description                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `-t, --template` | **Required.** Preset or registry identifier to scaffold.                                                               |
+| `-n, --name`     | Project name (interactive prompt when omitted).                                                                        |
+| `--ci`           | Non-interactive mode; also skips install and git init.                                                                 |
+| `-f, --force`    | Allow init into an existing target directory (no cleanup; pre-existing files survive unless a registry rewrites them). |
+| `--skip-install` | Skip `npm install` after scaffolding.                                                                                  |
+| `--skip-git`     | Skip `git init`.                                                                                                       |
 
 ```bash
 rk init -t @presets/vue-ts -n my-app

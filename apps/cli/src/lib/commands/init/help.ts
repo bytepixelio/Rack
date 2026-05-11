@@ -11,7 +11,7 @@ export const initHelpText = `
 Examples:
   $ rk init -t @presets/tutorial-project -n my-app
   $ rk init -t @rack/runtimes/node --ci -n svc        # CI mode requires -n
-  $ rk init -t @presets/nextjs-app -f                  # overwrite existing dir
+  $ rk init -t @presets/nextjs-app -f                  # allow init into an existing dir (no cleanup)
   $ rk init -t @presets/x --skip-install --skip-git    # scaffold only
 
 Template identifier:
@@ -25,6 +25,9 @@ Template identifier:
 Notes:
   - Without --ci you will be prompted for the project name if -n is omitted.
   - With --ci you must pass -n explicitly; init fails fast otherwise.
+  - -f/--force only allows init into an existing directory; it does NOT
+    clean the directory. Conflicting files are resolved per-file by each
+    registry's merge strategy (overwrite, json, env, ignore, custom).
   - rack.json is written before install; the step is safe to re-run.
   - Dependency install and git init failures become warnings, not fatal.
 `
