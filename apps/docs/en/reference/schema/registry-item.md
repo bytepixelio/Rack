@@ -276,7 +276,7 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 {
   "conflicts": [
     "frameworks/vue",
-    "frameworks/react@^18.0.0",
+    "frameworks/react@18.0.0",
     "frameworks/svelte:ts"
   ]
 }
