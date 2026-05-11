@@ -178,6 +178,72 @@ describe('add/pipeline addRegistry', () => {
     )
   })
 
+  it('does not re-apply transitive deps that are already installed', async () => {
+    // B (new) declares A (already installed) as a registry dependency.
+    // A must not appear in applyFiles or pkg.update, but conflict checking
+    // still sees A via fetchItems(installedRegistries).
+    const b = createItem({
+      identifier: '@rack/b',
+      dependencies: { b: '^1.0.0' },
+      registryDependencies: ['@rack/a']
+    })
+    fetchItemMock.mockResolvedValue(b)
+    fetchItemsMock.mockResolvedValue([
+      createItem({
+        identifier: '@rack/a',
+        dependencies: { a: '^1.0.0' }
+      })
+    ])
+
+    const result = await addRegistry(
+      {
+        identifier: '@rack/b',
+        targetDir: '/t',
+        installedRegistries: ['@rack/a']
+      },
+      createMockLogger()
+    )
+
+    expect(result.appliedRegistries).toEqual(['@rack/b'])
+    expect(result.dependencies).toEqual({ b: '^1.0.0' })
+    expect(applyMock).toHaveBeenCalledWith(
+      [expect.objectContaining({ identifier: '@rack/b' })],
+      '/t',
+      undefined,
+      expect.anything()
+    )
+    // A is fetched once via fetchItems for conflict checking, but not via
+    // fetchItem during dependency resolution.
+    expect(fetchItemMock).toHaveBeenCalledTimes(1)
+    expect(fetchItemMock).toHaveBeenCalledWith('@rack/b', expect.anything())
+  })
+
+  it('still enforces reciprocal conflicts from installed deps that were skipped', async () => {
+    // A is installed, B depends on A, and A reciprocally conflicts with B.
+    // Even though A is skipped in dependency resolution, fetchItems still
+    // pulls A so conflict detection catches it.
+    fetchItemMock.mockResolvedValue(
+      createItem({
+        identifier: '@rack/b',
+        registryDependencies: ['@rack/a']
+      })
+    )
+    fetchItemsMock.mockResolvedValue([
+      createItem({ identifier: '@rack/a', conflicts: ['@rack/b'] })
+    ])
+
+    await expect(
+      addRegistry(
+        {
+          identifier: '@rack/b',
+          targetDir: '/t',
+          installedRegistries: ['@rack/a']
+        },
+        createMockLogger()
+      )
+    ).rejects.toBeInstanceOf(ConflictError)
+  })
+
   it('pluralizes the degraded warning when multiple installed fetches fail', async () => {
     const logger = createMockLogger()
     fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
