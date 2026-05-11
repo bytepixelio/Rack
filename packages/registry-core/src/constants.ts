@@ -13,6 +13,22 @@ export const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
 
 /**
+ * Namespace pattern (e.g. `@rack`, `@my-org`). Mirrors
+ * `packages/storage/schema/registry-item.json#namespace.pattern` so
+ * any namespace accepted at upload time round-trips through the URL
+ * parser, and traversal-style namespaces (`..`, `%40rack`) are
+ * rejected before they reach storage.
+ */
+export const NAMESPACE_PATTERN = /^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/
+
+/**
+ * Single segment of a registry locator path (e.g. `quality`, `node`,
+ * `tailwindcss`). Mirrors each `/`-separated segment of the schema's
+ * `path` pattern; rejects `..`, uppercase, dots, and empty.
+ */
+export const PATH_SEGMENT_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/**
  * Map a registry.json `type` to the storage segment under `<namespace>/`.
  * Mirrors the 6-category taxonomy in
  * `apps/docs/{en,zh}/guide/registry.md`.
