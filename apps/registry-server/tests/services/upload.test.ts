@@ -663,6 +663,62 @@ describe('UploadService', () => {
     expect(r2.deletePrefix).toHaveBeenCalledWith('@rack/node/4.0.0')
   })
 
+  it('should log when rollback itself fails after regenerateVersions failure', async () => {
+    const upload = createUpload()
+    const extractDir = join(tempDir, 'extract-rollback-fail')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    vi.spyOn(storage, 'findVersions').mockRejectedValue(
+      new Error('scan failed')
+    )
+    vi.spyOn(storage, 'remove').mockRejectedValue(new Error('remove failed'))
+
+    // The original error from regenerateVersions still propagates — the
+    // rollback failure is only logged, not rethrown.
+    await expect(
+      upload.install(extractDir, '@rack', 'node', '5.0.0', ['node'])
+    ).rejects.toThrow('scan failed')
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rollbackError: expect.any(Error),
+        namespace: '@rack',
+        name: 'node',
+        version: '5.0.0',
+        segments: ['node']
+      }),
+      'Failed to roll back install after regenerateVersions failure'
+    )
+
+    vi.mocked(storage.findVersions).mockRestore()
+    vi.mocked(storage.remove).mockRestore()
+  })
+
+  it('should log when R2 deletePrefix fails during uploadDirectory rollback', async () => {
+    const r2 = createMockR2()
+    vi.mocked(r2.uploadDirectory).mockRejectedValue(new Error('upload failed'))
+    vi.mocked(r2.deletePrefix).mockRejectedValue(new Error('delete failed'))
+    const upload = createUpload({ r2 })
+
+    const extractDir = join(tempDir, 'extract-r2-rollback-fail')
+    await mkdir(extractDir, { recursive: true })
+    await writeFile(join(extractDir, 'registry.json'), '{}')
+
+    // The original upload error propagates; the rollback failure is logged.
+    await expect(
+      upload.install(extractDir, '@rack', 'node', '6.0.0', ['node'])
+    ).rejects.toThrow('upload failed')
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rollbackError: expect.any(Error),
+        keyPrefix: '@rack/node/6.0.0'
+      }),
+      'Failed to clean up R2 after partial uploadDirectory'
+    )
+  })
+
   it('should throw when version already exists, with canonical path in message', async () => {
     const upload = createUpload()
 
