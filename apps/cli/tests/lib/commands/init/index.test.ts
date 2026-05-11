@@ -215,6 +215,14 @@ describe('init command', () => {
     expect(gitInitMock).not.toHaveBeenCalled()
   })
 
+  it('exits with VALIDATION_ERROR when --ci is set without -n', async () => {
+    await expect(
+      runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '--ci'])
+    ).rejects.toThrow('__exit__')
+    expect(initProjectMock).not.toHaveBeenCalled()
+    expect(prompterMocks.text).not.toHaveBeenCalled()
+  })
+
   it('collects install failure as a warning', async () => {
     installMock.mockRejectedValue(new Error('ENOENT'))
     await runCommand(registerInitCommand, [
