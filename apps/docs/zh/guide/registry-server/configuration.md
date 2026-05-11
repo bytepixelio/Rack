@@ -90,7 +90,7 @@ R2_SECRET_ACCESS_KEY=your-secret-access-key
 | 变量名             | 默认值                   | 说明                                                               |
 | ------------------ | ------------------------ | ------------------------------------------------------------------ |
 | `AUTH_CONFIG_PATH` | `../../config/auth.json` | auth.json 配置文件路径 (仓库根 `config/auth.json`, 与 Worker 共用) |
-| `ADMIN_TOKEN`      | _(未设置)_               | 系统级管理员 Token, 用于跨命名空间发布                             |
+| `ADMIN_TOKEN`      | _(未设置)_               | 系统级管理员 Token, 跨命名空间读取与发布均跳过命名空间级认证       |
 
 **示例配置**
 
@@ -98,12 +98,12 @@ R2_SECRET_ACCESS_KEY=your-secret-access-key
 # 认证配置 (默认读仓库根 config/auth.json, 与 Worker 共用)
 # AUTH_CONFIG_PATH=../../config/auth.json
 
-# Admin Token (可选, 启用跨命名空间发布)
+# Admin Token (可选, 启用跨命名空间读取与发布)
 ADMIN_TOKEN=your-secret-admin-token
 ```
 
 ::: tip Admin Token
-`ADMIN_TOKEN` 允许向任意命名空间发布, 无需配置命名空间级别的 Token。当请求携带此 Token 时, 上传操作将跳过命名空间级别的认证检查。适用于需要向多个命名空间发布的 CI/CD 系统。
+`ADMIN_TOKEN` 是系统级主密钥, 持有者无需在 `auth.json` 中配置命名空间 Token, 即可读取并发布到任意命名空间。请求携带此 Token 时, 读取 (`GET /registries/*`、`GET /namespaces`) 和上传都会跳过命名空间级别的认证检查。适用于需要跨多个命名空间运维的 CI/CD 系统。
 :::
 
 ::: tip R2 模式下 auth.json 需要同步到 R2

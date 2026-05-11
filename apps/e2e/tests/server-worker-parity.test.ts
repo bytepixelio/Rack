@@ -61,22 +61,10 @@ const authCases: ParityCase[] = [
     expect: { status: 200 }
   },
   {
-    name: 'admin token on /registries/* (REVIEW §2.1 divergence)',
+    name: 'admin token on /registries/* → 200 (REVIEW §2.1 resolved)',
     path: REGISTRY_PATH,
     headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
-    expect: {
-      server: {
-        status: 401,
-        code: 'INVALID_TOKEN',
-        reason:
-          'REVIEW §2.1 — server does not bypass admin token on /registries/*'
-      },
-      worker: {
-        status: 200,
-        reason:
-          'REVIEW §2.1 — worker bypasses namespace auth when token equals ADMIN_TOKEN'
-      }
-    }
+    expect: { status: 200 }
   },
   {
     name: 'namespace not in allowlist → 403 FORBIDDEN_NAMESPACE',
