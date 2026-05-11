@@ -547,7 +547,11 @@ describe('UploadService', () => {
         languages: {
           ts: {
             files: [
-              { path: 'tsconfig.json', target: 'tsconfig.json', type: 'registry:config' }
+              {
+                path: 'tsconfig.json',
+                target: 'tsconfig.json',
+                type: 'registry:config'
+              }
             ]
           }
         }
@@ -556,6 +560,45 @@ describe('UploadService', () => {
     await writeFile(join(dir, 'tsconfig.json'), '{}')
 
     await expect(upload.validateExtractedTree(dir)).resolves.toBeUndefined()
+  })
+
+  // ─── manifest reuse ───────────────────────────────────────────────────────
+
+  it('validateSchema returns the parsed manifest', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'schema-return')
+    await mkdir(dir, { recursive: true })
+    const data = {
+      files: [{ path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }]
+    }
+    await writeFile(join(dir, 'registry.json'), JSON.stringify(data))
+
+    const manifest = await upload.validateSchema(dir)
+    expect(manifest).toEqual(data)
+  })
+
+  it('validateFilePaths uses provided manifest without reading registry.json', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'manifest-arg-paths')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    // intentionally no registry.json on disk — would fail if method tried to read it
+
+    await expect(
+      upload.validateFilePaths(dir, { files: [{ path: 'src/a.ts' }] })
+    ).resolves.toBeUndefined()
+  })
+
+  it('validateExtractedTree uses provided manifest without reading registry.json', async () => {
+    const upload = createUpload()
+    const dir = join(tempDir, 'manifest-arg-tree')
+    await mkdir(join(dir, 'src'), { recursive: true })
+    await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
+    // intentionally no registry.json on disk — fails if method tries to read
+
+    await expect(
+      upload.validateExtractedTree(dir, { files: [{ path: 'src/a.ts' }] })
+    ).resolves.toBeUndefined()
   })
 
   // ─── validateNamespace ───────────────────────────────────────────────────
@@ -611,9 +654,9 @@ describe('UploadService', () => {
 
     // The just-renamed version dir must be gone so a retry is not blocked
     // by VERSION_EXISTS and so callers do not see a half-published version.
-    expect(
-      await storage.exists(join(tempDir, '@rack', 'node', '3.0.0'))
-    ).toBe(false)
+    expect(await storage.exists(join(tempDir, '@rack', 'node', '3.0.0'))).toBe(
+      false
+    )
 
     vi.mocked(storage.findVersions).mockRestore()
   })
