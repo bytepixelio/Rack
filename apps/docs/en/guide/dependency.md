@@ -119,11 +119,27 @@ When multiple registries depend on the same `npm` package, Rack resolves version
 vue: "^3.4.0" + vue: "^3.4.0" → "^3.4.0"
 ```
 
-**Compatible versions** → Use newer version
+**Compatible versions** → Keep the intersection of every constraint
+
+If one range is already a subset of every other, return that narrowest range:
 
 ```json
 vue: "^3.4.0" + vue: "^3.3.0" → "^3.4.0"
 ```
+
+Otherwise AND-join the ranges using `npm`'s range syntax so the package
+manager enforces every original constraint:
+
+```json
+foo: "^1.0.0" + foo: "<1.5.0" → "^1.0.0 <1.5.0"
+```
+
+::: tip Why not just return the wider range?
+Returning `^1.0.0` alone would let the package manager install `1.9.x`,
+violating the `<1.5.0` upper bound. The joined form `^1.0.0 <1.5.0` is
+valid syntax in `npm` / `pnpm` / `yarn` and is equivalent to the
+intersection of both ranges.
+:::
 
 **Incompatible versions** → Lower priority number wins
 

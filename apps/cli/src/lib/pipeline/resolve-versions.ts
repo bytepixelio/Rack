@@ -207,10 +207,17 @@ function resolveVersionConflict(versions: VersionEntry[]): Resolution {
 /**
  * Find a range that is compatible with all input ranges.
  *
- * The candidate with the highest minVersion is the only possible winner:
- * any compatible version must be ≥ every range's minimum, so if the max
- * min fails to satisfy all ranges, no version does. We pick the max-min
- * candidate and verify it satisfies the original valid ranges.
+ * Compatibility check: the candidate with the highest minVersion is the
+ * only possible winner — any common version must be ≥ every range's
+ * minimum, so if the max-min fails to satisfy all ranges, no version
+ * does.
+ *
+ * Result shape: when a single input range is already a subset of every
+ * other (e.g. `^3.4.0` inside `^3.3.0`), return that narrowest range so
+ * `package.json` stays readable. Otherwise AND-join the unique ranges
+ * (`^1.0.0 <1.5.0`) so the package manager enforces every original
+ * constraint — returning one source range would silently drop the other
+ * ranges' upper bounds.
  *
  * @param versions - Conflicting version entries
  * @returns Compatible range, or `null` if no compatible range exists
@@ -228,6 +235,11 @@ function findCompatibleVersion(versions: VersionEntry[]): string | null {
   if (candidates.length === 0) return null
 
   const best = candidates.reduce((a, b) => (semver.gt(b.min, a.min) ? b : a))
+  if (!ranges.every((r) => semver.satisfies(best.min, r))) return null
 
-  return ranges.every((r) => semver.satisfies(best.min, r)) ? best.range : null
+  const unique = [...new Set(ranges)]
+  const narrowest = unique.find((r) =>
+    unique.every((other) => r === other || semver.subset(r, other))
+  )
+  return narrowest ?? unique.join(' ')
 }
