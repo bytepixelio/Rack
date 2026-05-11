@@ -166,7 +166,8 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 认证配置文件 (仓库根 `config/auth.json`, 与 [Cloudflare Worker](https://github.com/bytepixelio/Rack/blob/main/apps/registry-worker/README.md) 共用同一份) 是命名空间访问的唯一入口:
 
 - 命名空间必须作为顶层键存在; 不在 `auth.json` 中的命名空间一律返回 403 Forbidden, 且不会出现在 `GET /namespaces` 列表中。
-- 值必须是数组。空数组 `[]` → 匿名读取 (上传仍被拒绝, 除非使用 Admin Token)。这类命名空间在发现接口中对所有人可见。非数组值（如 `null`、字符串）或非空数组中所有条目均缺少有效 `token` 字段都属于配置错误, 加载时会抛出异常。
+- 空数组 `[]` → 匿名读取 (上传仍被拒绝, 除非使用 Admin Token); 这类命名空间在发现接口中对所有人可见。
+- 非数组值（如 `null`、字符串）或非空数组中所有条目均缺少有效 `token` 字段 → 该命名空间无法通过 per-namespace 校验, 不会出现在允许的命名空间集合中 (读取返回 403, 发现接口隐藏)。服务仍能启动, 错误会记入日志, 便于运维定位问题条目。
 - 配置了 Token 的命名空间（非空数组）仅对携带有效 Token（或 Admin Token）的调用者可见。
 - 数组内每个对象代表一个 Token, 字段如下:
 
