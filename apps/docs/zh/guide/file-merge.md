@@ -414,11 +414,12 @@ export function merge(
 
 #### 插件路径
 
-- **本地 Registry**：`script` 路径相对于 Registry 根目录
-- **远程 Registry**：插件会被下载到临时目录执行
+- **本地 Registry**：`script` 路径相对于 Registry 根目录，可以正常 `import` 旁边的辅助文件
+- **远程 Registry**：插件会被下载到临时目录执行，**必须是自包含的单文件**；CLI 只会下载 `script` 指向的入口脚本，**不会**递归下载相对 import 的依赖。例如 `import { mergeJson } from './utils.js'` 在远程场景会因为 `utils.js` 没被下载而加载失败。如果需要共用工具函数，请把它们内联进同一个 script。临时目录在插件执行完成后（无论成功或失败）会被自动清理
 
 #### 注意事项
 
 - 插件支持 ES Modules 和 CommonJS
 - 插件可以是同步或异步函数
 - 插件路径会进行安全检查，防止路径遍历攻击
+- 远程插件不能 `import` / `require` 旁边的辅助文件（见“插件路径”）；本地 Registry 不受此限制
