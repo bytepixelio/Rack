@@ -146,10 +146,16 @@ importers:
       '@rack/registry-server':
         specifier: workspace:*
         version: link:../registry-server
+      '@rack/registry-worker':
+        specifier: workspace:*
+        version: link:../registry-worker
       rackjs-cli:
         specifier: workspace:*
         version: link:../cli
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 4.20260511.1
+        version: 4.20260511.1
       '@types/node':
         specifier: 25.6.2
         version: 25.6.2
