@@ -45,6 +45,7 @@ rk config set @company --url https://registry.company.com --token your-token-her
 ```
 
 **命令输出：**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -80,6 +81,7 @@ rk config set @company --url https://registry.company.com \
 ```
 
 **命令输出：**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -118,6 +120,7 @@ rk config set @company --url https://registry.company.com \
 ```
 
 **命令输出：**
+
 ```
 ✓ Registry @company configured successfully
 
@@ -152,10 +155,10 @@ Configuration for @company:
 
 认证同样影响命名空间发现接口。需要 Token 的命名空间对未认证调用者不可见, 避免泄露命名空间名称和 Registry 列表。
 
-| 端点                              | 行为                                                                   |
-| --------------------------------- | ---------------------------------------------------------------------- |
-| `GET /namespaces`                 | 仅返回调用者有权访问的命名空间; 受保护的命名空间不会出现在列表中       |
-| `GET /namespaces/:ns/registries`  | 非匿名命名空间需要有效 Token; 否则返回 401/403                         |
+| 端点                             | 行为                                                             |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `GET /namespaces`                | 仅返回调用者有权访问的命名空间; 受保护的命名空间不会出现在列表中 |
+| `GET /namespaces/:ns/registries` | 非匿名命名空间需要有效 Token; 否则返回 401/403                   |
 
 ```bash
 # 匿名访问 — 只能看到公开命名空间

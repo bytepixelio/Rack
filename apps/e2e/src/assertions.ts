@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { readFile, access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -192,9 +192,7 @@ function isMatcherObject(
 function resolvePath(root: unknown, dotPath: string): unknown {
   return dotPath
     .split('.')
-    .reduce<
-      unknown
-    >((acc, key) => (isRecord(acc) ? acc[key] : undefined), root)
+    .reduce<unknown>((acc, key) => (isRecord(acc) ? acc[key] : undefined), root)
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -212,8 +210,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
     const keysA = Object.keys(a)
     const keysB = Object.keys(b)
     return (
-      keysA.length === keysB.length &&
-      keysA.every((k) => deepEqual(a[k], b[k]))
+      keysA.length === keysB.length && keysA.every((k) => deepEqual(a[k], b[k]))
     )
   }
   return false

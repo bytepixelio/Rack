@@ -17,14 +17,14 @@ A registry behaves like a configuration bundle that fully defines how a specific
 
 ## Registry Types
 
-| Type                 | Description     | Examples                                  | Suggested Priority |
-| -------------------- | --------------- | ----------------------------------------- | ------------------ |
-| `registry:runtime`   | Runtimes        | `Node.js` `Bun` `Deno`                    | 1                  |
+| Type                 | Description            | Examples                                  | Suggested Priority |
+| -------------------- | ---------------------- | ----------------------------------------- | ------------------ |
+| `registry:runtime`   | Runtimes               | `Node.js` `Bun` `Deno`                    | 1                  |
 | `registry:framework` | Application frameworks | `Vue.js` `React` `Next.js`                | 2                  |
-| `registry:build`     | Build tooling   | `Vite` `Webpack` `PostCSS` `Rollup`       | 3                  |
-| `registry:feature`   | Feature modules | `Vue Router` `TailwindCSS` `React Router` | 4                  |
-| `registry:testing`   | Testing tools   | `Vitest` `Jest` `Playwright`              | 5                  |
-| `registry:quality`   | Quality tooling | `ESLint` `Prettier` `CommitLint`          | 6                  |
+| `registry:build`     | Build tooling          | `Vite` `Webpack` `PostCSS` `Rollup`       | 3                  |
+| `registry:feature`   | Feature modules        | `Vue Router` `TailwindCSS` `React Router` | 4                  |
+| `registry:testing`   | Testing tools          | `Vitest` `Jest` `Playwright`              | 5                  |
+| `registry:quality`   | Quality tooling        | `ESLint` `Prettier` `CommitLint`          | 6                  |
 
 ## Registry Structure
 

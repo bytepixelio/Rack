@@ -1,8 +1,9 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import { R2UploadBackend } from '../../src/services/r2-upload-backend.js'
+
 import type { FastifyBaseLogger } from 'fastify'
 
 // ─── S3 Client Mock ───────────────────────────────────────────────────────────
@@ -17,9 +18,9 @@ vi.mock('@aws-sdk/client-s3', () => ({
   HeadObjectCommand: vi
     .fn()
     .mockImplementation((input) => ({ ...input, _type: 'HeadObject' })),
-  DeleteObjectCommand: vi
+  DeleteObjectsCommand: vi
     .fn()
-    .mockImplementation((input) => ({ ...input, _type: 'DeleteObject' })),
+    .mockImplementation((input) => ({ ...input, _type: 'DeleteObjects' })),
   ListObjectsV2Command: vi
     .fn()
     .mockImplementation((input) => ({ ...input, _type: 'ListObjects' }))
@@ -275,7 +276,7 @@ describe('R2UploadBackend', () => {
 
   // ─── deletePrefix ────────────────────────────────────────────────────────
 
-  it('should delete every object under a prefix', async () => {
+  it('should delete every object under a prefix in a single batch call', async () => {
     mockSend
       .mockResolvedValueOnce({
         Contents: [
@@ -284,22 +285,21 @@ describe('R2UploadBackend', () => {
         ]
       })
       .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({})
 
     await backend.deletePrefix('@rack/node/1.0.0')
 
+    expect(mockSend).toHaveBeenCalledTimes(2)
     expect(mockSend).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        _type: 'DeleteObject',
-        Key: '@rack/node/1.0.0/registry.json'
-      })
-    )
-    expect(mockSend).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        _type: 'DeleteObject',
-        Key: '@rack/node/1.0.0/templates/index.ts'
+        _type: 'DeleteObjects',
+        Delete: {
+          Quiet: true,
+          Objects: [
+            { Key: '@rack/node/1.0.0/registry.json' },
+            { Key: '@rack/node/1.0.0/templates/index.ts' }
+          ]
+        }
       })
     )
   })
@@ -311,12 +311,12 @@ describe('R2UploadBackend', () => {
         NextContinuationToken: 'page-2',
         Contents: [{ Key: 'a' }]
       })
-      .mockResolvedValueOnce({}) // delete a
+      .mockResolvedValueOnce({}) // batch delete page 1
       .mockResolvedValueOnce({
         IsTruncated: false,
         Contents: [{ Key: 'b' }]
       })
-      .mockResolvedValueOnce({}) // delete b
+      .mockResolvedValueOnce({}) // batch delete page 2
 
     await backend.deletePrefix('prefix')
 
@@ -338,7 +338,67 @@ describe('R2UploadBackend', () => {
 
     await backend.deletePrefix('p')
 
-    // Two send calls: list + one delete (the undefined Key is skipped)
+    // Two send calls: list + one batch delete with only the defined Key
     expect(mockSend).toHaveBeenCalledTimes(2)
+    expect(mockSend).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        _type: 'DeleteObjects',
+        Delete: { Quiet: true, Objects: [{ Key: 'real' }] }
+      })
+    )
+  })
+
+  it('should skip the batch delete call entirely when a page is empty', async () => {
+    mockSend.mockResolvedValueOnce({ Contents: [] })
+
+    await backend.deletePrefix('empty-prefix')
+
+    // Only the list call; no DeleteObjects for a zero-key batch
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
+  it('should throw when DeleteObjects returns per-key errors', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [{ Key: 'a' }, { Key: 'b' }]
+      })
+      .mockResolvedValueOnce({
+        Errors: [{ Key: 'b', Code: 'AccessDenied', Message: 'no permission' }]
+      })
+
+    await expect(backend.deletePrefix('p')).rejects.toThrow(
+      /Failed to delete 1 object\(s\) under "p\/": b: no permission/
+    )
+  })
+
+  it('should normalize prefix with a trailing slash to avoid sibling-version matches', async () => {
+    // Without normalization, listing `@rack/node/1.0.0` byte-prefix
+    // would also catch `@rack/node/1.0.0-beta.1/...` and
+    // `@rack/node/1.0.0+build/...` — a rollback of 1.0.0 would wipe
+    // those neighbors' files. The fix is a trailing slash so listing
+    // is bound to the directory boundary.
+    mockSend.mockResolvedValueOnce({ Contents: [] })
+
+    await backend.deletePrefix('@rack/node/1.0.0')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        _type: 'ListObjects',
+        Prefix: '@rack/node/1.0.0/'
+      })
+    )
+  })
+
+  it('should leave an already-trailing-slash prefix unchanged', async () => {
+    mockSend.mockResolvedValueOnce({ Contents: [] })
+
+    await backend.deletePrefix('@rack/node/1.0.0/')
+
+    expect(mockSend).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ Prefix: '@rack/node/1.0.0/' })
+    )
   })
 })

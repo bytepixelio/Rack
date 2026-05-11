@@ -7,7 +7,7 @@ import { verifyBaseline } from '../src/baseline.js'
 import { createWorkspace } from '../src/workspace.js'
 import { discoverRegistries } from '../src/discover.js'
 import { loadSmoke, applySmoke } from '../src/assertions.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
 
 import type { TestServer } from '../src/server.js'
 

@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/registry/client.js', () => ({
   registry: { fetchItem: vi.fn(), fetchPreset: vi.fn() }
 }))
 
-import { fetchTemplate } from '../../../../src/lib/commands/init/fetch.js'
 import { registry } from '../../../../src/lib/registry/client.js'
 import { createItem, createMockLogger } from '../../../helpers/mocks.js'
+import { fetchTemplate } from '../../../../src/lib/commands/init/fetch.js'
 
 const fetchItemMock = registry.fetchItem as unknown as ReturnType<typeof vi.fn>
 const fetchPresetMock = registry.fetchPreset as unknown as ReturnType<

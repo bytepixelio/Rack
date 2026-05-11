@@ -7,10 +7,7 @@
   "priority": 1,
   "description": "TypeScript runtime with entry file and execution scripts",
   "tags": ["runtime", "language", "typescript"],
-  "registryDependencies": [
-    "@rack/runtimes/node",
-    "@rack/build/typescript"
-  ],
+  "registryDependencies": ["@rack/runtimes/node", "@rack/build/typescript"],
   "devDependencies": {
     "tsx": "^4.21.0"
   },

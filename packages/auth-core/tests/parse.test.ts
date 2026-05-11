@@ -1,24 +1,31 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 
-import { parseAuthConfig, emptyAuthConfig } from '../src/parse.js'
+import { emptyAuthConfig, parseAuthConfig } from '../src/parse.js'
 
 describe('parseAuthConfig', () => {
-  it('returns empty maps for an empty object', () => {
+  it('returns empty maps and no errors for an empty object', () => {
     const config = parseAuthConfig({})
     expect(config.allowedNamespaces.size).toBe(0)
     expect(config.tokens.size).toBe(0)
+    expect(config.errors).toEqual([])
   })
 
   it('registers an anonymous namespace (empty token array)', () => {
     const config = parseAuthConfig({ '@public': [] })
     expect(config.allowedNamespaces.has('@public')).toBe(true)
     expect(config.tokens.has('@public')).toBe(false)
+    expect(config.errors).toEqual([])
   })
 
-  it('throws when namespace value is null', () => {
-    expect(() => parseAuthConfig({ '@ns': null })).toThrow(
-      'must map to an array'
-    )
+  it('isolates a non-array namespace value into errors, not allowed', () => {
+    const config = parseAuthConfig({ '@ns': null })
+    expect(config.allowedNamespaces.has('@ns')).toBe(false)
+    expect(config.errors).toEqual([
+      {
+        namespace: '@ns',
+        reason: expect.stringContaining('must map to an array')
+      }
+    ])
   })
 
   it('registers a namespace with tokens', () => {
@@ -30,6 +37,7 @@ describe('parseAuthConfig', () => {
       mark: 'CI',
       publish: true
     })
+    expect(config.errors).toEqual([])
   })
 
   it('parses expiresAt as a Date', () => {
@@ -41,20 +49,26 @@ describe('parseAuthConfig', () => {
     )
   })
 
-  it('throws on invalid expiresAt date strings rather than silently dropping them', () => {
-    expect(() =>
-      parseAuthConfig({
-        '@priv': [{ token: 'abc', publish: true, expiresAt: 'not-a-date' }]
-      })
-    ).toThrow(/invalid expiresAt/)
+  it('isolates an invalid expiresAt date string into errors', () => {
+    const config = parseAuthConfig({
+      '@priv': [{ token: 'abc', publish: true, expiresAt: 'not-a-date' }]
+    })
+    expect(config.allowedNamespaces.has('@priv')).toBe(false)
+    expect(config.tokens.has('@priv')).toBe(false)
+    expect(config.errors).toEqual([
+      {
+        namespace: '@priv',
+        reason: expect.stringContaining('invalid expiresAt')
+      }
+    ])
   })
 
-  it('throws when expiresAt is not a string', () => {
-    expect(() =>
-      parseAuthConfig({
-        '@priv': [{ token: 'abc', publish: true, expiresAt: 12345 }]
-      })
-    ).toThrow(/must be an ISO-8601 date string/)
+  it('isolates a non-string expiresAt into errors', () => {
+    const config = parseAuthConfig({
+      '@priv': [{ token: 'abc', publish: true, expiresAt: 12345 }]
+    })
+    expect(config.allowedNamespaces.has('@priv')).toBe(false)
+    expect(config.errors[0]?.reason).toMatch(/must be an ISO-8601 date string/)
   })
 
   it('treats an empty expiresAt string as never-expires', () => {
@@ -85,12 +99,14 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.get('@priv')?.size).toBe(1)
   })
 
-  it('throws when all token entries lack a valid token string', () => {
-    expect(() =>
-      parseAuthConfig({
-        '@priv': [{ publish: true }, { token: '', publish: true }]
-      })
-    ).toThrow('none contain a valid "token" string')
+  it('isolates a namespace where all token entries lack a valid token string', () => {
+    const config = parseAuthConfig({
+      '@priv': [{ publish: true }, { token: '', publish: true }]
+    })
+    expect(config.allowedNamespaces.has('@priv')).toBe(false)
+    expect(config.errors[0]?.reason).toContain(
+      'none contain a valid "token" string'
+    )
   })
 
   it('ignores non-string mark fields', () => {
@@ -100,16 +116,40 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.get('@priv')?.get('abc')?.mark).toBeUndefined()
   })
 
-  it('throws when namespace value is not an array', () => {
-    expect(() =>
-      parseAuthConfig({ '@priv': 'not-an-array' as never })
-    ).toThrow('must map to an array')
+  it('isolates a namespace value that is not an array', () => {
+    const config = parseAuthConfig({ '@priv': 'not-an-array' as never })
+    expect(config.allowedNamespaces.has('@priv')).toBe(false)
+    expect(config.errors[0]?.reason).toContain('must map to an array')
   })
 
-  it('throws when all entries are non-object', () => {
-    expect(() => parseAuthConfig({ '@priv': [null, 42, 'x'] })).toThrow(
+  it('isolates a namespace where all entries are non-object', () => {
+    const config = parseAuthConfig({ '@priv': [null, 42, 'x'] })
+    expect(config.allowedNamespaces.has('@priv')).toBe(false)
+    expect(config.errors[0]?.reason).toContain(
       'none contain a valid "token" string'
     )
+  })
+
+  it('isolates a broken namespace without affecting siblings', () => {
+    const config = parseAuthConfig({
+      '@good': [{ token: 'abc', publish: true }],
+      '@bad': [{ token: 'xyz', publish: true, expiresAt: 'oops' }],
+      '@anon': []
+    })
+
+    expect(config.allowedNamespaces.has('@good')).toBe(true)
+    expect(config.allowedNamespaces.has('@anon')).toBe(true)
+    expect(config.allowedNamespaces.has('@bad')).toBe(false)
+
+    expect(config.tokens.get('@good')?.get('abc')).toBeDefined()
+    expect(config.tokens.has('@bad')).toBe(false)
+
+    expect(config.errors).toEqual([
+      {
+        namespace: '@bad',
+        reason: expect.stringContaining('invalid expiresAt')
+      }
+    ])
   })
 
   it('throws when the top-level value is not an object', () => {
@@ -120,9 +160,10 @@ describe('parseAuthConfig', () => {
 })
 
 describe('emptyAuthConfig', () => {
-  it('returns a fresh empty config', () => {
+  it('returns a fresh empty config with no errors', () => {
     const config = emptyAuthConfig()
     expect(config.tokens.size).toBe(0)
     expect(config.allowedNamespaces.size).toBe(0)
+    expect(config.errors).toEqual([])
   })
 })

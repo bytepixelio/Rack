@@ -18,6 +18,8 @@
     }
   },
   "text": {
-    "rollup.config.mjs": { "contains": ["defineConfig", "rollup-plugin-typescript2"] }
+    "rollup.config.mjs": {
+      "contains": ["defineConfig", "rollup-plugin-typescript2"]
+    }
   }
 }

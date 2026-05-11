@@ -3,6 +3,7 @@
  */
 
 import { vi } from 'vitest'
+
 import type { Logger } from '../../src/lib/infra/logger.js'
 import type { Prompter } from '../../src/lib/infra/prompts.js'
 import type { ResolvedRegistryItem } from '../../src/lib/registry/types.js'

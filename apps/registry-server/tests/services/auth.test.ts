@@ -1,8 +1,8 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, writeFile, rm, mkdir } from 'fs/promises'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
 import { AuthService } from '../../src/services/auth.service.js'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { it, expect, describe, afterEach, beforeEach } from 'vitest'
 
 // AuthService is a thin disk-loader that delegates parsing and verification
 // to @rack/auth-core. Those modules already have exhaustive unit tests in
@@ -65,5 +65,28 @@ describe('AuthService', () => {
     const auth = new AuthService(join(tempDir, 'is-a-dir'))
 
     await expect(auth.load()).rejects.toThrow()
+  })
+
+  it('isolates per-namespace parse errors and exposes them on getConfigErrors', async () => {
+    await writeFile(
+      authPath,
+      JSON.stringify({
+        '@good': [{ token: 'abc', publish: true }],
+        '@bad': 'not-an-array'
+      })
+    )
+    const auth = new AuthService(authPath)
+    await auth.load()
+
+    // @good still works, @bad is silently rejected from allowedNamespaces
+    expect(auth.isNamespaceAllowed('@good')).toBe(true)
+    expect(auth.isNamespaceAllowed('@bad')).toBe(false)
+
+    const errors = auth.getConfigErrors()
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatchObject({
+      namespace: '@bad',
+      reason: expect.stringContaining('must map to an array')
+    })
   })
 })

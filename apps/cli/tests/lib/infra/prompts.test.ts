@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 // Mock `prompts` and `ora` before importing the SUT.
 vi.mock('prompts', () => ({ default: vi.fn() }))
@@ -12,10 +12,10 @@ vi.mock('ora', () => ({
   }))
 }))
 
-import inquirer from 'prompts'
 import ora from 'ora'
-import { Prompter } from '../../../src/lib/infra/prompts.js'
+import inquirer from 'prompts'
 import { Logger } from '../../../src/lib/infra/logger.js'
+import { Prompter } from '../../../src/lib/infra/prompts.js'
 
 const mockedInquirer = inquirer as unknown as ReturnType<typeof vi.fn>
 const mockedOra = ora as unknown as ReturnType<typeof vi.fn>

@@ -17,7 +17,7 @@ import { initProject } from './pipeline.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
 import { Prompter } from '../../infra/prompts.js'
-import { pathExists, writeJSON } from '../../infra/fs.js'
+import { writeJSON, pathExists } from '../../infra/fs.js'
 import { AppError, getErrorMessage } from '../../utils/errors.js'
 import {
   displayCIMode,

@@ -5,8 +5,8 @@
  * Content-Type headers and HEAD request support.
  */
 
-import { extname } from 'path'
 import mime from 'mime-types'
+import { extname } from 'path'
 import { stat } from 'fs/promises'
 import { createReadStream } from 'fs'
 import { NotFoundError, ForbiddenError } from './errors.js'

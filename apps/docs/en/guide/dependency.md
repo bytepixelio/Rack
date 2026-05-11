@@ -152,6 +152,7 @@ Final installation order = Sort by dependency level + Sort by priority number wi
 ```
 
 **Rules**:
+
 1. First calculate the dependency level for each Registry (no dependencies = level 0, depends on level N = level N+1)
 2. Sort from low to high level (dependencies must be installed first)
 3. Within the same level, sort by priority number from small to large
@@ -166,7 +167,7 @@ Assume the following registries:
     {
       "name": "A",
       "priority": 1,
-      "registryDependencies": ["B"]  // A depends on B
+      "registryDependencies": ["B"] // A depends on B
     },
     {
       "name": "B",
@@ -179,6 +180,7 @@ Assume the following registries:
 **Sorting result**: `B → A`
 
 **Analysis**:
+
 - B is at level 0 (no dependencies), A is at level 1 (depends on B)
 - Although A's priority (1) is less than B's (4), the dependency relationship determines that B must be installed first
 - Dependencies (hard constraints) take precedence over priority numbers (soft constraints)

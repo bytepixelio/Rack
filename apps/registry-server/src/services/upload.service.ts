@@ -12,14 +12,14 @@
  */
 
 import { createGunzip } from 'zlib'
-import { lstat, readdir } from 'fs/promises'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
-import { join, dirname, relative, sep } from 'path'
+import { lstat, readdir } from 'fs/promises'
 import { createHash, randomUUID } from 'crypto'
-import { validateFilePath, deriveSegments } from '@rack/registry-core'
+import { sep, join, dirname, relative } from 'path'
 import { createReadStream, createWriteStream } from 'fs'
 import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
+import { deriveSegments, validateFilePath } from '@rack/registry-core'
 import {
   ConflictError,
   ForbiddenError,
@@ -250,13 +250,20 @@ export class UploadService {
   /**
    * Validate an extracted package's registry.json against the schema.
    *
+   * Returns the parsed manifest so callers can pass it to subsequent
+   * validators ({@link validateFilePaths}, {@link validateExtractedTree})
+   * without re-reading or re-parsing the file.
+   *
    * @param extractedDir - Path to the extracted package
+   * @returns The parsed registry.json manifest
    * @throws {Error} On validation failure
    */
-  async validateSchema(extractedDir: string): Promise<void> {
+  async validateSchema(extractedDir: string): Promise<ManifestShape> {
     const raw = await this.storage.readFile(join(extractedDir, 'registry.json'))
-    await this.validator.validate(JSON.parse(raw))
+    const manifest = JSON.parse(raw) as ManifestShape
+    await this.validator.validate(manifest)
     this.logger.info('Schema validation passed')
+    return manifest
   }
 
   /**
@@ -264,17 +271,22 @@ export class UploadService {
    * and points to an existing regular file in the extracted directory.
    *
    * @param extractedDir - Path to the extracted package
+   * @param manifest    - Pre-parsed manifest from {@link validateSchema};
+   *                      read from disk when omitted (direct-call fallback)
    * @throws {ValidationError} If any path is invalid or missing
    */
-  async validateFilePaths(extractedDir: string): Promise<void> {
-    const manifest = await this.readManifest(extractedDir)
-    const paths = collectManifestPaths(manifest)
+  async validateFilePaths(
+    extractedDir: string,
+    manifest?: ManifestShape
+  ): Promise<void> {
+    const m = manifest ?? (await this.readManifest(extractedDir))
+    const paths = collectManifestPaths(m)
 
     for (const filePath of paths) {
       const { normalized } = validateFilePath(filePath)
       const fullPath = join(extractedDir, normalized)
 
-      if (!await this.storage.isFile(fullPath)) {
+      if (!(await this.storage.isFile(fullPath))) {
         throw new ValidationError(
           'FILE_NOT_FOUND',
           `File referenced in registry.json is missing or not a regular file: ${filePath}`
@@ -302,11 +314,16 @@ export class UploadService {
    * `/files/*` or have its symlink target leaked.
    *
    * @param extractedDir - Path to the extracted package
+   * @param manifest    - Pre-parsed manifest from {@link validateSchema};
+   *                      read from disk when omitted (direct-call fallback)
    * @throws {ValidationError} On unsafe entries or undeclared files
    */
-  async validateExtractedTree(extractedDir: string): Promise<void> {
-    const manifest = await this.readManifest(extractedDir)
-    const allowlist = buildAllowlist(manifest)
+  async validateExtractedTree(
+    extractedDir: string,
+    manifest?: ManifestShape
+  ): Promise<void> {
+    const m = manifest ?? (await this.readManifest(extractedDir))
+    const allowlist = buildAllowlist(m)
 
     let fileCount = 0
 
@@ -646,20 +663,22 @@ function collectManifestPaths(manifest: ManifestShape): string[] {
 
 /**
  * Build the allowlist of POSIX-relative file paths that may appear in
- * the extracted package. Always includes `registry.json`. Manifest paths
- * are normalized via {@link validateFilePath} so an entry like `./a/b`
- * matches a tree file at `a/b`.
+ * the extracted package. Always includes `registry.json`. Manifest
+ * paths are normalized via {@link validateFilePath} so an entry like
+ * `./a/b` matches a tree file at `a/b`.
+ *
+ * Any invalid path makes `validateFilePath` throw and surfaces as
+ * INVALID_PATH at the upload route. The previous version swallowed
+ * such failures on the assumption that `validateFilePaths` always runs
+ * first — that's a hidden invariant, so let the error propagate
+ * naturally; if a future caller skips the prior validator, this is
+ * the right place to fail loudly.
  */
 function buildAllowlist(manifest: ManifestShape): Set<string> {
   const allow = new Set<string>(['registry.json'])
   for (const p of collectManifestPaths(manifest)) {
-    try {
-      const { normalized } = validateFilePath(p)
-      allow.add(normalized)
-    } catch {
-      // Invalid path will fail in validateFilePaths with a descriptive error;
-      // skip here so this helper never throws mid-walk.
-    }
+    const { normalized } = validateFilePath(p)
+    allow.add(normalized)
   }
   return allow
 }

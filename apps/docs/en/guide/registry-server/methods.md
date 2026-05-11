@@ -165,11 +165,11 @@ Override the host port with `HOST_PORT`, e.g. `HOST_PORT=18090 docker compose up
 
 ### Volumes & config
 
-| Mount point                 | Purpose                                                                              |
-| --------------------------- | ------------------------------------------------------------------------------------ |
-| `/data`                     | Uploaded tar.gz packages, per-registry `versions.json`, and the `.healthcheck` marker (must persist) |
+| Mount point                 | Purpose                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/data`                     | Uploaded tar.gz packages, per-registry `versions.json`, and the `.healthcheck` marker (must persist)                      |
 | `/app/config/auth.json`     | Namespace/token policy, bind-mounted from repo-root `config/auth.json` so the Server and Worker share one source of truth |
-| `/app/config/webhooks.json` | Webhook config, mounted from `apps/registry-server/config/webhooks.json`             |
+| `/app/config/webhooks.json` | Webhook config, mounted from `apps/registry-server/config/webhooks.json`                                                  |
 
 JSON Schemas live at `/app/schema` **inside the image** — not on a volume — so `docker compose up -d --build` is enough to roll out schema changes.
 

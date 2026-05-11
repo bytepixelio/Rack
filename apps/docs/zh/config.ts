@@ -1,4 +1,4 @@
-import { defineAdditionalConfig, type DefaultTheme } from 'vitepress'
+import { type DefaultTheme, defineAdditionalConfig } from 'vitepress'
 
 export default defineAdditionalConfig({
   description: '基于 Registry 架构的模块化项目脚手架工具',

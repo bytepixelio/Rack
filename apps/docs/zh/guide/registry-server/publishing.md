@@ -105,12 +105,13 @@ tar -tzf ../my-tool-1.0.0.tar.gz
 ```
 
 ::: warning 包结构要求
+
 - `registry.json` 必须位于压缩包根（`registry.json`，不是 `my-tool/registry.json`）
 - 压缩包内只能出现在 `registry.json` 中声明的文件（`files[].path`、`languages.*.files[].path`、自定义 `mergeStrategy.script`），其余文件会被拒收
 - 所有 `files[].path` 引用必须指向包内的普通文件 (不能是目录或符号链接)
 - `files[].path` 必须是相对 POSIX 路径, 每段只允许 `A-Z a-z 0-9 . _ @ + -`; 不允许百分号编码、`?`、`#` 和反斜杠
 - 推荐使用 `<name>-<version>.tar.gz` 命名格式
-:::
+  :::
 
 ## 计算 SHA256 校验和
 
@@ -154,6 +155,7 @@ curl -X POST "$SERVER_URL/registries" \
 ```
 
 ::: tip Admin Token 与命名空间 Token
+
 - **命名空间 Token**: 在 `auth.json` 中按命名空间配置, 需要 `publish: true` 权限
 - **Admin Token**: 通过 `ADMIN_TOKEN` 环境变量设置, 上传时跳过命名空间级别的认证
   :::
@@ -307,6 +309,7 @@ jobs:
 ```
 
 配置 GitHub Secrets:
+
 - `REGISTRY_TOKEN` - 发布 Token (命名空间 Token 或 Admin Token)
 - `REGISTRY_URL` - Registry Server 地址
 

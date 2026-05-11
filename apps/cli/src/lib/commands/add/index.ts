@@ -9,11 +9,11 @@
 import { Command } from 'commander'
 import { addHelpText } from './help.js'
 import { addRegistry } from './pipeline.js'
-import { AppError } from '../../utils/errors.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
+import { AppError } from '../../utils/errors.js'
 import { Prompter } from '../../infra/prompts.js'
-import { isPreset, parseNamespace } from '../../registry/identifier.js'
+import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
 import {
   displayHeader,
   displayResults,
@@ -45,14 +45,9 @@ export function registerAddCommand(program: Command): void {
         // disk — otherwise rackJson.readOrCreate would seed a stub
         // rack.json in a directory that is not a Rack project just
         // because the user typed `rk add @presets/foo` or a typo.
-        const canonicalize = (id: string) => {
-          const { namespace, path } = parseNamespace(id)
-          return `${namespace}/${path}`
-        }
-
         // Throws InvalidNamespaceError on parse failure; surfaces with
         // a code+hint via commandError below.
-        canonicalize(identifier)
+        canonicalizeIdentifier(identifier)
 
         if (isPreset(identifier)) {
           throw new AppError(
@@ -65,9 +60,9 @@ export function registerAddCommand(program: Command): void {
         const { items: installedRegistries = [], language } =
           await rackJson.readOrCreate(targetDir)
 
-        const requestedKey = canonicalize(identifier)
+        const requestedKey = canonicalizeIdentifier(identifier)
         const existingMatch = installedRegistries.find(
-          (r) => canonicalize(r) === requestedKey
+          (r) => canonicalizeIdentifier(r) === requestedKey
         )
         if (existingMatch) {
           displayAlreadyInstalled(identifier, existingMatch, logger)

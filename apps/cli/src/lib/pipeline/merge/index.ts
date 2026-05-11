@@ -22,8 +22,8 @@ import {
   envMerge,
   jsonMerge,
   ignoreMerge,
-  overwriteMerge,
-  mergeInternals
+  mergeInternals,
+  overwriteMerge
 } from './strategies.js'
 
 import type {

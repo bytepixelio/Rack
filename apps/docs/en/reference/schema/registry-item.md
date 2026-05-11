@@ -274,7 +274,11 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 ```json
 {
-  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
+  "conflicts": [
+    "frameworks/vue",
+    "frameworks/react@^18.0.0",
+    "frameworks/svelte:ts"
+  ]
 }
 ```
 
@@ -345,14 +349,14 @@ The top-level `path` controls where the **registry itself** is stored. The `path
 
 **`FileObject` structure**
 
-| Field          | Type    | Required | Description                                  |
-| -------------- | ------- | -------- | -------------------------------------------- |
-| target         | string  | Yes      | Target file path                             |
-| type           | string  | Yes      | `FileObject` type                            |
-| content        | string  | No       | Inline file content. For non-asset files, content takes priority over path when both are provided |
-| path           | string  | No       | Template file path on the server. For `registry:asset`, path takes priority over content when both are provided |
-| executable     | boolean | No       | Whether executable permission is needed      |
-| mergeStrategy  | object  | No       | Merge strategy configuration                 |
+| Field         | Type    | Required | Description                                                                                                     |
+| ------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| target        | string  | Yes      | Target file path                                                                                                |
+| type          | string  | Yes      | `FileObject` type                                                                                               |
+| content       | string  | No       | Inline file content. For non-asset files, content takes priority over path when both are provided               |
+| path          | string  | No       | Template file path on the server. For `registry:asset`, path takes priority over content when both are provided |
+| executable    | boolean | No       | Whether executable permission is needed                                                                         |
+| mergeStrategy | object  | No       | Merge strategy configuration                                                                                    |
 
 **`path` format requirements**: relative POSIX path with an optional `./` prefix. Each segment must contain only `A-Z a-z 0-9 . _ @ + -`. The following are **not** allowed: percent-encoding (`%`), query (`?`), fragment (`#`), backslash (`\`), absolute paths, empty segments, or `.`/`..` segments. The referenced file must exist in the uploaded package and must be a regular file (not a directory or symlink).
 
@@ -360,11 +364,11 @@ For `registry:asset`, prefer using `path`. When `path` is used, the CLI writes t
 
 **`mergeStrategy` configuration**
 
-| Field     | Type   | Required                       | Description                                    |
-| --------- | ------ | ------------------------------ | ---------------------------------------------- |
-| type      | string | Yes                            | Strategy type: `builtin` or `custom`           |
-| strategy  | string | Yes when `type` is `"builtin"` | Built-in strategy name: `json`, `ignore`, `env`, `overwrite`. Not allowed when `type` is `"custom"` |
-| script    | string | Yes when `type` is `"custom"`  | Plugin script path. Not allowed when `type` is `"builtin"` |
+| Field    | Type   | Required                       | Description                                                                                         |
+| -------- | ------ | ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| type     | string | Yes                            | Strategy type: `builtin` or `custom`                                                                |
+| strategy | string | Yes when `type` is `"builtin"` | Built-in strategy name: `json`, `ignore`, `env`, `overwrite`. Not allowed when `type` is `"custom"` |
+| script   | string | Yes when `type` is `"custom"`  | Plugin script path. Not allowed when `type` is `"builtin"`                                          |
 
 **Example**:
 

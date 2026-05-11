@@ -1,7 +1,7 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { HttpClient } from '../../../src/lib/infra/http.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import { HttpError, TimeoutError } from '../../../src/lib/utils/errors.js'
 
 /** Virtual time large enough to flush axios-retry's 1s+2s+3s linear backoff. */

@@ -7,9 +7,7 @@
   "priority": 6,
   "description": "Prettier code formatter configuration",
   "tags": ["prettier", "formatting", "code-quality"],
-  "registryDependencies": [
-    "@rack/quality/lint-staged"
-  ],
+  "registryDependencies": ["@rack/quality/lint-staged"],
   "devDependencies": {
     "prettier": "^3.8.3"
   },

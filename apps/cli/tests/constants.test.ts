@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { DEFAULT_NAMESPACE, DEFAULT_REGISTRY_URL } from '../src/constants.js'
 
 describe('constants', () => {

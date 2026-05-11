@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/rackrc.js', () => ({
   rackrc: { load: vi.fn() }
 }))
 
+import { rackrc } from '../../../../src/lib/rackrc.js'
 import {
   validateNamespace,
   checkRegistryExists,
   displayRegistryEntry
 } from '../../../../src/lib/commands/config/helpers.js'
-import { rackrc } from '../../../../src/lib/rackrc.js'
 
 const loadMock = rackrc.load as unknown as ReturnType<typeof vi.fn>
 

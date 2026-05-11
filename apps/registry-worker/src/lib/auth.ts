@@ -9,13 +9,13 @@
  * `.github/workflows/sync-auth.yml` workflow.
  */
 
+import { json } from './response.js'
 import {
-  verifyAccess,
   extractToken,
+  verifyAccess,
   parseAuthConfig,
   isNamespaceAllowed
 } from '@rack/auth-core'
-import { json } from './response.js'
 
 import type { AuthConfig } from '@rack/auth-core'
 
@@ -37,15 +37,33 @@ export function clearAuthCache(): void {
   cache = null
 }
 
-async function loadAuthConfig(
+/**
+ * Load and cache the parsed auth config from R2.
+ *
+ * Shared with the namespace-listing routes so the same cache services
+ * both rejection-path enforcement and discovery filtering — otherwise
+ * `/namespaces` would re-read `.auth/auth.json` on every request.
+ *
+ * @param bucket - R2 bucket holding `.auth/auth.json`
+ * @param now    - Wall-clock ms for cache freshness; defaults to `Date.now()`
+ *                 (override for deterministic tests)
+ */
+export async function loadAuthConfig(
   bucket: R2Bucket,
-  now: number
+  now: number = Date.now()
 ): Promise<AuthConfig> {
   if (cache && cache.expiresAt > now) return cache.config
 
   const obj = await bucket.get(AUTH_OBJECT_KEY)
   const raw = obj ? await obj.json<unknown>() : {}
   const config = parseAuthConfig(raw)
+
+  // Surface per-namespace parse failures — without this the rejected
+  // namespace would silently 403 every request with no visible cause.
+  // Cloudflare captures console output via wrangler tail / dashboard.
+  for (const e of config.errors) {
+    console.error(`auth.json namespace rejected: ${e.namespace} — ${e.reason}`)
+  }
 
   cache = { config, expiresAt: now + CACHE_TTL_MS }
   return config

@@ -2,9 +2,9 @@ import path from 'node:path'
 import { runCli } from '../src/cli.js'
 import { fileURLToPath } from 'node:url'
 import { startServer } from '../src/server.js'
-import { readFile, access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { createWorkspace } from '../src/workspace.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
 
 import type { TestServer } from '../src/server.js'
 

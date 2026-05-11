@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { validateNoConflicts } from '../../../src/lib/pipeline/conflict.js'
-import { ConflictError } from '../../../src/lib/utils/errors.js'
+import { it, expect, describe } from 'vitest'
 import { createItem } from '../../helpers/mocks.js'
+import { ConflictError } from '../../../src/lib/utils/errors.js'
+import { validateNoConflicts } from '../../../src/lib/pipeline/conflict.js'
 
 describe('pipeline/conflict', () => {
   it('no-ops on an empty list', () => {

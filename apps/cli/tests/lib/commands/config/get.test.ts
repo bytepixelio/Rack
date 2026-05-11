@@ -15,9 +15,9 @@ vi.mock('../../../../src/lib/rackrc.js', () => ({
   }
 }))
 
-import { registerGetCommand } from '../../../../src/lib/commands/config/get.js'
-import { rackrc } from '../../../../src/lib/rackrc.js'
 import { runCommand } from '../helpers.js'
+import { rackrc } from '../../../../src/lib/rackrc.js'
+import { registerGetCommand } from '../../../../src/lib/commands/config/get.js'
 
 const loadMock = rackrc.load as unknown as ReturnType<typeof vi.fn>
 const resolveMock = rackrc.resolveRegistry as unknown as ReturnType<

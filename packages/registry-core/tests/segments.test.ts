@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { deriveSegments } from '../src/segments.js'
 
 describe('deriveSegments', () => {
@@ -12,15 +12,16 @@ describe('deriveSegments', () => {
   })
 
   it('maps registry:framework to frameworks/<name>', () => {
-    expect(
-      deriveSegments({ name: 'vue', type: 'registry:framework' })
-    ).toEqual(['frameworks', 'vue'])
+    expect(deriveSegments({ name: 'vue', type: 'registry:framework' })).toEqual(
+      ['frameworks', 'vue']
+    )
   })
 
   it('maps registry:build to build/<name>', () => {
-    expect(
-      deriveSegments({ name: 'rollup', type: 'registry:build' })
-    ).toEqual(['build', 'rollup'])
+    expect(deriveSegments({ name: 'rollup', type: 'registry:build' })).toEqual([
+      'build',
+      'rollup'
+    ])
   })
 
   it('maps registry:feature to features/<name>', () => {
@@ -36,9 +37,9 @@ describe('deriveSegments', () => {
   })
 
   it('maps registry:quality to quality/<name>', () => {
-    expect(
-      deriveSegments({ name: 'husky', type: 'registry:quality' })
-    ).toEqual(['quality', 'husky'])
+    expect(deriveSegments({ name: 'husky', type: 'registry:quality' })).toEqual(
+      ['quality', 'husky']
+    )
   })
 
   // ─── fallbacks ─────────────────────────────────────────────────────

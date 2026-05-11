@@ -18,10 +18,10 @@ vi.mock('../../../../src/lib/infra/prompts.js', () => ({
   }))
 }))
 
-import { registerRemoveCommand } from '../../../../src/lib/commands/config/remove.js'
+import { runCommand } from '../helpers.js'
 import { rackrc } from '../../../../src/lib/rackrc.js'
 import { Prompter } from '../../../../src/lib/infra/prompts.js'
-import { runCommand } from '../helpers.js'
+import { registerRemoveCommand } from '../../../../src/lib/commands/config/remove.js'
 
 const loadMock = rackrc.load as unknown as ReturnType<typeof vi.fn>
 const removeMock = rackrc.removeRegistry as unknown as ReturnType<typeof vi.fn>

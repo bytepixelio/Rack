@@ -7,7 +7,7 @@
  * stays inside the root.
  */
 
-import { join, normalize, relative, isAbsolute } from 'node:path'
+import { join, relative, normalize, isAbsolute } from 'node:path'
 import {
   buildFileKey,
   buildRegistryKey,

@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+import { it, expect, describe, afterEach, beforeEach } from 'vitest'
 import { SchemaValidatorService } from '../../src/services/schema-validator.service.js'
 
 const VALID_SCHEMA = {

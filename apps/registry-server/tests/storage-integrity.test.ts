@@ -14,9 +14,9 @@
 import Ajv from 'ajv/dist/2020.js'
 import { fileURLToPath } from 'url'
 import addFormats from 'ajv-formats'
-import { describe, expect, it } from 'vitest'
-import { resolve, dirname, join } from 'path'
-import { readFile, readdir } from 'fs/promises'
+import { it, expect, describe } from 'vitest'
+import { join, dirname, resolve } from 'path'
+import { readdir, readFile } from 'fs/promises'
 
 const storageDir = resolve(
   dirname(fileURLToPath(import.meta.url)),

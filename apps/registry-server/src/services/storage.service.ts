@@ -7,15 +7,15 @@
  */
 
 import semver from 'semver'
-import { join, relative, sep } from 'path'
+import { sep, join, relative } from 'path'
 import { listRegistries, SEMVER_PATTERN } from '@rack/registry-core'
 import {
   rm,
   stat,
   lstat,
   mkdir,
-  rename,
   access,
+  rename,
   readdir,
   readFile,
   writeFile

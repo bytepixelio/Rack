@@ -4,7 +4,7 @@ services:
       context: ../..
       dockerfile: apps/registry-server/Dockerfile
     ports:
-      - "${HOST_PORT:-18080}:8080"
+      - '${HOST_PORT:-18080}:8080'
     volumes:
       - storage-data:/data
       - ./config/webhooks.json:/app/config/webhooks.json:ro
@@ -27,8 +27,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
     restart: unless-stopped
 
 volumes:

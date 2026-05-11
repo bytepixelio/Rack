@@ -1,11 +1,11 @@
-import { describe, it, expect, vi } from 'vitest'
+import { it, vi, expect, describe } from 'vitest'
+import { createMockLogger } from '../../../helpers/mocks.js'
 import {
   displayCIMode,
   displayResults,
   displayProjectInfo,
   displayManifestGenerated
 } from '../../../../src/lib/commands/init/display.js'
-import { createMockLogger } from '../../../helpers/mocks.js'
 
 function pipelineResult(overrides = {}) {
   return {

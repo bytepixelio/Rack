@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('node:os', async () => {
   const real = await vi.importActual<typeof import('node:os')>('node:os')

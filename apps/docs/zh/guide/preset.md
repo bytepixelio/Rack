@@ -110,4 +110,3 @@ rk config set @mypresets --url https://registry.company.com
 # 使用自定义模板
 rk init -t @mypresets/my-preset
 ```
-
