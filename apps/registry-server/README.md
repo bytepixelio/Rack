@@ -138,7 +138,7 @@ Copy `.env.example` to `.env`:
 | `WEBHOOK_CONFIG_PATH`  | `config/webhooks.json`   | Webhook config path                                                     |
 | `LOG_LEVEL`            | `info`                   | Log level                                                               |
 | `NODE_ENV`             | `development`            | Runtime environment                                                     |
-| `ADMIN_TOKEN`          | —                        | System-level admin token for cross-namespace publishing (optional)      |
+| `ADMIN_TOKEN`          | —                        | System-level admin token; bypasses namespace auth for reads and uploads |
 | `R2_BUCKET_NAME`       | —                        | R2 bucket name (required when `STORAGE_BACKEND=r2`)                     |
 | `R2_ACCOUNT_ID`        | —                        | Cloudflare account ID (required when `STORAGE_BACKEND=r2`)              |
 | `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)               |
@@ -170,7 +170,7 @@ Rules:
 - `publish: true` = uploads allowed (for non-anonymous namespaces)
 - `expiresAt` = ISO 8601 expiry
 - Anonymous namespaces **do not allow uploads** — use `ADMIN_TOKEN` or configure namespace tokens
-- `ADMIN_TOKEN` holders can publish to **any** namespace, bypassing namespace-level auth
+- `ADMIN_TOKEN` holders bypass namespace-level auth for **both reads and uploads** across any namespace
 
 Pass tokens via `Authorization: Bearer xxx` or `X-Registry-Token: xxx`.
 

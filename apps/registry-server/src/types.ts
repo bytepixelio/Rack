@@ -34,7 +34,7 @@ export interface Config {
    */
   schemaDir: string
 
-  /** System-level admin token for cross-namespace publishing (optional) */
+  /** System-level admin token; bypasses namespace auth for reads and uploads (optional) */
   adminToken?: string
 
   /** Path to auth.json configuration file */
