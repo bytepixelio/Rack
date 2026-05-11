@@ -28,11 +28,12 @@
   ],
   "scripts": {
     "build": "tsup",
-    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "dev": "tsx ./src/bin.ts",
     "start": "node --import tsx/esm ./src/bin.ts",
     "test": "vitest run --coverage --silent",
-    "prepublishOnly": "pnpm run build && pnpm run lint && pnpm run test"
+    "prepublishOnly": "pnpm run build && pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "axios": "1.16.0",
