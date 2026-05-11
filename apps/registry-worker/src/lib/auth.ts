@@ -47,6 +47,13 @@ async function loadAuthConfig(
   const raw = obj ? await obj.json<unknown>() : {}
   const config = parseAuthConfig(raw)
 
+  // Surface per-namespace parse failures — without this the rejected
+  // namespace would silently 403 every request with no visible cause.
+  // Cloudflare captures console output via wrangler tail / dashboard.
+  for (const e of config.errors) {
+    console.error(`auth.json namespace rejected: ${e.namespace} — ${e.reason}`)
+  }
+
   cache = { config, expiresAt: now + CACHE_TTL_MS }
   return config
 }

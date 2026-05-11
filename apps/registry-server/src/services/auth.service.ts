@@ -20,7 +20,7 @@ import {
   isNamespaceAnonymous
 } from '@rack/auth-core'
 
-import type { AuthConfig, AccessResult } from '@rack/auth-core'
+import type { AuthConfig, AccessResult, AuthConfigError } from '@rack/auth-core'
 
 export class AuthService {
   private readonly filePath: string
@@ -55,6 +55,18 @@ export class AuthService {
     }
 
     this.config = parseAuthConfig(JSON.parse(raw))
+  }
+
+  /**
+   * Per-namespace parse errors from the last `load()`.
+   *
+   * Each entry means that namespace was rejected (not in
+   * {@link isNamespaceAllowed}) due to a malformed token array,
+   * `expiresAt`, etc. Callers should surface these to monitoring so
+   * the operator notices the silent skip.
+   */
+  getConfigErrors(): readonly AuthConfigError[] {
+    return this.config.errors
   }
 
   /** Whether a namespace is declared in auth.json. */

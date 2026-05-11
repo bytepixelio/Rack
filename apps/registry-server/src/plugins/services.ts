@@ -61,6 +61,16 @@ async function servicesPlugin(
   await authService.load()
   await webhookService.load()
 
+  // Surface per-namespace auth.json parse failures to operators —
+  // parseAuthConfig isolates them instead of throwing, so without
+  // logging the rejected namespace would silently 403 every request.
+  for (const e of authService.getConfigErrors()) {
+    app.log.error(
+      { namespace: e.namespace, reason: e.reason },
+      'auth.json namespace rejected'
+    )
+  }
+
   // Layer 1.5: optional R2 backend
   const r2Backend =
     config.storageBackend === 'r2' && config.r2
