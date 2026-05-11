@@ -3,8 +3,12 @@
  * merge scripts from local or remote registries.
  *
  * Supports both ESM and CommonJS plugins. Remote plugins are downloaded
- * to a temporary directory before execution. Local plugin paths are
- * validated against traversal attacks.
+ * to a temporary directory and the directory is removed after execution
+ * (success or failure). Remote plugins must be self-contained single
+ * files: only the entry script referenced by `mergeStrategy.script` is
+ * fetched, so relative imports inside the script (`import './utils.js'`)
+ * will fail to resolve. Local plugin paths are validated against
+ * traversal attacks.
  *
  * @example
  * ```ts
@@ -21,8 +25,8 @@ import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
-import { mkdir, writeFile } from 'node:fs/promises'
 import { registry } from '../../registry/client.js'
+import { rm, mkdtemp, writeFile } from 'node:fs/promises'
 
 import type { MergeParams, MergeResult } from './index.js'
 import type { Language, MergeStrategyConfig } from '../../registry/types.js'
@@ -73,37 +77,53 @@ export async function executePlugin(
     )
   }
 
+  const isRemote =
+    registryUrl.startsWith('http://') || registryUrl.startsWith('https://')
+
+  let tempDir: string | null = null
+
   try {
-    const isRemote =
-      registryUrl.startsWith('http://') || registryUrl.startsWith('https://')
+    try {
+      let resolvedPath: string
+      if (isRemote) {
+        tempDir = await mkdtemp(path.join(tmpdir(), 'rack-plugin-'))
+        resolvedPath = await downloadRemotePlugin(
+          scriptPath,
+          registryUrl,
+          tempDir
+        )
+      } else {
+        resolvedPath = resolveLocalPlugin(scriptPath, deriveRoot(registryUrl))
+      }
 
-    const resolvedPath = isRemote
-      ? await resolveRemotePlugin(scriptPath, registryUrl)
-      : resolveLocalPlugin(scriptPath, deriveRoot(registryUrl))
+      const pluginModule = await loadModule(resolvedPath)
 
-    const pluginModule = await loadModule(resolvedPath)
+      if (typeof pluginModule.merge !== 'function') {
+        throw new Error(`Plugin ${scriptPath} must export a 'merge' function`)
+      }
 
-    if (typeof pluginModule.merge !== 'function') {
-      throw new Error(`Plugin ${scriptPath} must export a 'merge' function`)
-    }
+      const result = await pluginModule.merge(params, helpers)
 
-    const result = await pluginModule.merge(params, helpers)
+      if (
+        !result ||
+        typeof result !== 'object' ||
+        typeof result.content !== 'string'
+      ) {
+        throw new Error(
+          `Plugin ${scriptPath} must return a MergeResult object with content as string`
+        )
+      }
 
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      typeof result.content !== 'string'
-    ) {
-      throw new Error(
-        `Plugin ${scriptPath} must return a MergeResult object with content as string`
-      )
-    }
-
-    return {
-      content: result.content,
-      strategy: 'custom' as const,
-      changed: result.changed ?? true,
-      warnings: result.warnings ?? []
+      return {
+        content: result.content,
+        strategy: 'custom' as const,
+        changed: result.changed ?? true,
+        warnings: result.warnings ?? []
+      }
+    } finally {
+      if (tempDir) {
+        await rm(tempDir, { recursive: true, force: true })
+      }
     }
   } catch (error) {
     throw new Error(
@@ -125,25 +145,28 @@ function deriveRoot(registryUrl: string): string {
 }
 
 /**
- * Download a remote plugin script to a temporary directory.
+ * Download a remote plugin script into a caller-provided temporary directory.
  *
- * @param scriptPath - Relative path to the plugin script
+ * Only the entry script is fetched; relative imports inside the script are
+ * not resolved. The caller owns `tempDir` and is responsible for removing it
+ * after the plugin finishes executing.
+ *
+ * @param scriptPath  - Relative path to the plugin script
  * @param registryUrl - Full URL of the registry.json file
+ * @param tempDir     - Caller-owned temp directory to write the script into
  * @returns Absolute path to the downloaded plugin file
  */
-async function resolveRemotePlugin(
+async function downloadRemotePlugin(
   scriptPath: string,
-  registryUrl: string
+  registryUrl: string,
+  tempDir: string
 ): Promise<string> {
   const content = await registry.fetchFile(registryUrl, scriptPath)
-  const tempDir = path.join(tmpdir(), `rack-plugin-${Date.now()}`)
-  await mkdir(tempDir, { recursive: true })
-
   const ext = path.extname(scriptPath) || '.js'
-  const tempPath = path.join(tempDir, `plugin${ext}`)
-  await writeFile(tempPath, content, 'utf-8')
+  const pluginPath = path.join(tempDir, `plugin${ext}`)
+  await writeFile(pluginPath, content, 'utf-8')
 
-  return tempPath
+  return pluginPath
 }
 
 /**

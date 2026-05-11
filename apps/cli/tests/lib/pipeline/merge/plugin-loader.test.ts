@@ -1,5 +1,6 @@
+import { tmpdir } from 'node:os'
 import { join, basename } from 'node:path'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../../helpers/tmp.js'
 import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
@@ -48,6 +49,40 @@ describe('merge/plugin-loader', () => {
     )
     expect(res.content).toBe('a!')
     expect(res.strategy).toBe('custom')
+  })
+
+  it('removes the remote plugin temp directory after successful execution', async () => {
+    fetchFileMock.mockResolvedValue(
+      `export function merge() { return { content: 'ok' } }`
+    )
+
+    const before = await listRackPluginDirs()
+    await executePlugin(
+      { type: 'custom', script: './merge.mjs' },
+      'https://r.com/registries/@rack/x/1.0.0',
+      { filePath: 'x', currentContent: null, incomingContent: 'a' },
+      {}
+    )
+    const after = await listRackPluginDirs()
+    expect([...after].filter((d) => !before.has(d))).toEqual([])
+  })
+
+  it('removes the remote plugin temp directory after the plugin throws', async () => {
+    fetchFileMock.mockResolvedValue(
+      `export function merge() { throw new Error('boom') }`
+    )
+
+    const before = await listRackPluginDirs()
+    await expect(
+      executePlugin(
+        { type: 'custom', script: './merge.mjs' },
+        'https://r.com/registries/@rack/x/1.0.0',
+        { filePath: 'x', currentContent: null, incomingContent: 'a' },
+        {}
+      )
+    ).rejects.toThrow(/boom|execution failed/)
+    const after = await listRackPluginDirs()
+    expect([...after].filter((d) => !before.has(d))).toEqual([])
   })
 
   it('loads a local plugin and executes its merge function', async () => {
@@ -187,3 +222,8 @@ describe('merge/plugin-loader', () => {
     expect(res.content).toBe('cjs:hi')
   })
 })
+
+async function listRackPluginDirs(): Promise<Set<string>> {
+  const entries = await readdir(tmpdir())
+  return new Set(entries.filter((name) => name.startsWith('rack-plugin-')))
+}
