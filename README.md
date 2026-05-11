@@ -49,10 +49,10 @@ npm install -g rackjs-cli
 
 ```bash
 # Initialize a project
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 
 # Add a registry
-rk add @rack/tailwindcss
+rk add @rack/testing/vitest
 ```
 
 ## Development
@@ -79,8 +79,10 @@ pnpm test
 # End-to-end tests
 pnpm test:e2e
 
-# Lint
+# Typecheck / Lint / Format
+pnpm typecheck
 pnpm lint
+pnpm format:check
 ```
 
 ## Deploy Registry Server

@@ -44,7 +44,7 @@ describe('pipeline/apply', () => {
     const item = createItem({
       files: [{ type: 'config', target: 'x.txt', content: 'hello' }]
     })
-    const changes = await applyFiles([item], tmp, 'ts', createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     expect(await readFile(join(tmp, 'x.txt'), 'utf8')).toBe('hello\n')
     expect(changes[0]).toMatchObject({ type: 'created', path: 'x.txt' })
   })
@@ -54,7 +54,7 @@ describe('pipeline/apply', () => {
     const item = createItem({
       files: [{ type: 'config', target: 'x.txt', content: 'new' }]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     expect(changes[0].type).toBe('modified')
   })
 
@@ -63,7 +63,7 @@ describe('pipeline/apply', () => {
     const item = createItem({
       files: [{ type: 'config', target: 'out.txt', path: './out.txt' }]
     })
-    await applyFiles([item], tmp, undefined, createMockLogger())
+    await applyFiles([item], tmp, createMockLogger())
     expect(await readFile(join(tmp, 'out.txt'), 'utf8')).toBe('remote\n')
   })
 
@@ -74,7 +74,7 @@ describe('pipeline/apply', () => {
     })
 
     await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
+      applyFiles([item], tmp, createMockLogger())
     ).rejects.toMatchObject({
       code: 'FILE_FETCH_FAILED',
       target: 'out.txt',
@@ -94,7 +94,7 @@ describe('pipeline/apply', () => {
         }
       ]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     const buf = await readFile(join(tmp, 'logo.png'))
     expect(Array.from(buf)).toEqual([1, 2, 3])
     expect(changes[0].strategy).toBe('overwrite')
@@ -110,7 +110,7 @@ describe('pipeline/apply', () => {
         { type: 'registry:asset', target: 'logo.png', path: './logo.png' }
       ]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     expect(changes[0].type).toBe('modified')
   })
 
@@ -123,7 +123,7 @@ describe('pipeline/apply', () => {
     })
 
     await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
+      applyFiles([item], tmp, createMockLogger())
     ).rejects.toMatchObject({
       code: 'FILE_FETCH_FAILED',
       target: 'logo.png'
@@ -134,7 +134,7 @@ describe('pipeline/apply', () => {
     const item = createItem({
       files: [{ type: 'config', target: 'out.txt' }]
     })
-    const changes = await applyFiles([item], tmp, undefined, createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     expect(changes[0]).toMatchObject({
       type: 'skipped',
       warnings: ['File has neither content nor path']
@@ -152,18 +152,13 @@ describe('pipeline/apply', () => {
         }
       ]
     })
-    await applyFiles([item], tmp, undefined, createMockLogger())
+    await applyFiles([item], tmp, createMockLogger())
     const mode = (await stat(join(tmp, 'bin.sh'))).mode & 0o777
     expect(mode).toBe(0o755)
   })
 
   it('returns empty changes for items with no files', async () => {
-    const changes = await applyFiles(
-      [createItem()],
-      tmp,
-      undefined,
-      createMockLogger()
-    )
+    const changes = await applyFiles([createItem()], tmp, createMockLogger())
     expect(changes).toEqual([])
   })
 
@@ -171,18 +166,18 @@ describe('pipeline/apply', () => {
     const item = createItem({
       files: [{ type: 'config', target: '../outside.txt', content: 'evil' }]
     })
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow(PathTraversalError)
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow(
+      PathTraversalError
+    )
   })
 
   it('rejects absolute target paths', async () => {
     const item = createItem({
       files: [{ type: 'config', target: '/etc/passwd', content: 'evil' }]
     })
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow(PathTraversalError)
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow(
+      PathTraversalError
+    )
   })
 
   it('rejects deeply nested ".." traversal', async () => {
@@ -195,16 +190,16 @@ describe('pipeline/apply', () => {
         }
       ]
     })
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow(PathTraversalError)
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow(
+      PathTraversalError
+    )
   })
 
   it('allows nested subdirectory targets', async () => {
     const item = createItem({
       files: [{ type: 'config', target: 'sub/dir/file.txt', content: 'ok' }]
     })
-    const changes = await applyFiles([item], tmp, 'ts', createMockLogger())
+    const changes = await applyFiles([item], tmp, createMockLogger())
     expect(changes[0].type).toBe('created')
     expect(await readFile(join(tmp, 'sub/dir/file.txt'), 'utf8')).toBe('ok\n')
   })
@@ -227,7 +222,7 @@ describe('pipeline/apply', () => {
     })
 
     await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
+      applyFiles([item], tmp, createMockLogger())
     ).rejects.toMatchObject({
       code: 'FILE_FETCH_FAILED',
       target: 'second.txt'
@@ -249,9 +244,7 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow()
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow()
 
     // first.txt was written then rolled back; occupied stays as the
     // pre-existing file (rollback never touched it).
@@ -270,9 +263,7 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow()
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow()
 
     expect(await readFile(join(tmp, 'a.txt'), 'utf8')).toBe('original')
   })
@@ -290,12 +281,7 @@ describe('pipeline/apply', () => {
       files: [{ type: 'config', target: 'shared.txt', content: 'second' }]
     })
 
-    const changes = await applyFiles(
-      [item1, item2],
-      tmp,
-      undefined,
-      createMockLogger()
-    )
+    const changes = await applyFiles([item1, item2], tmp, createMockLogger())
 
     // Two change records (one per contributor), one final write.
     expect(changes).toHaveLength(2)
@@ -326,9 +312,7 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow()
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow()
 
     expect(await readFile(scriptPath, 'utf8')).toBe('old')
     expect((await stat(scriptPath)).mode & 0o777).toBe(0o644)
@@ -355,9 +339,7 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(
-      applyFiles([item], tmp, undefined, createMockLogger())
-    ).rejects.toThrow()
+    await expect(applyFiles([item], tmp, createMockLogger())).rejects.toThrow()
 
     const restored = await readFile(join(tmp, 'logo.png'))
     expect(Array.from(restored)).toEqual(Array.from(original))
@@ -382,7 +364,7 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(applyFiles([item], tmp, undefined, logger)).rejects.toThrow()
+    await expect(applyFiles([item], tmp, logger)).rejects.toThrow()
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringMatching(
