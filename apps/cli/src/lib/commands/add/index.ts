@@ -11,9 +11,13 @@ import { addHelpText } from './help.js'
 import { addRegistry } from './pipeline.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
-import { AppError } from '../../utils/errors.js'
 import { Prompter } from '../../infra/prompts.js'
-import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
+import { AppError, VersionMismatchError } from '../../utils/errors.js'
+import {
+  isPreset,
+  parseNamespace,
+  canonicalizeIdentifier
+} from '../../registry/identifier.js'
 import {
   displayHeader,
   displayResults,
@@ -65,6 +69,17 @@ export function registerAddCommand(program: Command): void {
           (r) => canonicalizeIdentifier(r) === requestedKey
         )
         if (existingMatch) {
+          // Same canonical id but a different version is an upgrade
+          // request — Rack does not support that, so refuse loudly
+          // instead of silently keeping the old version (which is what
+          // exit-0 "already installed" would imply to CI). Identical
+          // versions (including both omitted) fall through to the
+          // friendly skip path.
+          const installedVersion = parseNamespace(existingMatch).version
+          const requestedVersion = parseNamespace(identifier).version
+          if (installedVersion !== requestedVersion) {
+            throw new VersionMismatchError(existingMatch, identifier)
+          }
           displayAlreadyInstalled(identifier, existingMatch, logger)
           return
         }

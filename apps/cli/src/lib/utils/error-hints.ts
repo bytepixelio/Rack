@@ -45,7 +45,12 @@ export const ERROR_HINTS: Record<string, string> = {
     "Run 'rk doctor --json' to confirm the registry is reachable, " +
     'then retry. The pipeline aborted before any project files were ' +
     'written to keep your project consistent.',
-  VALIDATION_ERROR: "See 'rk <command> --help' for valid options."
+  VALIDATION_ERROR: "See 'rk <command> --help' for valid options.",
+  VERSION_MISMATCH:
+    'Rack does not support upgrading registries — scaffolded files ' +
+    'belong to the user once written. To switch versions, remove the ' +
+    'existing entry from rack.json.items (and clean up the files it ' +
+    "scaffolded), then re-run 'rk add' with the desired version."
 }
 
 /**

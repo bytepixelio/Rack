@@ -53,10 +53,14 @@ aside: false
 
 ### 1. 决定安装顺序
 
-当执行 `rk add` 或 `rk init` 时, Rack 会按优先级从低到高排序。
+当执行 `rk add` 或 `rk init` 时, Rack 会按优先级从低到高排序。`rk add` 每次只接受一个 Registry, 多个 Registry 需要分多次执行 (依赖会被自动解析并按 priority 排序):
 
 ```bash
-rk add runtimes/node frameworks/vue build/vite testing/vitest quality/eslint
+rk add runtimes/node
+rk add frameworks/vue
+rk add build/vite
+rk add testing/vitest
+rk add quality/eslint
 ```
 
 **实际安装顺序**

@@ -49,10 +49,10 @@ npm install -g rackjs-cli
 
 ```bash
 # Initialize a project
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 
 # Add a registry
-rk add @rack/tailwindcss
+rk add @rack/testing/vitest
 ```
 
 ## Development

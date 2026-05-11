@@ -69,12 +69,24 @@ export async function addRegistry(
     )
   }
 
-  // 1. Fetch the registry
+  // 1. Fetch the registry. The root's `:js`/`:ts` suffix (if any) wins
+  // over `language` (the project default from rack.json) inside fetchItem,
+  // and the resolved choice is attached to the returned item so steps 2
+  // and 5 propagate the same variant downstream.
   logger.info(`Fetching registry: ${identifier}`)
   const root = await registry.fetchItem(identifier, { language })
 
-  // 2. Resolve dependencies (BFS)
-  const resolved = await resolveRegistryDependencies([root], language, logger)
+  // 2. Resolve dependencies (BFS). Each dep is fetched with its parent's
+  // resolvedLanguage, so a `:js` root pulls JS deps even when rack.json
+  // is TS. Skip transitive deps already installed — their files and
+  // package.json entries are on disk from a previous install. Conflict
+  // detection below still sees them via the separate
+  // `fetchItems(installedRegistries)` call.
+  const resolved = await resolveRegistryDependencies(
+    [root],
+    logger,
+    installedRegistries
+  )
   logger.info(`Fetched ${resolved.length} registries (including dependencies)`)
 
   // 3. Conflict check (new + installed)
@@ -90,7 +102,7 @@ export async function addRegistry(
 
   // 5. Apply files
   logger.info('Applying files')
-  const fileChanges = await applyFiles(items, targetDir, language, logger)
+  const fileChanges = await applyFiles(items, targetDir, logger)
 
   // 6. Collect dependencies and scripts
   const { dependencies, devDependencies, conflicts } =
