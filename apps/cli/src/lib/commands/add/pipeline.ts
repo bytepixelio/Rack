@@ -73,8 +73,16 @@ export async function addRegistry(
   logger.info(`Fetching registry: ${identifier}`)
   const root = await registry.fetchItem(identifier, { language })
 
-  // 2. Resolve dependencies (BFS)
-  const resolved = await resolveRegistryDependencies([root], language, logger)
+  // 2. Resolve dependencies (BFS). Skip transitive deps that are already
+  // installed — their files and package.json entries are on disk from a
+  // previous install. Conflict detection below still sees them via the
+  // separate `fetchItems(installedRegistries)` call.
+  const resolved = await resolveRegistryDependencies(
+    [root],
+    language,
+    logger,
+    installedRegistries
+  )
   logger.info(`Fetched ${resolved.length} registries (including dependencies)`)
 
   // 3. Conflict check (new + installed)
