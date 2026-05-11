@@ -6,6 +6,9 @@ vi.mock('../../../../src/lib/registry/client.js', () => ({
 vi.mock('../../../../src/lib/pipeline/apply.js', () => ({
   applyFiles: vi.fn()
 }))
+vi.mock('../../../../src/lib/pipeline/preflight.js', () => ({
+  preflight: vi.fn()
+}))
 vi.mock('../../../../src/lib/pkg.js', () => ({
   pkg: { update: vi.fn() }
 }))
@@ -13,6 +16,7 @@ vi.mock('../../../../src/lib/pkg.js', () => ({
 import { pkg } from '../../../../src/lib/pkg.js'
 import { registry } from '../../../../src/lib/registry/client.js'
 import { applyFiles } from '../../../../src/lib/pipeline/apply.js'
+import { preflight } from '../../../../src/lib/pipeline/preflight.js'
 import { createItem, createMockLogger } from '../../../helpers/mocks.js'
 import { addRegistry } from '../../../../src/lib/commands/add/pipeline.js'
 import { AppError, ConflictError } from '../../../../src/lib/utils/errors.js'
@@ -22,12 +26,14 @@ const fetchItemsMock = registry.fetchItems as unknown as ReturnType<
   typeof vi.fn
 >
 const applyMock = applyFiles as unknown as ReturnType<typeof vi.fn>
+const preflightMock = preflight as unknown as ReturnType<typeof vi.fn>
 const pkgUpdateMock = pkg.update as unknown as ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   fetchItemMock.mockReset()
   fetchItemsMock.mockReset()
   applyMock.mockReset()
+  preflightMock.mockReset()
   pkgUpdateMock.mockReset()
   fetchItemsMock.mockResolvedValue([])
   applyMock.mockResolvedValue([])
@@ -241,6 +247,39 @@ describe('add/pipeline addRegistry', () => {
         createMockLogger()
       )
     ).rejects.toBeInstanceOf(ConflictError)
+  })
+
+  it('runs preflight before applyFiles so a corrupt package.json aborts pre-write', async () => {
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    const order: string[] = []
+    preflightMock.mockImplementationOnce(async () => {
+      order.push('preflight')
+    })
+    applyMock.mockImplementationOnce(async () => {
+      order.push('apply')
+      return []
+    })
+
+    await addRegistry(
+      { identifier: '@rack/a', targetDir: '/t' },
+      createMockLogger()
+    )
+
+    expect(order).toEqual(['preflight', 'apply'])
+  })
+
+  it('surfaces preflight failures before applyFiles runs', async () => {
+    fetchItemMock.mockResolvedValue(createItem({ identifier: '@rack/a' }))
+    preflightMock.mockRejectedValueOnce(new Error('PACKAGE_JSON_INVALID'))
+
+    await expect(
+      addRegistry(
+        { identifier: '@rack/a', targetDir: '/t' },
+        createMockLogger()
+      )
+    ).rejects.toThrow('PACKAGE_JSON_INVALID')
+    expect(applyMock).not.toHaveBeenCalled()
+    expect(pkgUpdateMock).not.toHaveBeenCalled()
   })
 
   it('pluralizes the degraded warning when multiple installed fetches fail', async () => {
