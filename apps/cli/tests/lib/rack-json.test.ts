@@ -132,6 +132,26 @@ describe('rack-json', () => {
     expect(err.message).toContain('non-canonical identifier')
   })
 
+  it('read accepts canonical full identifier from non-default namespace', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['@mycompany/runtime/node'] })
+    )
+    const cfg = await rackJson.read(tmp)
+    expect(cfg.items).toEqual(['@mycompany/runtime/node'])
+  })
+
+  it('read rejects shorthand-style identifier from non-default namespace', async () => {
+    await writeFile(
+      join(tmp, 'rack.json'),
+      JSON.stringify({ name: 'x', items: ['@MyCompany/runtime/node'] })
+    )
+    const err = await rackJson.read(tmp).catch((e) => e)
+    expect(err).toBeInstanceOf(RackJsonError)
+    expect(err.errorCode).toBe('INVALID')
+    expect(err.message).toContain('non-canonical identifier')
+  })
+
   it('read throws INVALID when items contains non-strings', async () => {
     await writeFile(
       join(tmp, 'rack.json'),
