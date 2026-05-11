@@ -6,6 +6,17 @@
   "type": "object",
   "additionalProperties": false,
   "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "description": "Semantic version (semver). Mirrors SEMVER_PATTERN in @rack/registry-core — keep both in sync."
+    },
+    "filePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+      "description": "Server-relative POSIX file path. Optional ./ prefix; each segment must match [A-Za-z0-9._@+-]; no .. segments, no percent-encoding, backslashes, query (?), or fragment (#) characters. Mirrors FILE_PATH_PATTERN in @rack/registry-core."
+    },
     "registryIdentifier": {
       "type": "string",
       "oneOf": [
@@ -69,9 +80,7 @@
           "properties": {
             "type": { "const": "custom" },
             "script": {
-              "type": "string",
-              "minLength": 1,
-              "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+              "$ref": "#/$defs/filePath",
               "description": "Plugin script path on the registry server. Same path-safety rules as files[].path: relative POSIX path with optional ./ prefix, no .. segments, no percent-encoding, no backslashes, no query/fragment."
             }
           },
@@ -95,9 +104,7 @@
         },
         "type": { "$ref": "#/$defs/fileType" },
         "path": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?:\\.\\/)?(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+(?:\\/(?!\\.{1,2}(?:\\/|$))[A-Za-z0-9._@+\\-]+)*$",
+          "$ref": "#/$defs/filePath",
           "description": "Template path on the registry server. For registry:asset files, path takes priority over content. For other file types, content takes priority over path. Relative POSIX path with optional ./ prefix. Each segment must match [A-Za-z0-9._@+-]. No percent-encoding, backslashes, query (?), or fragment (#) characters."
         },
         "content": {
@@ -149,11 +156,7 @@
       ],
       "description": "Registry category"
     },
-    "version": {
-      "type": "string",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
-      "description": "Semantic version (semver)"
-    },
+    "version": { "$ref": "#/$defs/semver" },
     "description": {
       "type": "string",
       "description": "Short human-readable summary"
