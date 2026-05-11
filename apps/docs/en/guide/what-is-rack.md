@@ -25,16 +25,16 @@ When you run `rk init` or `rk add` commands, Rack analyzes dependencies between 
 
 ## Quick Examples
 
-Initialize a `Vue` full-stack project:
+Initialize a project from the Node preset:
 
 ```bash
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 ```
 
-Add state management to an existing project:
+Add a test framework to an existing project:
 
 ```bash
-rk add features/pinia
+rk add @rack/testing/vitest
 ```
 
 Configure a private enterprise source:

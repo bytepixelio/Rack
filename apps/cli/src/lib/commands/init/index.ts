@@ -19,6 +19,7 @@ import { Logger } from '../../infra/logger.js'
 import { Prompter } from '../../infra/prompts.js'
 import { writeJSON, pathExists } from '../../infra/fs.js'
 import { AppError, getErrorMessage } from '../../utils/errors.js'
+import { isPreset, parseNamespace } from '../../registry/identifier.js'
 import {
   displayCIMode,
   displayResults,
@@ -81,14 +82,26 @@ export function registerInitCommand(program: Command): void {
 
         await validateTargetDir(targetDir, cwd, force)
 
+        // The `:js`/`:ts` suffix on a single-registry template is the
+        // user's explicit project-language choice — capture it here so
+        // (a) the pipeline propagates it to transitive deps and (b)
+        // it's persisted to rack.json so subsequent `rk add` inherits.
+        // Presets reject suffixes (see registry/client.ts fetchPreset),
+        // so for preset templates this stays undefined; opting in for
+        // presets is a separate schema change.
+        const templateLanguage = isPreset(template)
+          ? undefined
+          : parseNamespace(template).language
+
         const pipelineResult = await prompter.withSpinner(
           logger,
           'Running initialization pipeline...',
-          () => initProject({ template, targetDir }, undefined, logger)
+          () => initProject({ template, targetDir }, templateLanguage, logger)
         )
 
         const manifest = rackJson.generate({
           template,
+          language: templateLanguage,
           items: pipelineResult.appliedRegistries,
           name: projectName || path.basename(targetDir)
         })

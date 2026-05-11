@@ -22,10 +22,10 @@ rk version
 
 ### Using a Preset Template
 
-The simplest way is to initialize a project from a preset template.
+The simplest way is to initialize a project from a preset template. The official source currently ships `@presets/node` and `@presets/node-library`.
 
 ```bash
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 ```
 
 Rack will prompt for the project name and then automatically:
@@ -49,11 +49,11 @@ cd my-project
 Then add the required registries one by one.
 
 ```bash
-# Add framework
-rk add frameworks/vue
+# Add test framework
+rk add testing/vitest
 
-# Add build tool
-rk add build/vite
+# Add linter
+rk add quality/eslint
 ```
 
 > `rk init` requires `-t/--template`. The template can be either a preset (`@presets/...`) or a single registry. `rk add` can run in any existing project directory; if `rack.json` is missing, a minimal one is generated from the directory name before continuing.
