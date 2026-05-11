@@ -51,4 +51,4 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
             https://registry.rackjs.com/schemas/registry-item.json -o /dev/null
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
-            https://registry.rackjs.com/presets/node/preset.json -o /dev/null
+            https://registry.rackjs.com/presets/node -o /dev/null
