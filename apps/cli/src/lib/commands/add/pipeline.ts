@@ -20,7 +20,7 @@ import { sortItems } from '../../pipeline/sort.js'
 import { registry } from '../../registry/client.js'
 import { applyFiles } from '../../pipeline/apply.js'
 import { validateNoConflicts } from '../../pipeline/conflict.js'
-import { isPreset, parseNamespace } from '../../registry/identifier.js'
+import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
 import {
   logConflicts,
   resolveDependencies
@@ -132,8 +132,12 @@ function warnDegradedConflictCheck(
 ): void {
   if (requested.length === 0 || fetched.length === requested.length) return
 
-  const fetchedKeys = new Set(fetched.map((it) => canonicalize(it.identifier)))
-  const missing = requested.filter((id) => !fetchedKeys.has(canonicalize(id)))
+  const fetchedKeys = new Set(
+    fetched.map((it) => canonicalizeIdentifier(it.identifier))
+  )
+  const missing = requested.filter(
+    (id) => !fetchedKeys.has(canonicalizeIdentifier(id))
+  )
   if (missing.length === 0) return
 
   logger.warn(
@@ -141,11 +145,6 @@ function warnDegradedConflictCheck(
       `${missing.join(', ')}. Reciprocal "conflicts" declared by ` +
       `${missing.length === 1 ? 'this registry' : 'these registries'} cannot be enforced.`
   )
-}
-
-function canonicalize(identifier: string): string {
-  const { namespace, path } = parseNamespace(identifier)
-  return `${namespace}/${path}`
 }
 
 function pluralize(n: number, one: string, many: string): string {

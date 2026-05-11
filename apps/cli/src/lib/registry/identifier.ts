@@ -122,6 +122,24 @@ export function formatCanonicalIdentifier(parsed: ParsedNamespace): string {
   return id
 }
 
+/**
+ * Reduce an identifier to its `namespace/path` form for deduplication
+ * and dependency-graph keys. Strips `@version` and `:language`.
+ *
+ * @param identifier - Registry identifier (any accepted by {@link parseNamespace})
+ * @returns Canonical `namespace/path` string
+ * @throws {InvalidNamespaceError} If the identifier is invalid
+ *
+ * @example
+ * canonicalizeIdentifier('@RACK/Vue@1.0.0:ts')   // → '@rack/vue'
+ * canonicalizeIdentifier('vue')                  // → '@rack/vue'
+ * canonicalizeIdentifier('frameworks/vue@2.0.0') // → '@rack/frameworks/vue'
+ */
+export function canonicalizeIdentifier(identifier: string): string {
+  const { namespace, path } = parseNamespace(identifier)
+  return `${namespace}/${path}`
+}
+
 // ─── Internal ────────────────────────────────────────────────────────────────
 
 /**

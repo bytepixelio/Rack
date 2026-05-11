@@ -11,7 +11,7 @@
  */
 
 import { CircularDependencyError } from '../utils/errors.js'
-import { parseNamespace } from '../registry/identifier.js'
+import { canonicalizeIdentifier } from '../registry/identifier.js'
 
 import type { ResolvedRegistryItem } from './types.js'
 
@@ -43,21 +43,13 @@ export function sortItems(
 
   return [...items].sort((a, b) => {
     const levelDiff =
-      levels.get(canonicalize(a.identifier))! -
-      levels.get(canonicalize(b.identifier))!
+      levels.get(canonicalizeIdentifier(a.identifier))! -
+      levels.get(canonicalizeIdentifier(b.identifier))!
     return levelDiff !== 0 ? levelDiff : a.priority - b.priority
   })
 }
 
 // ─── Internal ────────────────────────────────────────────────────────────────
-
-/**
- * Normalize an identifier to `namespace/path` for graph key matching.
- */
-function canonicalize(identifier: string): string {
-  const { namespace, path } = parseNamespace(identifier)
-  return `${namespace}/${path}`
-}
 
 /**
  * Build a simplified dependency graph: canonical id → canonical dependency ids.
@@ -68,8 +60,8 @@ function canonicalize(identifier: string): string {
 function buildGraph(items: ResolvedRegistryItem[]): Map<string, string[]> {
   return new Map(
     items.map((item) => [
-      canonicalize(item.identifier),
-      (item.registryDependencies ?? []).map(canonicalize)
+      canonicalizeIdentifier(item.identifier),
+      (item.registryDependencies ?? []).map(canonicalizeIdentifier)
     ])
   )
 }
@@ -118,7 +110,7 @@ function computeLevels(items: ResolvedRegistryItem[]): Map<string, number> {
   }
 
   for (const item of items) {
-    const key = canonicalize(item.identifier)
+    const key = canonicalizeIdentifier(item.identifier)
     if (!levels.has(key)) {
       visit(key)
     }
