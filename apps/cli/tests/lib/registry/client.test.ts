@@ -120,6 +120,21 @@ describe('registry/client fetchItem', () => {
     expect(item.dependencies).toEqual({ a: '1', b: '2' })
   })
 
+  it('merges devDependencies from the language overlay', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        devDependencies: { eslint: '8' },
+        languages: {
+          ts: { devDependencies: { typescript: '5' } }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue', { language: 'ts' })
+    expect(item.devDependencies).toEqual({ eslint: '8', typescript: '5' })
+  })
+
   it('applies defaultLanguage override when no language option is supplied', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
     http.get.mockResolvedValue({
@@ -194,6 +209,34 @@ describe('registry/client fetchItem', () => {
     expect(item.files).toEqual([
       { path: 'index.html', target: 'index.html', type: 'registry:entry' },
       { path: 'shared.ts', target: 'src/shared.ts', type: 'registry:lib' },
+      {
+        path: 'tailwind.config.js',
+        target: 'tailwind.config.js',
+        type: 'registry:config'
+      }
+    ])
+  })
+
+  it('uses language overlay files when base item has no files', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({
+      data: {
+        ...baseItem,
+        languages: {
+          js: {
+            files: [
+              {
+                path: 'tailwind.config.js',
+                target: 'tailwind.config.js',
+                type: 'registry:config'
+              }
+            ]
+          }
+        }
+      }
+    })
+    const item = await registry.fetchItem('@rack/vue:js')
+    expect(item.files).toEqual([
       {
         path: 'tailwind.config.js',
         target: 'tailwind.config.js',
