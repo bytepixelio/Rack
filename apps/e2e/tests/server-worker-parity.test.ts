@@ -68,11 +68,13 @@ const authCases: ParityCase[] = [
       server: {
         status: 401,
         code: 'INVALID_TOKEN',
-        reason: 'REVIEW §2.1 — server does not bypass admin token on /registries/*'
+        reason:
+          'REVIEW §2.1 — server does not bypass admin token on /registries/*'
       },
       worker: {
         status: 200,
-        reason: 'REVIEW §2.1 — worker bypasses namespace auth when token equals ADMIN_TOKEN'
+        reason:
+          'REVIEW §2.1 — worker bypasses namespace auth when token equals ADMIN_TOKEN'
       }
     }
   },
@@ -112,12 +114,14 @@ const malformedCases: ParityCase[] = [
     expect: {
       server: {
         status: 200,
-        reason: 'REVIEW §2.2 — Fastify decodes %40 in path params, so /%40rack matches /@rack'
+        reason:
+          'REVIEW §2.2 — Fastify decodes %40 in path params, so /%40rack matches /@rack'
       },
       worker: {
         status: 400,
         code: 'INVALID_PATH',
-        reason: 'REVIEW §2.2 — Worker URL.pathname keeps %40 encoded; parser rejects'
+        reason:
+          'REVIEW §2.2 — Worker URL.pathname keeps %40 encoded; parser rejects'
       }
     }
   }
@@ -202,7 +206,10 @@ beforeEach(() => clearAuthCache())
 
 function runCases(cases: ParityCase[]): void {
   it.each(cases)('$name', async (c) => {
-    const [serverRes, workerRes] = await Promise.all([fireServer(c), fireWorker(c)])
+    const [serverRes, workerRes] = await Promise.all([
+      fireServer(c),
+      fireWorker(c)
+    ])
 
     const sExp = serverExpect(c)
     const wExp = workerExpect(c)
