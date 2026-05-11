@@ -103,3 +103,46 @@ export function verifyAccess(
     }
   }
 }
+
+/** Options for {@link filterAllowedNamespaces}. */
+export interface FilterNamespacesOptions {
+  /** Bypass per-namespace filtering and return every input as-is. */
+  isAdmin?: boolean
+}
+
+/**
+ * Reduce a list of namespaces to the ones a token may see.
+ *
+ * Used by both the Server's `GET /namespaces` route and the Worker's
+ * equivalent — keep them in lockstep so the visible namespace set never
+ * diverges between runtimes for the same token.
+ *
+ * Decision per namespace (in order):
+ * 1. `options.isAdmin` → keep (no further checks)
+ * 2. Not in `config.allowedNamespaces` → drop
+ * 3. Anonymous-allowed namespace → keep
+ * 4. Otherwise → keep iff {@link verifyAccess} allows the token
+ *
+ * @param config - Parsed auth config
+ * @param namespaces - Candidate namespaces (e.g. from storage listing)
+ * @param token - Raw token string from the request, or `null`
+ * @param options - Filter options (admin bypass)
+ * @returns Namespaces the token may discover, in the input order
+ *
+ * @example
+ * filterAllowedNamespaces(config, ['@rack', '@priv'], 'secret')
+ * // → ['@rack', '@priv'] if both are allowed for 'secret', else a subset
+ */
+export function filterAllowedNamespaces(
+  config: AuthConfig,
+  namespaces: string[],
+  token: string | null,
+  options: FilterNamespacesOptions = {}
+): string[] {
+  if (options.isAdmin) return [...namespaces]
+  return namespaces.filter((ns) => {
+    if (!isNamespaceAllowed(config, ns)) return false
+    if (isNamespaceAnonymous(config, ns)) return true
+    return verifyAccess(config, ns, token).allowed
+  })
+}

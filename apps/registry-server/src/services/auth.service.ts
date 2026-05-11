@@ -17,10 +17,16 @@ import {
   emptyAuthConfig,
   parseAuthConfig,
   isNamespaceAllowed,
-  isNamespaceAnonymous
+  isNamespaceAnonymous,
+  filterAllowedNamespaces
 } from '@rack/auth-core'
 
-import type { AuthConfig, AccessResult, AuthConfigError } from '@rack/auth-core'
+import type {
+  AuthConfig,
+  AccessResult,
+  AuthConfigError,
+  FilterNamespacesOptions
+} from '@rack/auth-core'
 
 export class AuthService {
   private readonly filePath: string
@@ -86,5 +92,19 @@ export class AuthService {
    */
   verifyAccess(namespace: string, tokenValue: string | null): AccessResult {
     return verifyAccess(this.config, namespace, tokenValue)
+  }
+
+  /**
+   * Reduce a list of namespaces to those the given token may see.
+   * Thin wrapper around {@link filterAllowedNamespaces} — the
+   * Worker calls the auth-core function directly; both runtimes share
+   * the same decision logic.
+   */
+  filterNamespaces(
+    namespaces: string[],
+    tokenValue: string | null,
+    options?: FilterNamespacesOptions
+  ): string[] {
+    return filterAllowedNamespaces(this.config, namespaces, tokenValue, options)
   }
 }
