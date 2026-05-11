@@ -96,22 +96,28 @@ const malformedCases: ParityCase[] = [
     expect: { status: 400, code: 'INVALID_PATH' }
   },
   {
-    name: 'percent-encoded @ in registry URL (REVIEW §2.2 divergence)',
+    name: 'percent-encoded @ in registry URL → 200 on both',
     path: '/registries/%40rack/lib/1.0.0',
     headers: { authorization: `Bearer ${NS_TOKEN}` },
-    expect: {
-      server: {
-        status: 200,
-        reason:
-          'REVIEW §2.2 — Fastify decodes %40 in path params, so /%40rack matches /@rack'
-      },
-      worker: {
-        status: 400,
-        code: 'INVALID_PATH',
-        reason:
-          'REVIEW §2.2 — Worker URL.pathname keeps %40 encoded; parser rejects'
-      }
-    }
+    expect: { status: 200 }
+  },
+  {
+    name: 'traversal segment in registry URL → 400 INVALID_PATH',
+    path: '/registries/@rack/%2E%2E/lib/1.0.0',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    expect: { status: 400, code: 'INVALID_PATH' }
+  },
+  {
+    name: 'uppercase namespace → 400 INVALID_PATH',
+    path: '/registries/@Rack/lib/1.0.0',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    expect: { status: 400, code: 'INVALID_PATH' }
+  },
+  {
+    name: 'uppercase path segment → 400 INVALID_PATH',
+    path: '/registries/@rack/Lib/1.0.0',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    expect: { status: 400, code: 'INVALID_PATH' }
   }
 ]
 

@@ -93,12 +93,21 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
   }
 
   if (pathname.startsWith('/registries/')) {
-    return handleRegistry(
-      env.BUCKET,
-      env.ADMIN_TOKEN,
-      request,
-      pathname.slice('/registries/'.length)
-    )
+    // Decode percent-encoded characters so `%40rack` matches `@rack`
+    // — Fastify's path-param decoder does the same on the server side,
+    // and without this CLI requests that encode the leading `@` would
+    // return 400 here while succeeding on the server. Malformed
+    // encoding (e.g. a stray `%`) throws URIError → INVALID_PATH.
+    let wildcardPath: string
+    try {
+      wildcardPath = decodeURIComponent(pathname.slice('/registries/'.length))
+    } catch {
+      return json(
+        { code: 'INVALID_PATH', message: 'Invalid registry resource path' },
+        400
+      )
+    }
+    return handleRegistry(env.BUCKET, env.ADMIN_TOKEN, request, wildcardPath)
   }
 
   return notFound('NOT_FOUND', 'Route not found')

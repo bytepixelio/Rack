@@ -124,4 +124,79 @@ describe('parseRegistryUrl', () => {
       locator: { namespace: '@rack', segments: ['node'], version: '1.0.0' }
     })
   })
+
+  // ─── field-level validation ───────────────────────────────────────
+
+  it('returns null for uppercase namespace', () => {
+    expect(parseRegistryUrl('/@Rack/node/1.0.0')).toBeNull()
+  })
+
+  it('returns null for namespace containing dot', () => {
+    expect(parseRegistryUrl('/@rack.io/node/1.0.0')).toBeNull()
+  })
+
+  it('returns null for namespace without alphanumeric body', () => {
+    expect(parseRegistryUrl('/@/node/1.0.0')).toBeNull()
+  })
+
+  it('returns null for traversal-style segment', () => {
+    expect(parseRegistryUrl('/@rack/../etc/passwd')).toBeNull()
+  })
+
+  it('returns null for uppercase segment', () => {
+    expect(parseRegistryUrl('/@rack/Node/1.0.0')).toBeNull()
+  })
+
+  it('returns null for segment containing dot', () => {
+    expect(parseRegistryUrl('/@rack/node.js/1.0.0')).toBeNull()
+  })
+
+  it('returns null for segment containing underscore', () => {
+    expect(parseRegistryUrl('/@rack/node_modules/1.0.0')).toBeNull()
+  })
+
+  it('returns null for trailing-dash segment', () => {
+    expect(parseRegistryUrl('/@rack/node-/1.0.0')).toBeNull()
+  })
+
+  it('returns null for traversal segment under /versions', () => {
+    expect(parseRegistryUrl('/@rack/../versions')).toBeNull()
+  })
+
+  it('returns null for traversal segment in file path', () => {
+    expect(parseRegistryUrl('/@rack/node/1.0.0/files/../leak')).toBeNull()
+  })
+
+  it('returns null for backslash in file path', () => {
+    expect(parseRegistryUrl('/@rack/node/1.0.0/files/a\\b')).toBeNull()
+  })
+
+  it('returns null for absolute-style file path', () => {
+    // collapse to /@rack/node/1.0.0/files/leak — leading slash stripped
+    // by split-filter, but the file path itself must still survive
+    // validateFilePath checks.
+    expect(parseRegistryUrl('/@rack/node/1.0.0/files/%2e%2e/leak')).toBeNull()
+  })
+
+  it('accepts kebab-case multi-dash segments', () => {
+    expect(parseRegistryUrl('/@rack/build-tools/vite-plugin/1.0.0')).toEqual({
+      type: 'versioned',
+      locator: {
+        namespace: '@rack',
+        segments: ['build-tools', 'vite-plugin'],
+        version: '1.0.0'
+      }
+    })
+  })
+
+  it('accepts namespace with mid-string underscore and dash', () => {
+    expect(parseRegistryUrl('/@my_org-x/node/1.0.0')).toEqual({
+      type: 'versioned',
+      locator: {
+        namespace: '@my_org-x',
+        segments: ['node'],
+        version: '1.0.0'
+      }
+    })
+  })
 })

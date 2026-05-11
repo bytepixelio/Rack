@@ -105,6 +105,47 @@ describe('Worker top-level routing', () => {
     expect(await head.text()).toBe('')
   })
 
+  it('decodes %40 in /registries/* wildcard', async () => {
+    const bucket = createMockBucket({
+      '@rack/lib/1.0.0/registry.json': { name: 'lib', version: '1.0.0' }
+    })
+
+    const res = await fire(
+      { BUCKET: bucket },
+      'https://w.example.com/registries/%40rack/lib/1.0.0'
+    )
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { name: string }
+    expect(body.name).toBe('lib')
+  })
+
+  it('returns 400 INVALID_PATH for malformed encoding in /registries/*', async () => {
+    const bucket = createMockBucket({})
+
+    const res = await fire(
+      { BUCKET: bucket },
+      'https://w.example.com/registries/%E0%A4%A/lib/1.0.0'
+    )
+
+    expect(res.status).toBe(400)
+    const body = (await res.json()) as { code: string }
+    expect(body.code).toBe('INVALID_PATH')
+  })
+
+  it('rejects traversal segment in /registries/* with 400 INVALID_PATH', async () => {
+    const bucket = createMockBucket({})
+
+    const res = await fire(
+      { BUCKET: bucket },
+      'https://w.example.com/registries/@rack/%2E%2E/lib/1.0.0'
+    )
+
+    expect(res.status).toBe(400)
+    const body = (await res.json()) as { code: string }
+    expect(body.code).toBe('INVALID_PATH')
+  })
+
   it('strips body for HEAD on JSON listings', async () => {
     const bucket = createMockBucket({
       '@rack/lib/versions.json': { versions: ['1.0.0'] }
