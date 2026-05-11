@@ -256,14 +256,19 @@ docker build -f apps/registry-server/Dockerfile -t rack-registry .
 # Run with defaults (host 18080 → container 8080)
 docker run -p 18080:8080 rack-registry
 
-# Run with custom config and persistent storage
+# Run with custom config and persistent storage (run from repo root)
 docker run -p 18080:8080 \
-  -v ./config:/app/config:ro \
-  -v $(pwd)/../../config/auth.json:/app/config/auth.json:ro \
+  -v $(pwd)/config/auth.json:/app/config/auth.json:ro \
+  -v $(pwd)/apps/registry-server/config/webhooks.json:/app/config/webhooks.json:ro \
   -v registry-data:/data \
   -e ADMIN_TOKEN=your-secret \
   rack-registry
 ```
+
+The image sets `STORAGE_ROOT=/data`, `SCHEMA_DIR=/app/schema`,
+`AUTH_CONFIG_PATH=/app/config/auth.json`, and
+`WEBHOOK_CONFIG_PATH=/app/config/webhooks.json` as defaults, so plain
+`docker run` works without any `-e` overrides.
 
 ### Volumes
 
