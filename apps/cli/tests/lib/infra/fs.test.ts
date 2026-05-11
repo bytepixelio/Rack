@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { join } from 'node:path'
 import * as fsp from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../helpers/tmp.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import {
   chmod,
   readFile,
   readJSON,
+  ensureDir,
   writeFile,
   writeJSON,
-  ensureDir,
   pathExists
 } from '../../../src/lib/infra/fs.js'
 

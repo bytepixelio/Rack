@@ -4,8 +4,8 @@
  * `GET /presets/:name` — Serve preset.json configuration files.
  */
 
-import { CACHE_HEADERS } from '@rack/registry-core'
 import { resolvePresetPath } from '../lib/path.js'
+import { CACHE_HEADERS } from '@rack/registry-core'
 import { streamFileResponse } from '../lib/file-stream.js'
 
 import type { FastifyInstance } from 'fastify'

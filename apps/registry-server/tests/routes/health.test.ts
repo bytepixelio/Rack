@@ -1,10 +1,11 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildApp } from '../../src/app.js'
+import { rm, mkdtemp, writeFile } from 'fs/promises'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
+
 import type { FastifyInstance } from 'fastify'
 import type { Config } from '../../src/types.js'
-import { mkdtemp, writeFile, rm } from 'fs/promises'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
 function createConfig(storageRoot: string): Config {
   return {

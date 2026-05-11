@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-import { displayReport } from '../../../../src/lib/commands/doctor/display.js'
-import type { CheckSummary } from '../../../../src/lib/commands/doctor/checks.js'
+import { it, vi, expect, describe } from 'vitest'
 import { createMockLogger } from '../../../helpers/mocks.js'
+import { displayReport } from '../../../../src/lib/commands/doctor/display.js'
+
+import type { CheckSummary } from '../../../../src/lib/commands/doctor/checks.js'
 
 function summary(results: CheckSummary['results']): CheckSummary {
   return {

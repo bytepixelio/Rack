@@ -1,9 +1,10 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { describe, it, expect, vi } from 'vitest'
-import { mkdtemp, writeFile, rm, mkdir, chmod } from 'fs/promises'
-import type { FastifyReply, FastifyRequest, FastifyBaseLogger } from 'fastify'
+import { it, vi, expect, describe } from 'vitest'
+import { rm, chmod, mkdir, mkdtemp, writeFile } from 'fs/promises'
 import { getMimeType, streamFileResponse } from '../../src/lib/file-stream.js'
+
+import type { FastifyReply, FastifyRequest, FastifyBaseLogger } from 'fastify'
 
 describe('getMimeType', () => {
   it('should return text/typescript for .ts files', () => {

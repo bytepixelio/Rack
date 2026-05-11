@@ -16,11 +16,7 @@ aside: false
   "description": "React 教程项目预设, 包含 TypeScript、Vite、React Router 等",
   "author": "John Doe",
   "tags": ["react", "tutorial", "typescript"],
-  "registries": [
-    "runtimes/node",
-    "build/vite",
-    "frameworks/react"
-  ]
+  "registries": ["runtimes/node", "build/vite", "frameworks/react"]
 }
 ```
 

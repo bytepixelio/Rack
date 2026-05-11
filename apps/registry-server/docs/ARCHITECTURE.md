@@ -431,8 +431,8 @@ Key conventions:
 
 Three sources, non-overlapping responsibilities:
 
-| Source | Contents | How to change |
-|--------|----------|---------------|
-| **Environment** (`config.ts`) | Deployment: port, paths, log level, admin token | Edit `.env`, restart |
-| **Compile-time constants** (`constants.ts`) | Safety limits: upload size, rate limits, timeouts, schema allowlist | Change code, rebuild |
-| **File config** (`auth.json` / `webhooks.json`) | Runtime data: tokens, webhook URLs | Edit file, restart |
+| Source                                          | Contents                                                            | How to change        |
+| ----------------------------------------------- | ------------------------------------------------------------------- | -------------------- |
+| **Environment** (`config.ts`)                   | Deployment: port, paths, log level, admin token                     | Edit `.env`, restart |
+| **Compile-time constants** (`constants.ts`)     | Safety limits: upload size, rate limits, timeouts, schema allowlist | Change code, rebuild |
+| **File config** (`auth.json` / `webhooks.json`) | Runtime data: tokens, webhook URLs                                  | Edit file, restart   |

@@ -21,11 +21,11 @@ import { registry } from '../../registry/client.js'
 import { applyFiles } from '../../pipeline/apply.js'
 import { validateNoConflicts } from '../../pipeline/conflict.js'
 import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
+import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
 import {
   logConflicts,
   resolveDependencies
 } from '../../pipeline/resolve-versions.js'
-import { resolveRegistryDependencies } from '../../pipeline/resolve-dependencies.js'
 
 import type { Logger } from '../../infra/logger.js'
 import type { Language } from '../../registry/types.js'

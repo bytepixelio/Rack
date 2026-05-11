@@ -165,7 +165,7 @@ docker compose down
 
 ### 关键卷与配置
 
-| 挂载点                       | 用途                                                                                |
+| 挂载点                      | 用途                                                                                |
 | --------------------------- | ----------------------------------------------------------------------------------- |
 | `/data`                     | 上传的 tar.gz 包、各 Registry 的 `versions.json`、`.healthcheck` 标记 (需要持久化)  |
 | `/app/config/auth.json`     | 命名空间/Token 策略, 默认从仓库根 `config/auth.json` 绑定挂载, 与 Worker 共享同一份 |

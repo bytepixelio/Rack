@@ -1,9 +1,10 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+import { it, vi, expect, afterAll, describe, beforeAll } from 'vitest'
+
 import type { FastifyInstance } from 'fastify'
 import type { Config } from '../../src/types.js'
-import { mkdtemp, writeFile, rm, mkdir } from 'fs/promises'
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 vi.mock('../../src/constants.js', async (importOriginal) => {
   const original =

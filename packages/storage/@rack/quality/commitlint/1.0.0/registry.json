@@ -7,9 +7,7 @@
   "priority": 6,
   "description": "Commitlint and Commitizen configuration for conventional commits",
   "tags": ["git", "commitlint", "commitizen", "code-quality"],
-  "registryDependencies": [
-    "@rack/quality/husky"
-  ],
+  "registryDependencies": ["@rack/quality/husky"],
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 const execFileMock = vi.fn()
 vi.mock('node:child_process', () => ({

@@ -14,6 +14,7 @@ import axios, {
   type AxiosError,
   type AxiosResponse
 } from 'axios'
+
 /** Request timeout: 30 seconds. */
 const TIMEOUT = 30_000
 

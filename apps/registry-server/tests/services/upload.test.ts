@@ -5,14 +5,7 @@ import { AuthService } from '../../src/services/auth.service.js'
 import { UploadService } from '../../src/services/upload.service.js'
 import { StorageService } from '../../src/services/storage.service.js'
 import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
-import {
-  rm,
-  mkdir,
-  mkdtemp,
-  readFile,
-  symlink,
-  writeFile
-} from 'fs/promises'
+import { rm, mkdir, mkdtemp, symlink, readFile, writeFile } from 'fs/promises'
 
 import type { FastifyBaseLogger } from 'fastify'
 import type { WebhookService } from '../../src/services/webhook.service.js'
@@ -390,7 +383,11 @@ describe('UploadService', () => {
       join(dir, 'registry.json'),
       JSON.stringify({
         files: [
-          { path: 'src/missing.ts', target: 'src/missing.ts', type: 'registry:lib' }
+          {
+            path: 'src/missing.ts',
+            target: 'src/missing.ts',
+            type: 'registry:lib'
+          }
         ]
       })
     )
@@ -455,9 +452,7 @@ describe('UploadService', () => {
     await writeFile(
       join(dir, 'registry.json'),
       JSON.stringify({
-        files: [
-          { path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }
-        ]
+        files: [{ path: 'src/a.ts', target: 'src/a.ts', type: 'registry:lib' }]
       })
     )
     await writeFile(join(dir, 'src', 'a.ts'), 'export {}')
@@ -469,10 +464,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-extra')
     await mkdir(dir, { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await writeFile(join(dir, 'secrets.txt'), 'leaked')
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
@@ -484,10 +476,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-extra-sub')
     await mkdir(join(dir, 'sub'), { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await writeFile(join(dir, 'sub', 'leak.env'), 'API_KEY=...')
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(
@@ -499,10 +488,7 @@ describe('UploadService', () => {
     const upload = createUpload()
     const dir = join(tempDir, 'tree-symlink')
     await mkdir(dir, { recursive: true })
-    await writeFile(
-      join(dir, 'registry.json'),
-      JSON.stringify({ files: [] })
-    )
+    await writeFile(join(dir, 'registry.json'), JSON.stringify({ files: [] }))
     await symlink('/etc/hosts', join(dir, 'shadow'))
 
     await expect(upload.validateExtractedTree(dir)).rejects.toThrow(

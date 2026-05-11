@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { listRegistries } from '../src/listing.js'
 
 import type { RegistryStore } from '../src/listing.js'

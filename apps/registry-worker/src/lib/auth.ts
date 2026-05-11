@@ -9,13 +9,13 @@
  * `.github/workflows/sync-auth.yml` workflow.
  */
 
+import { json } from './response.js'
 import {
-  verifyAccess,
   extractToken,
+  verifyAccess,
   parseAuthConfig,
   isNamespaceAllowed
 } from '@rack/auth-core'
-import { json } from './response.js'
 
 import type { AuthConfig } from '@rack/auth-core'
 

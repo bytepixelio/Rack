@@ -44,13 +44,13 @@ LOG_LEVEL=info
 
 ### Storage Configuration
 
-| Variable               | Default                  | Description                                     |
-| ---------------------- | ------------------------ | ----------------------------------------------- |
-| `STORAGE_ROOT`         | `../../packages/storage` | Static resource root directory (relative path)  |
-| `STORAGE_BACKEND`      | `local`                  | Upload storage backend: `local` or `r2`         |
-| `R2_BUCKET_NAME`       | —                        | R2 bucket name (required when `STORAGE_BACKEND=r2`)       |
-| `R2_ACCOUNT_ID`        | —                        | Cloudflare account ID (required when `STORAGE_BACKEND=r2`) |
-| `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)  |
+| Variable               | Default                  | Description                                                   |
+| ---------------------- | ------------------------ | ------------------------------------------------------------- |
+| `STORAGE_ROOT`         | `../../packages/storage` | Static resource root directory (relative path)                |
+| `STORAGE_BACKEND`      | `local`                  | Upload storage backend: `local` or `r2`                       |
+| `R2_BUCKET_NAME`       | —                        | R2 bucket name (required when `STORAGE_BACKEND=r2`)           |
+| `R2_ACCOUNT_ID`        | —                        | Cloudflare account ID (required when `STORAGE_BACKEND=r2`)    |
+| `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)     |
 | `R2_SECRET_ACCESS_KEY` | —                        | R2 API secret access key (required when `STORAGE_BACKEND=r2`) |
 
 **Example Configuration (Local)**
@@ -87,10 +87,10 @@ When `STORAGE_BACKEND=local` (default), uploaded packages are stored on the loca
 
 ### Authentication Configuration
 
-| Variable           | Default            | Description                                             |
-| ------------------ | ------------------ | ------------------------------------------------------- |
+| Variable           | Default                  | Description                                                              |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------ |
 | `AUTH_CONFIG_PATH` | `../../config/auth.json` | Path to auth.json (repo-root `config/auth.json`, shared with the Worker) |
-| `ADMIN_TOKEN`      | _(not set)_        | System-level admin token for cross-namespace publishing |
+| `ADMIN_TOKEN`      | _(not set)_              | System-level admin token for cross-namespace publishing                  |
 
 **Example Configuration**
 
@@ -149,13 +149,13 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 
 The following values are compiled into the server and cannot be changed via environment variables:
 
-| Setting            | Value            | Description                                                          |
-| ------------------ | ---------------- | -------------------------------------------------------------------- |
-| Cache-Control      | Per-route tiered | See [Operations — Response Caching](./operations.md#response-caching) |
-| Compression        | Always enabled   | Supports `gzip`, `deflate`, `br` encodings                          |
-| Rate limit max     | `1200` requests  | Maximum requests per window                                          |
-| Rate limit window  | `1 minute`       | Rate limit time window                                               |
-| Max upload size    | `100 MB`         | Maximum file upload size                                             |
+| Setting           | Value            | Description                                                           |
+| ----------------- | ---------------- | --------------------------------------------------------------------- |
+| Cache-Control     | Per-route tiered | See [Operations — Response Caching](./operations.md#response-caching) |
+| Compression       | Always enabled   | Supports `gzip`, `deflate`, `br` encodings                            |
+| Rate limit max    | `1200` requests  | Maximum requests per window                                           |
+| Rate limit window | `1 minute`       | Rate limit time window                                                |
+| Max upload size   | `100 MB`         | Maximum file upload size                                              |
 
 ::: tip Rate Limiting
 Rate limits are applied **per client IP**. When deploying behind a reverse proxy (e.g., Nginx), ensure `X-Forwarded-For` is correctly forwarded so each real client IP is counted independently. When the limit is exceeded, the server returns `429 Too Many Requests` with `{ "statusCode": 429, "error": "Too Many Requests", "message": "Rate limit exceeded, retry in X" }`

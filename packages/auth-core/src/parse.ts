@@ -13,8 +13,8 @@
  */
 
 import type {
-  TokenRecord,
   AuthConfig,
+  TokenRecord,
   RawAuthConfig,
   AuthConfigError
 } from './types.js'

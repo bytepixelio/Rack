@@ -1,8 +1,9 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import { R2UploadBackend } from '../../src/services/r2-upload-backend.js'
+
 import type { FastifyBaseLogger } from 'fastify'
 
 // ─── S3 Client Mock ───────────────────────────────────────────────────────────

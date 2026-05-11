@@ -1,5 +1,5 @@
 import { beforeEach } from 'vitest'
-import { describe, it, expect, vi } from 'vitest'
+import { it, vi, expect, describe } from 'vitest'
 import { clearAuthCache } from '../../src/lib/auth.js'
 import { createMockBucket } from '../helpers/mock-bucket.js'
 import {

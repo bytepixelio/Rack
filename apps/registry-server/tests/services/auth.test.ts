@@ -1,8 +1,8 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, writeFile, rm, mkdir } from 'fs/promises'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
 import { AuthService } from '../../src/services/auth.service.js'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { it, expect, describe, afterEach, beforeEach } from 'vitest'
 
 // AuthService is a thin disk-loader that delegates parsing and verification
 // to @rack/auth-core. Those modules already have exhaustive unit tests in

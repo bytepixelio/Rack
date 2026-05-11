@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { Logger } from '../../../src/lib/infra/logger.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import {
   AppError,
   RegistryNotFoundError

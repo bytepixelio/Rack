@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { basename, join } from 'node:path'
-import { writeFile, mkdir } from 'node:fs/promises'
+import { join, basename } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../../helpers/tmp.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/registry/client.js', () => ({
   registry: { fetchFile: vi.fn() }
 }))
 
-import { executePlugin } from '../../../../src/lib/pipeline/merge/plugin-loader.js'
 import { registry } from '../../../../src/lib/registry/client.js'
+import { executePlugin } from '../../../../src/lib/pipeline/merge/plugin-loader.js'
 
 const fetchFileMock = registry.fetchFile as unknown as ReturnType<typeof vi.fn>
 

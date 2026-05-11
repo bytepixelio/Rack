@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { parseAuthConfig } from '../src/parse.js'
 import {
   verifyAccess,

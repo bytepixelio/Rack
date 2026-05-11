@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 const execFileMock = vi.fn()
 vi.mock('node:child_process', () => ({
@@ -32,10 +32,10 @@ vi.mock('../../../../src/lib/utils/version.js', () => ({
   getMinNodeVersion: vi.fn()
 }))
 
-import { runChecks } from '../../../../src/lib/commands/doctor/checks.js'
-import { rackJson } from '../../../../src/lib/rack-json.js'
 import { rackrc } from '../../../../src/lib/rackrc.js'
+import { rackJson } from '../../../../src/lib/rack-json.js'
 import { getMinNodeVersion } from '../../../../src/lib/utils/version.js'
+import { runChecks } from '../../../../src/lib/commands/doctor/checks.js'
 
 const readMock = rackJson.read as unknown as ReturnType<typeof vi.fn>
 const listMock = rackrc.listRegistries as unknown as ReturnType<typeof vi.fn>

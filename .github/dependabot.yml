@@ -18,10 +18,10 @@ updates:
     # ignores Dependabot retries each one on every push and produces
     # `security_update_not_possible` failure runs as background noise.
     ignore:
-      - dependency-name: vite              # via vitest
-      - dependency-name: postcss           # via vitest -> vite
-      - dependency-name: picomatch         # via @changesets -> fast-glob
-      - dependency-name: fast-xml-parser   # via @aws-sdk/client-s3
-      - dependency-name: follow-redirects  # via axios
-      - dependency-name: lodash            # via commitizen/cz-customizable
-      - dependency-name: brace-expansion   # via @typescript-eslint -> minimatch
+      - dependency-name: vite # via vitest
+      - dependency-name: postcss # via vitest -> vite
+      - dependency-name: picomatch # via @changesets -> fast-glob
+      - dependency-name: fast-xml-parser # via @aws-sdk/client-s3
+      - dependency-name: follow-redirects # via axios
+      - dependency-name: lodash # via commitizen/cz-customizable
+      - dependency-name: brace-expansion # via @typescript-eslint -> minimatch

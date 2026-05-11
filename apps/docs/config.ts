@@ -1,4 +1,4 @@
-import { defineAdditionalConfig, type DefaultTheme } from 'vitepress'
+import { type DefaultTheme, defineAdditionalConfig } from 'vitepress'
 
 export default defineAdditionalConfig({
   description:

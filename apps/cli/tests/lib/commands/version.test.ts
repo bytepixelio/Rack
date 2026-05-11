@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../src/lib/utils/version.js', () => ({
   getCliVersion: vi.fn().mockResolvedValue('9.9.9')
 }))
 
-import { registerVersionCommand } from '../../../src/lib/commands/version/index.js'
 import { runCommand } from './helpers.js'
+import { registerVersionCommand } from '../../../src/lib/commands/version/index.js'
 
 let infoSpy: ReturnType<typeof vi.spyOn>
 

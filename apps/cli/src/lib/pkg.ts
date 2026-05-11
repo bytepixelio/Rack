@@ -8,8 +8,8 @@
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
-import { PackageJsonInvalidError, getErrorMessage } from './utils/errors.js'
-import { pathExists, readJSON, writeJSON } from './infra/fs.js'
+import { readJSON, writeJSON, pathExists } from './infra/fs.js'
+import { getErrorMessage, PackageJsonInvalidError } from './utils/errors.js'
 
 const execFileAsync = promisify(execFile)
 

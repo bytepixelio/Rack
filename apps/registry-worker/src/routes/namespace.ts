@@ -6,9 +6,9 @@
  * are not leaked to anyone who cannot access them.
  */
 
-import { loadAuthConfig, enforceNamespaceAccess } from '../lib/auth.js'
-import { json, badRequest, notFound } from '../lib/response.js'
+import { json, notFound, badRequest } from '../lib/response.js'
 import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
+import { loadAuthConfig, enforceNamespaceAccess } from '../lib/auth.js'
 import { extractToken, filterAllowedNamespaces } from '@rack/auth-core'
 
 import type { RegistryStore } from '@rack/registry-core'

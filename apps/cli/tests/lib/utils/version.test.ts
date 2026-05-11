@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import * as fs from '../../../src/lib/infra/fs.js'
+import { it, vi, expect, describe, afterEach } from 'vitest'
 import {
   getCliVersion,
   getMinNodeVersion
 } from '../../../src/lib/utils/version.js'
-import * as fs from '../../../src/lib/infra/fs.js'
 
 afterEach(() => vi.restoreAllMocks())
 

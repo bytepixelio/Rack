@@ -18,11 +18,11 @@ Commits must follow [Conventional Commits](https://www.conventionalcommits.org/)
 
 Three GitHub Actions workflows live under `.github/workflows/`:
 
-| Workflow             | Triggers on                                                 | What it does                                                                                                   |
-| -------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`             | Every push / PR                                             | Build + lint + test across all apps. Runs changesets on `main` to either open a Version PR or publish to npm.  |
-| `deploy-worker.yml`  | Push to `main` touching `apps/registry-worker/**` or itself | Deploys the Cloudflare Worker, then runs a post-deploy smoke test that exercises the Server → R2 → Worker roundtrip. |
-| `sync-auth.yml`      | Push to `main` touching `config/auth.json` or itself        | Uploads `config/auth.json` to R2 at `.auth/auth.json`, then hits an anonymous-read endpoint to confirm the Worker still parses it. |
+| Workflow            | Triggers on                                                 | What it does                                                                                                                       |
+| ------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`            | Every push / PR                                             | Build + lint + test across all apps. Runs changesets on `main` to either open a Version PR or publish to npm.                      |
+| `deploy-worker.yml` | Push to `main` touching `apps/registry-worker/**` or itself | Deploys the Cloudflare Worker, then runs a post-deploy smoke test that exercises the Server → R2 → Worker roundtrip.               |
+| `sync-auth.yml`     | Push to `main` touching `config/auth.json` or itself        | Uploads `config/auth.json` to R2 at `.auth/auth.json`, then hits an anonymous-read endpoint to confirm the Worker still parses it. |
 
 ## Forking: what to configure
 
@@ -39,26 +39,26 @@ If you fork Rack and want the workflows to run against your own infrastructure, 
 
 Add these under **Settings → Secrets and variables → Actions**:
 
-| Secret                  | Used by                                                | How to obtain                                                                                                        |
-| ----------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | `deploy-worker.yml`, `sync-auth.yml`                   | Cloudflare → My Profile → API Tokens. Scopes: `Workers Scripts:Edit` + `Workers R2 Storage:Edit`.                    |
-| `CLOUDFLARE_ACCOUNT_ID` | `deploy-worker.yml`, `sync-auth.yml`                   | Cloudflare dashboard → account home (right sidebar).                                                                 |
-| `R2_BUCKET_NAME`        | `deploy-worker.yml` (post-deploy smoke)                | Your R2 bucket name.                                                                                                 |
-| `R2_ACCOUNT_ID`         | `deploy-worker.yml` (post-deploy smoke)                | Same as `CLOUDFLARE_ACCOUNT_ID` — kept separate so the smoke step stays self-contained.                              |
-| `R2_ACCESS_KEY_ID`      | `deploy-worker.yml` (post-deploy smoke)                | R2 → Manage R2 API Tokens → Create API Token (Object Read & Write).                                                  |
-| `R2_SECRET_ACCESS_KEY`  | `deploy-worker.yml` (post-deploy smoke)                | Paired with `R2_ACCESS_KEY_ID`, shown once at token creation.                                                        |
-| `NPM_TOKEN`             | `ci.yml` (changesets publish on `main`)                | npm → Access Tokens → Generate (Automation). Only needed if you publish the CLI to npm; safe to omit otherwise.      |
+| Secret                  | Used by                                 | How to obtain                                                                                                   |
+| ----------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | `deploy-worker.yml`, `sync-auth.yml`    | Cloudflare → My Profile → API Tokens. Scopes: `Workers Scripts:Edit` + `Workers R2 Storage:Edit`.               |
+| `CLOUDFLARE_ACCOUNT_ID` | `deploy-worker.yml`, `sync-auth.yml`    | Cloudflare dashboard → account home (right sidebar).                                                            |
+| `R2_BUCKET_NAME`        | `deploy-worker.yml` (post-deploy smoke) | Your R2 bucket name.                                                                                            |
+| `R2_ACCOUNT_ID`         | `deploy-worker.yml` (post-deploy smoke) | Same as `CLOUDFLARE_ACCOUNT_ID` — kept separate so the smoke step stays self-contained.                         |
+| `R2_ACCESS_KEY_ID`      | `deploy-worker.yml` (post-deploy smoke) | R2 → Manage R2 API Tokens → Create API Token (Object Read & Write).                                             |
+| `R2_SECRET_ACCESS_KEY`  | `deploy-worker.yml` (post-deploy smoke) | Paired with `R2_ACCESS_KEY_ID`, shown once at token creation.                                                   |
+| `NPM_TOKEN`             | `ci.yml` (changesets publish on `main`) | npm → Access Tokens → Generate (Automation). Only needed if you publish the CLI to npm; safe to omit otherwise. |
 
 ### 3. Values that are currently hardcoded
 
 These are not secrets but are baked into the workflows pointing at `rackjs.com`. Change them to match your deployment:
 
-| Location                                                                       | Value                             | What to change it to                   |
-| ------------------------------------------------------------------------------ | --------------------------------- | -------------------------------------- |
-| `.github/workflows/deploy-worker.yml` — Post-deploy health check               | `https://registry.rackjs.com/health` | Your Worker's health URL               |
-| `.github/workflows/deploy-worker.yml` — Run upload roundtrip → `RACK_REGISTRY_URL` | `https://registry.rackjs.com`     | Your Worker's base URL                 |
-| `.github/workflows/sync-auth.yml` — Post-sync read check                       | `https://registry.rackjs.com/...` | Same base URL                          |
-| `apps/registry-worker/wrangler.toml`                                           | routes and bucket binding         | Your zone + bucket                     |
+| Location                                                                           | Value                                | What to change it to     |
+| ---------------------------------------------------------------------------------- | ------------------------------------ | ------------------------ |
+| `.github/workflows/deploy-worker.yml` — Post-deploy health check                   | `https://registry.rackjs.com/health` | Your Worker's health URL |
+| `.github/workflows/deploy-worker.yml` — Run upload roundtrip → `RACK_REGISTRY_URL` | `https://registry.rackjs.com`        | Your Worker's base URL   |
+| `.github/workflows/sync-auth.yml` — Post-sync read check                           | `https://registry.rackjs.com/...`    | Same base URL            |
+| `apps/registry-worker/wrangler.toml`                                               | routes and bucket binding            | Your zone + bucket       |
 
 ### 4. About the `@rack/e2e-upload-smoke` fixture
 

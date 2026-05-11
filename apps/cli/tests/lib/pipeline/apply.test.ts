@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { chmod, readFile, writeFile, stat } from 'node:fs/promises'
 import { makeTmpDir, cleanTmpDir } from '../../helpers/tmp.js'
+import { stat, chmod, readFile, writeFile } from 'node:fs/promises'
 import { createItem, createMockLogger } from '../../helpers/mocks.js'
 import { PathTraversalError } from '../../../src/lib/utils/errors.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../src/lib/registry/client.js', () => ({
   registry: { fetchFile: vi.fn(), fetchBinaryFile: vi.fn() }
@@ -19,9 +19,9 @@ vi.mock('node:fs/promises', async () => {
   return { ...actual, rm: vi.fn(actual.rm) }
 })
 
-import { applyFiles } from '../../../src/lib/pipeline/apply.js'
-import { registry } from '../../../src/lib/registry/client.js'
 import { rm as rmMock } from 'node:fs/promises'
+import { registry } from '../../../src/lib/registry/client.js'
+import { applyFiles } from '../../../src/lib/pipeline/apply.js'
 
 const fetchFileMock = registry.fetchFile as unknown as ReturnType<typeof vi.fn>
 const fetchBinaryMock = registry.fetchBinaryFile as unknown as ReturnType<
@@ -382,12 +382,12 @@ describe('pipeline/apply', () => {
       ]
     })
 
-    await expect(
-      applyFiles([item], tmp, undefined, logger)
-    ).rejects.toThrow()
+    await expect(applyFiles([item], tmp, undefined, logger)).rejects.toThrow()
 
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/Rollback failed for .*first\.txt.*synthetic rm failure/)
+      expect.stringMatching(
+        /Rollback failed for .*first\.txt.*synthetic rm failure/
+      )
     )
   })
 })

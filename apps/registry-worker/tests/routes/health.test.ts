@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { handleHealth } from '../../src/routes/health.js'
 import { createMockBucket } from '../helpers/mock-bucket.js'
 

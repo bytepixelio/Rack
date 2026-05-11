@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/commands/init/fetch.js', () => ({
   fetchTemplate: vi.fn()
@@ -11,12 +11,12 @@ vi.mock('../../../../src/lib/pipeline/apply.js', () => ({
 }))
 vi.mock('../../../../src/lib/pkg.js', () => ({ pkg: { update: vi.fn() } }))
 
-import { initProject } from '../../../../src/lib/commands/init/pipeline.js'
-import { fetchTemplate } from '../../../../src/lib/commands/init/fetch.js'
-import { applyFiles } from '../../../../src/lib/pipeline/apply.js'
 import { pkg } from '../../../../src/lib/pkg.js'
-import { createItem, createMockLogger } from '../../../helpers/mocks.js'
+import { applyFiles } from '../../../../src/lib/pipeline/apply.js'
 import { ConflictError } from '../../../../src/lib/utils/errors.js'
+import { createItem, createMockLogger } from '../../../helpers/mocks.js'
+import { fetchTemplate } from '../../../../src/lib/commands/init/fetch.js'
+import { initProject } from '../../../../src/lib/commands/init/pipeline.js'
 
 const fetchTemplateMock = fetchTemplate as unknown as ReturnType<typeof vi.fn>
 const applyMock = applyFiles as unknown as ReturnType<typeof vi.fn>

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
+import { rm, mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 
 export interface Workspace {
   cwd: string

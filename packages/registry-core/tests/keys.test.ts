@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import {
   buildFileKey,
   buildRegistryKey,
@@ -25,9 +25,9 @@ describe('buildRegistryDirKey', () => {
 
 describe('buildVersionsKey', () => {
   it('appends versions.json to single-segment dir', () => {
-    expect(
-      buildVersionsKey({ namespace: '@rack', segments: ['node'] })
-    ).toBe('@rack/node/versions.json')
+    expect(buildVersionsKey({ namespace: '@rack', segments: ['node'] })).toBe(
+      '@rack/node/versions.json'
+    )
   })
 
   it('appends versions.json to multi-segment dir', () => {

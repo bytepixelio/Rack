@@ -18,19 +18,19 @@
  */
 
 import path from 'node:path'
-import { rm, stat, readFile as readBuffer } from 'node:fs/promises'
 import { merge } from './merge/index.js'
 import { registry } from '../registry/client.js'
+import { rm, stat, readFile as readBuffer } from 'node:fs/promises'
+import { chmod, ensureDir, writeFile, pathExists } from '../infra/fs.js'
 import {
   FileFetchError,
   getErrorMessage,
   PathTraversalError
 } from '../utils/errors.js'
-import { chmod, writeFile, ensureDir, pathExists } from '../infra/fs.js'
 
 import type { Logger } from '../infra/logger.js'
-import type { Language, RegistryFile } from '../registry/types.js'
 import type { FileChange, ResolvedRegistryItem } from './types.js'
+import type { Language, RegistryFile } from '../registry/types.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -145,7 +145,8 @@ async function planWrites(
 
     for (const file of item.files ?? []) {
       const targetPath = resolveWithinTarget(targetDir, file.target)
-      const existing = plans.get(targetPath) ?? (await snapshotTarget(targetPath))
+      const existing =
+        plans.get(targetPath) ?? (await snapshotTarget(targetPath))
 
       if (file.type === 'registry:asset' && file.path) {
         const buffer = await fetchBinary(file, item.registryUrl, logger)
@@ -176,7 +177,7 @@ async function planWrites(
         item.registryUrl,
         typeof currentForMerge === 'string'
           ? currentForMerge
-          : currentForMerge?.toString('utf8') ?? null,
+          : (currentForMerge?.toString('utf8') ?? null),
         language,
         logger
       )
@@ -337,10 +338,7 @@ async function mergeText(
  * Rollback is best-effort: a failure during rollback is logged but
  * does not mask the original error.
  */
-async function commitWrites(
-  plans: FilePlan[],
-  logger: Logger
-): Promise<void> {
+async function commitWrites(plans: FilePlan[], logger: Logger): Promise<void> {
   const committed: FilePlan[] = []
 
   try {

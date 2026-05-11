@@ -7,8 +7,8 @@
  */
 
 import chalk from 'chalk'
-import { AppError, getErrorMessage } from '../utils/errors.js'
 import { getErrorHint } from '../utils/error-hints.js'
+import { AppError, getErrorMessage } from '../utils/errors.js'
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent'
 

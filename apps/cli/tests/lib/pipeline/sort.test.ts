@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
+import { createItem } from '../../helpers/mocks.js'
 import { sortItems } from '../../../src/lib/pipeline/sort.js'
 import { CircularDependencyError } from '../../../src/lib/utils/errors.js'
-import { createItem } from '../../helpers/mocks.js'
 
 describe('pipeline/sort', () => {
   it('returns empty array for empty input', () => {

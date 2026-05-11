@@ -136,9 +136,7 @@ export function registerSetCommand(configCommand: Command): void {
           }
 
           if (url && !/^https?:\/\//.test(url)) {
-            throw new Error(
-              '--url must be an absolute http:// or https:// URL'
-            )
+            throw new Error('--url must be an absolute http:// or https:// URL')
           }
 
           const registryEntry = existingEntry ?? {

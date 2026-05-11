@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { Command } from 'commander'
+import { it, expect, describe } from 'vitest'
 import { registerConfigCommand } from '../../../../src/lib/commands/config/index.js'
 
 describe('config/index', () => {

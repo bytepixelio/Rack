@@ -269,4 +269,3 @@ rk add frameworks/vue  # 使用 defaultLanguage: "ts"
 ```
 
 > 如需为某种语言提供完全不同的脚本, 推荐拆分为独立 Registry (例如 `frameworks/vue` 与 `frameworks/vue-spa`), 而不是依赖语言变体来覆盖 `scripts`。
-
