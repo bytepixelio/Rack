@@ -37,7 +37,11 @@ interface InitCommandOptions {
   ci?: boolean
   /** Project name. */
   name?: string
-  /** Force overwrite existing files. */
+  /**
+   * Allow init into an existing target directory. The directory is **not**
+   * cleaned — pre-existing files survive untouched unless a registry
+   * file declares the same `target` and a merge strategy rewrites it.
+   */
   force?: boolean
   /** Template to use (e.g., '@presets/tutorial-project'). */
   template: string
@@ -61,7 +65,11 @@ export function registerInitCommand(program: Command): void {
     .requiredOption('-t, --template <template>', 'Template to use')
     .option('-n, --name <name>', 'Project name')
     .option('--ci', 'Run in CI mode (non-interactive)', false)
-    .option('-f, --force', 'Force overwrite existing files', false)
+    .option(
+      '-f, --force',
+      'Allow init into an existing target directory (no cleanup; pre-existing files are preserved unless a registry rewrites them)',
+      false
+    )
     .option('--skip-install', 'Skip dependency installation', false)
     .option('--skip-git', 'Skip git repository initialization', false)
     .addHelpText('after', initHelpText)
@@ -149,12 +157,18 @@ async function promptProjectName(prompter: Prompter): Promise<string> {
 }
 
 /**
- * Ensure the target directory is empty or `force` is set.
+ * Reject pre-existing target directories unless `force` is set.
+ *
+ * `--force` only *allows* init into an existing directory — it does not
+ * clean it. Pre-existing files survive untouched; conflicts are resolved
+ * per-file by the registry's merge strategy (overwrite, json-merge, etc.)
+ * during the apply phase.
+ *
  * Skips the check when `targetDir === cwd` (init in current directory).
  *
  * @param targetDir - Resolved absolute target directory
  * @param cwd - Current working directory
- * @param force - Whether to skip the existence check
+ * @param force - Whether to allow merging into an existing directory
  * @throws {AppError} With code `VALIDATION_ERROR` if the directory exists and `force` is false
  */
 async function validateTargetDir(
@@ -166,7 +180,7 @@ async function validateTargetDir(
   if ((await pathExists(targetDir)) && !force) {
     throw new AppError(
       'VALIDATION_ERROR',
-      `Target directory already exists: ${targetDir}. Use --force to overwrite.`
+      `Target directory already exists: ${targetDir}. Use --force to merge into it (pre-existing files are preserved unless a registry rewrites them).`
     )
   }
 }
