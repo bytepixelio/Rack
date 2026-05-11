@@ -663,20 +663,22 @@ function collectManifestPaths(manifest: ManifestShape): string[] {
 
 /**
  * Build the allowlist of POSIX-relative file paths that may appear in
- * the extracted package. Always includes `registry.json`. Manifest paths
- * are normalized via {@link validateFilePath} so an entry like `./a/b`
- * matches a tree file at `a/b`.
+ * the extracted package. Always includes `registry.json`. Manifest
+ * paths are normalized via {@link validateFilePath} so an entry like
+ * `./a/b` matches a tree file at `a/b`.
+ *
+ * Any invalid path makes `validateFilePath` throw and surfaces as
+ * INVALID_PATH at the upload route. The previous version swallowed
+ * such failures on the assumption that `validateFilePaths` always runs
+ * first — that's a hidden invariant, so let the error propagate
+ * naturally; if a future caller skips the prior validator, this is
+ * the right place to fail loudly.
  */
 function buildAllowlist(manifest: ManifestShape): Set<string> {
   const allow = new Set<string>(['registry.json'])
   for (const p of collectManifestPaths(manifest)) {
-    try {
-      const { normalized } = validateFilePath(p)
-      allow.add(normalized)
-    } catch {
-      // Invalid path will fail in validateFilePaths with a descriptive error;
-      // skip here so this helper never throws mid-walk.
-    }
+    const { normalized } = validateFilePath(p)
+    allow.add(normalized)
   }
   return allow
 }
