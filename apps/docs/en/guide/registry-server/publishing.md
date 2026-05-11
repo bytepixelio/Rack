@@ -106,12 +106,13 @@ tar -tzf ../my-tool-1.0.0.tar.gz
 ```
 
 ::: warning Package Structure Requirements
+
 - `registry.json` must sit at the archive root (`registry.json`, not `my-tool/registry.json`)
 - Only files declared in `registry.json` (`files[].path`, `languages.*.files[].path`, custom `mergeStrategy.script`) may appear in the archive — anything else will be rejected
 - All `files[].path` references must point to regular files in the package; symlinks and other non-regular entries are rejected
 - `files[].path` values must be relative POSIX paths using only `A-Z a-z 0-9 . _ @ + -` per segment; percent-encoding, `?`, `#`, and backslash are not allowed
 - Recommended naming format: `<name>-<version>.tar.gz`
-:::
+  :::
 
 ## Calculate SHA256 Checksum
 
@@ -155,6 +156,7 @@ curl -X POST "$SERVER_URL/registries" \
 ```
 
 ::: tip Admin Token vs Namespace Token
+
 - **Namespace token**: Configured per-namespace in `auth.json`, requires `publish: true` permission
 - **Admin token**: Set via `ADMIN_TOKEN` environment variable, bypasses namespace-level auth for uploads
   :::
@@ -308,6 +310,7 @@ jobs:
 ```
 
 Configure GitHub Secrets:
+
 - `REGISTRY_TOKEN` - Publishing token (namespace token or admin token)
 - `REGISTRY_URL` - Registry Server URL
 

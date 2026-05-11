@@ -6,8 +6,8 @@
  * is actually wired up and contains the phrases we care about.
  */
 
-import { describe, it, expect } from 'vitest'
 import { Command } from 'commander'
+import { it, expect, describe } from 'vitest'
 
 import { registerAddCommand } from '../../../src/lib/commands/add/index.js'
 import { registerInitCommand } from '../../../src/lib/commands/init/index.js'
@@ -153,9 +153,8 @@ describe('command help output', () => {
 
 describe('top-level overview', () => {
   it('cli --help appends overview with identifier syntax and flow', async () => {
-    const { overviewHelpText } = await import(
-      '../../../src/lib/help/overview.js'
-    )
+    const { overviewHelpText } =
+      await import('../../../src/lib/help/overview.js')
     expect(overviewHelpText).toContain('Core concepts:')
     expect(overviewHelpText).toContain('Identifier syntax:')
     expect(overviewHelpText).toContain('Typical flow:')

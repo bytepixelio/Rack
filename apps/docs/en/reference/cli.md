@@ -18,14 +18,14 @@ rk init -t <template> [-n <project-name>] [--ci] [-f] [--skip-install] [--skip-g
 
 ### Options
 
-| Option                      | Description                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------------- |
-| `-t, --template <template>` | **Required.** Template ID, e.g. `@presets/tutorial-project` or a single registry identifier        |
-| `-n, --name <project-name>` | Specify the project name in advance (interactive prompt when omitted)                             |
-| `-f, --force`               | Force overwrite an existing target directory                                                      |
-| `--ci`                      | Run in CI mode (non-interactive; also skips dependency install and Git init)                      |
-| `--skip-install`            | Skip dependency installation                                                                       |
-| `--skip-git`                | Skip Git repository initialization                                                                 |
+| Option                      | Description                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `-t, --template <template>` | **Required.** Template ID, e.g. `@presets/tutorial-project` or a single registry identifier |
+| `-n, --name <project-name>` | Specify the project name in advance (interactive prompt when omitted)                       |
+| `-f, --force`               | Force overwrite an existing target directory                                                |
+| `--ci`                      | Run in CI mode (non-interactive; also skips dependency install and Git init)                |
+| `--skip-install`            | Skip dependency installation                                                                |
+| `--skip-git`                | Skip Git repository initialization                                                          |
 
 ## `rk add`
 
@@ -103,32 +103,32 @@ rk config <subcommand>
 
 ### Subcommands
 
-| Subcommand              | Alias | Description                                                                              | Example                               |
-| ----------------------- | ----- | ---------------------------------------------------------------------------------------- | ------------------------------------- |
-| `rk config list`        | `ls`  | Display all configured registry sources                                                  | `rk config list`                      |
-| `rk config get <ns>`    | -     | View details for a specific namespace                                                    | `rk config get @rack`                 |
-| `rk config set <ns>`    | -     | Add or update registry source configuration                                              | `rk config set @internal --url <url>` |
-| `rk config remove <ns>` | `rm`  | Remove registry source configuration (requires confirmation unless `-f` is provided)     | `rk config remove @internal`          |
+| Subcommand              | Alias | Description                                                                          | Example                               |
+| ----------------------- | ----- | ------------------------------------------------------------------------------------ | ------------------------------------- |
+| `rk config list`        | `ls`  | Display all configured registry sources                                              | `rk config list`                      |
+| `rk config get <ns>`    | -     | View details for a specific namespace                                                | `rk config get @rack`                 |
+| `rk config set <ns>`    | -     | Add or update registry source configuration                                          | `rk config set @internal --url <url>` |
+| `rk config remove <ns>` | `rm`  | Remove registry source configuration (requires confirmation unless `-f` is provided) | `rk config remove @internal`          |
 
 #### `list` Subcommand Options
 
-| Option   | Description                                                       |
-| -------- | ----------------------------------------------------------------- |
-| `--json` | Output all configurations in JSON format (for script processing)  |
+| Option   | Description                                                      |
+| -------- | ---------------------------------------------------------------- |
+| `--json` | Output all configurations in JSON format (for script processing) |
 
 #### `get` Subcommand Options
 
-| Option   | Description                                                  |
-| -------- | ------------------------------------------------------------ |
-| `--json` | Output configuration in JSON format (for script processing)  |
+| Option   | Description                                                 |
+| -------- | ----------------------------------------------------------- |
+| `--json` | Output configuration in JSON format (for script processing) |
 
 #### `set` Subcommand Options
 
-| Option                 | Description                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| `--url <url>`          | Registry server address                                                              |
-| `--token <token>`      | Authentication token                                                                  |
-| `--header <header...>` | Custom request header in `Key: Value` format; can be used multiple times             |
+| Option                 | Description                                                              |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `--url <url>`          | Registry server address                                                  |
+| `--token <token>`      | Authentication token                                                     |
+| `--header <header...>` | Custom request header in `Key: Value` format; can be used multiple times |
 
 After setting the configuration, the command prints the new entry. `--token` is stored as a separate `token` field on disk; both `rk config get/list` output and outgoing HTTP requests expand it into an `Authorization: Bearer <token>` header.
 
@@ -222,9 +222,9 @@ rk doctor [options]
 
 ### Options
 
-| Option   | Description                                                       |
-| -------- | ----------------------------------------------------------------- |
-| `--json` | Output diagnostic results in structured JSON for CI consumption   |
+| Option   | Description                                                     |
+| -------- | --------------------------------------------------------------- |
+| `--json` | Output diagnostic results in structured JSON for CI consumption |
 
 ### Description
 

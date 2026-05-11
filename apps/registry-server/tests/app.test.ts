@@ -1,9 +1,10 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildApp } from '../src/app.js'
+import { it, expect, describe } from 'vitest'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+
 import type { Config } from '../src/types.js'
-import { describe, it, expect } from 'vitest'
-import { mkdtemp, writeFile, rm, mkdir } from 'fs/promises'
 
 function createConfig(
   storageRoot: string,

@@ -110,4 +110,3 @@ rk config set @mypresets --url https://registry.company.com
 # Use custom template
 rk init -t @mypresets/my-preset
 ```
-

@@ -14,11 +14,7 @@ aside: false
   "name": "my-project",
   "language": "ts",
   "template": "react-tutorial-project",
-  "items": [
-    "runtimes/node@1.0.0",
-    "build/vite",
-    "frameworks/react"
-  ]
+  "items": ["runtimes/node@1.0.0", "build/vite", "frameworks/react"]
 }
 ```
 
@@ -96,10 +92,6 @@ aside: false
 
 ```json
 {
-  "items": [
-    "runtimes/node@1.0.0",
-    "build/vite",
-    "frameworks/react"
-  ]
+  "items": ["runtimes/node@1.0.0", "build/vite", "frameworks/react"]
 }
 ```

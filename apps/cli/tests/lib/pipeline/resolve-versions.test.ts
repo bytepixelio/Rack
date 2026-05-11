@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
+import { createItem, createMockLogger } from '../../helpers/mocks.js'
 import {
   logConflicts,
   resolveDependencies
 } from '../../../src/lib/pipeline/resolve-versions.js'
-import { createItem, createMockLogger } from '../../helpers/mocks.js'
 
 describe('pipeline/resolve-versions resolveDependencies', () => {
   it('keeps a singly-declared version without marking a conflict', () => {

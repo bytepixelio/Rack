@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/pipeline/merge/plugin-loader.js', () => ({
   executePlugin: vi.fn()
 }))
 
+import { MergeError } from '../../../../src/lib/utils/errors.js'
+import { executePlugin } from '../../../../src/lib/pipeline/merge/plugin-loader.js'
 import {
   merge,
   mergeBuiltin,
   resolveStrategy
 } from '../../../../src/lib/pipeline/merge/index.js'
-import { executePlugin } from '../../../../src/lib/pipeline/merge/plugin-loader.js'
-import { MergeError } from '../../../../src/lib/utils/errors.js'
 
 const executePluginMock = executePlugin as unknown as ReturnType<typeof vi.fn>
 

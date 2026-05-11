@@ -4,7 +4,7 @@
  * The server provides an fs-based {@link RegistryStore} (recursive
  * `readdir`); the worker provides an R2-based one (`bucket.list` with a
  * prefix). The listing algorithm itself — "find every key matching
- * `<namespace>/**​/versions.json`, derive the registry-relative
+ * `<namespace>/**\/versions.json`, derive the registry-relative
  * prefix" — is shared so both runtimes return identical results.
  */
 

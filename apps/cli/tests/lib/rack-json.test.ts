@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { join } from 'node:path'
-import { writeFile, chmod } from 'node:fs/promises'
-import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
+import { chmod, writeFile } from 'node:fs/promises'
 import { rackJson } from '../../src/lib/rack-json.js'
+import { makeTmpDir, cleanTmpDir } from '../helpers/tmp.js'
 import { RackJsonError } from '../../src/lib/utils/errors.js'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 describe('rack-json', () => {
   let tmp: string

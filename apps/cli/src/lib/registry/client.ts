@@ -19,8 +19,8 @@ import { validateFilePath } from '@rack/registry-core'
 import { AppError, HttpError, RegistryNotFoundError } from '../utils/errors.js'
 import {
   parseNamespace,
-  formatCanonicalIdentifier,
-  type ParsedNamespace
+  type ParsedNamespace,
+  formatCanonicalIdentifier
 } from './identifier.js'
 
 import type { Logger } from '../infra/logger.js'
@@ -362,7 +362,11 @@ function applyLanguageOverrides(
     merged.dependencies = merge({}, item.dependencies, overrides.dependencies)
   }
   if (overrides.devDependencies) {
-    merged.devDependencies = merge({}, item.devDependencies, overrides.devDependencies)
+    merged.devDependencies = merge(
+      {},
+      item.devDependencies,
+      overrides.devDependencies
+    )
   }
   if (overrides.files?.length) {
     merged.files = mergeFilesByTarget(item.files ?? [], overrides.files)
@@ -384,10 +388,10 @@ function mergeFilesByTarget(
   base: RegistryFile[],
   overrides: RegistryFile[]
 ): RegistryFile[] {
-  const overrideMap = new Map(overrides.map(f => [f.target, f]))
+  const overrideMap = new Map(overrides.map((f) => [f.target, f]))
   const seen = new Set<string>()
 
-  const result = base.map(f => {
+  const result = base.map((f) => {
     if (overrideMap.has(f.target)) {
       seen.add(f.target)
       return overrideMap.get(f.target)!

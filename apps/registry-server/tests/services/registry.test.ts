@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { mkdtemp, mkdir, writeFile, rm } from 'fs/promises'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { rm, mkdir, mkdtemp, writeFile } from 'fs/promises'
+import { it, expect, describe, afterEach, beforeEach } from 'vitest'
 import { StorageService } from '../../src/services/storage.service.js'
 import { RegistryService } from '../../src/services/registry.service.js'
 
@@ -75,5 +75,4 @@ describe('RegistryService', () => {
     )
     expect(path).toContain('@rack/node/1.0.0/src/index.ts')
   })
-
 })

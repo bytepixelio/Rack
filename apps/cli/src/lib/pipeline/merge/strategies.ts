@@ -19,8 +19,8 @@
 import { MergeError } from '../../utils/errors.js'
 import {
   isEqual,
-  unionWith,
   cloneDeep,
+  unionWith,
   isPlainObject,
   dropRightWhile
 } from 'lodash-es'

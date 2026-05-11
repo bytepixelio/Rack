@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import {
-  CACHE_HEADERS,
   SCHEMA_FILES,
+  CACHE_HEADERS,
   SEMVER_PATTERN,
   CATEGORY_BY_TYPE
 } from '../src/constants.js'

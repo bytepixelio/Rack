@@ -1,5 +1,5 @@
-import { CACHE_HEADERS, SCHEMA_FILES } from '@rack/registry-core'
 import { notFound, streamObject } from '../lib/response.js'
+import { SCHEMA_FILES, CACHE_HEADERS } from '@rack/registry-core'
 
 /** GET /schemas/:file → R2 `schema/{file}` */
 export async function handleSchema(

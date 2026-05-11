@@ -12,14 +12,14 @@
  */
 
 import { createGunzip } from 'zlib'
-import { lstat, readdir } from 'fs/promises'
 import { pipeline } from 'stream/promises'
 import { extract as tarExtract } from 'tar'
-import { join, dirname, relative, sep } from 'path'
+import { lstat, readdir } from 'fs/promises'
 import { createHash, randomUUID } from 'crypto'
-import { validateFilePath, deriveSegments } from '@rack/registry-core'
+import { sep, join, dirname, relative } from 'path'
 import { createReadStream, createWriteStream } from 'fs'
 import { ALLOWED_UPLOAD_MIMETYPES } from '../constants.js'
+import { deriveSegments, validateFilePath } from '@rack/registry-core'
 import {
   ConflictError,
   ForbiddenError,

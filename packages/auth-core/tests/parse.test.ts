@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 
-import { parseAuthConfig, emptyAuthConfig } from '../src/parse.js'
+import { emptyAuthConfig, parseAuthConfig } from '../src/parse.js'
 
 describe('parseAuthConfig', () => {
   it('returns empty maps and no errors for an empty object', () => {
@@ -21,7 +21,10 @@ describe('parseAuthConfig', () => {
     const config = parseAuthConfig({ '@ns': null })
     expect(config.allowedNamespaces.has('@ns')).toBe(false)
     expect(config.errors).toEqual([
-      { namespace: '@ns', reason: expect.stringContaining('must map to an array') }
+      {
+        namespace: '@ns',
+        reason: expect.stringContaining('must map to an array')
+      }
     ])
   })
 
@@ -53,7 +56,10 @@ describe('parseAuthConfig', () => {
     expect(config.allowedNamespaces.has('@priv')).toBe(false)
     expect(config.tokens.has('@priv')).toBe(false)
     expect(config.errors).toEqual([
-      { namespace: '@priv', reason: expect.stringContaining('invalid expiresAt') }
+      {
+        namespace: '@priv',
+        reason: expect.stringContaining('invalid expiresAt')
+      }
     ])
   })
 
@@ -139,7 +145,10 @@ describe('parseAuthConfig', () => {
     expect(config.tokens.has('@bad')).toBe(false)
 
     expect(config.errors).toEqual([
-      { namespace: '@bad', reason: expect.stringContaining('invalid expiresAt') }
+      {
+        namespace: '@bad',
+        reason: expect.stringContaining('invalid expiresAt')
+      }
     ])
   })
 

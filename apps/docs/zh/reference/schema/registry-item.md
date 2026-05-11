@@ -274,7 +274,11 @@ aside: false
 
 ```json
 {
-  "conflicts": ["frameworks/vue", "frameworks/react@^18.0.0", "frameworks/svelte:ts"]
+  "conflicts": [
+    "frameworks/vue",
+    "frameworks/react@^18.0.0",
+    "frameworks/svelte:ts"
+  ]
 }
 ```
 
@@ -345,14 +349,14 @@ aside: false
 
 **`FileObject` 结构**
 
-| 字段          | 类型    | 必填 | 说明                            |
-| ------------- | ------- | ---- | ------------------------------- |
-| target        | string  | 是   | 目标文件路径                    |
-| type          | string  | 是   | `FileObject` 类型               |
-| content       | string  | 否   | 内联文件内容。非 asset 文件同时有 content 和 path 时优先使用 content |
+| 字段          | 类型    | 必填 | 说明                                                                        |
+| ------------- | ------- | ---- | --------------------------------------------------------------------------- |
+| target        | string  | 是   | 目标文件路径                                                                |
+| type          | string  | 是   | `FileObject` 类型                                                           |
+| content       | string  | 否   | 内联文件内容。非 asset 文件同时有 content 和 path 时优先使用 content        |
 | path          | string  | 否   | 服务端模板文件路径。`registry:asset` 同时有 path 和 content 时优先使用 path |
-| executable    | boolean | 否   | 是否需要可执行权限              |
-| mergeStrategy | object  | 否   | 合并策略配置                    |
+| executable    | boolean | 否   | 是否需要可执行权限                                                          |
+| mergeStrategy | object  | 否   | 合并策略配置                                                                |
 
 **`path` 格式要求**: 相对 POSIX 路径, 可选 `./` 前缀。每个路径段只允许 `A-Z a-z 0-9 . _ @ + -`。**不允许**使用: 百分号编码 (`%`)、查询符 (`?`)、片段符 (`#`)、反斜杠 (`\`)、绝对路径、空段, 以及 `.`/`..` 段。引用的文件必须存在于上传的包中, 且必须是普通文件 (不能是目录或符号链接)。
 
@@ -360,11 +364,11 @@ aside: false
 
 **`mergeStrategy` 配置**
 
-| 字段     | 类型   | 必填                         | 说明                                    |
-| -------- | ------ | ---------------------------- | --------------------------------------- |
-| type     | string | 是                           | 策略类型：`builtin` 或 `custom`          |
+| 字段     | 类型   | 必填                         | 说明                                                                                  |
+| -------- | ------ | ---------------------------- | ------------------------------------------------------------------------------------- |
+| type     | string | 是                           | 策略类型：`builtin` 或 `custom`                                                       |
 | strategy | string | `type` 为 `"builtin"` 时必填 | 内置策略名称：`json`、`ignore`、`env`、`overwrite`。`type` 为 `"custom"` 时不允许出现 |
-| script   | string | `type` 为 `"custom"` 时必填  | 插件脚本路径。`type` 为 `"builtin"` 时不允许出现 |
+| script   | string | `type` 为 `"custom"` 时必填  | 插件脚本路径。`type` 为 `"builtin"` 时不允许出现                                      |
 
 **示例**：
 

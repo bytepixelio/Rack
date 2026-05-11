@@ -17,9 +17,10 @@ Different registries may need to modify the same files.
 Rack applies different merge strategies based on file type, ensuring correct configuration without losing information.
 
 ::: tip Core Principles
+
 - **Installation order determines override priority**: Later-installed registries override earlier-installed ones
 - **File type determines merge strategy**: Configuration files are deeply merged, code files are fully replaced, ignore files are deduplicated and appended
-:::
+  :::
 
 ## Merge Strategy Types
 
@@ -229,13 +230,13 @@ API_URL=https://api.example.com  # ← newly added
 
 Rack determines which strategy to use based on file path and extension:
 
-| File Pattern                                                                                                                              | Merge Strategy            | Description                  |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------------------------- |
-| `package.json` / `tsconfig.json` / `tsconfig.app.json` / `tsconfig.base.json` / `jsconfig.json` / `rack.json`                             | Deep merge                | Known JSON config files      |
-| `*.schema.json`                                                                                                                           | Deep merge                | JSON Schema files            |
-| `.gitignore` / `.npmignore` / `.dockerignore` / `.eslintignore` / `.prettierignore`                                                       | Line deduplication append | Known ignore files           |
-| `.env*` (e.g. `.env`, `.env.example`, `.env.local`)                                                                                       | Smart merge               | Environment variable files   |
-| Anything else (including unlisted `*.json`, source files `*.ts` / `*.js` / `*.vue`, docs `*.md`, etc.)                                    | Complete replacement      | Default strategy             |
+| File Pattern                                                                                                  | Merge Strategy            | Description                |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------- |
+| `package.json` / `tsconfig.json` / `tsconfig.app.json` / `tsconfig.base.json` / `jsconfig.json` / `rack.json` | Deep merge                | Known JSON config files    |
+| `*.schema.json`                                                                                               | Deep merge                | JSON Schema files          |
+| `.gitignore` / `.npmignore` / `.dockerignore` / `.eslintignore` / `.prettierignore`                           | Line deduplication append | Known ignore files         |
+| `.env*` (e.g. `.env`, `.env.example`, `.env.local`)                                                           | Smart merge               | Environment variable files |
+| Anything else (including unlisted `*.json`, source files `*.ts` / `*.js` / `*.vue`, docs `*.md`, etc.)        | Complete replacement      | Default strategy           |
 
 > To force a specific strategy on a file, declare it explicitly via `files[].mergeStrategy` in `registry.json` (see "Custom Merge Strategy" below).
 
@@ -265,12 +266,12 @@ Add a `mergeStrategy` field to files in the `files` array of `registry.json`:
 
 ### Built-in Strategies
 
-| Strategy Name | Description              | Use Cases                        |
-| ------------- | ------------------------ | -------------------------------- |
-| `json`        | JSON deep merge          | JSON configuration files          |
-| `ignore`      | Line deduplication append | `.gitignore`, `.npmignore`       |
-| `env`         | Merge by key             | `.env`, `.env.example`           |
-| `overwrite`   | Complete replacement     | Code files, documentation files, binary asset files |
+| Strategy Name | Description               | Use Cases                                           |
+| ------------- | ------------------------- | --------------------------------------------------- |
+| `json`        | JSON deep merge           | JSON configuration files                            |
+| `ignore`      | Line deduplication append | `.gitignore`, `.npmignore`                          |
+| `env`         | Merge by key              | `.env`, `.env.example`                              |
+| `overwrite`   | Complete replacement      | Code files, documentation files, binary asset files |
 
 > Note: `registry:asset` files loaded from `path` use a binary write path in the CLI. They default to overwrite behavior and do not use text merge strategies such as `json`, `ignore`, `env`, or `custom`.
 
@@ -311,23 +312,22 @@ A plugin is a JavaScript module (supports ES Modules or CommonJS) that exports a
 export function merge(params, helpers) {
   const current = params.currentContent ? JSON.parse(params.currentContent) : {}
   const incoming = JSON.parse(params.incomingContent)
-  
+
   // Custom merge logic
   const merged = {
     ...current,
     ...incoming,
     // Special handling: merge arrays and deduplicate
-    plugins: [
-      ...(current.plugins || []),
-      ...(incoming.plugins || [])
-    ].filter((v, i, arr) => arr.indexOf(v) === i)
+    plugins: [...(current.plugins || []), ...(incoming.plugins || [])].filter(
+      (v, i, arr) => arr.indexOf(v) === i
+    )
   }
-  
+
   // Can use environment information and helper functions from helpers (e.g., language)
   if (helpers.language === 'ts') {
     // TypeScript-specific merge logic
   }
-  
+
   return {
     content: JSON.stringify(merged, null, 2) + '\n',
     changed: true,
@@ -362,20 +362,21 @@ Plugins must export the following interface:
 
 ```typescript
 interface MergeParams {
-  filePath: string           // Target file path
-  currentContent?: string    // Existing file content (if any)
-  incomingContent: string    // New file content
-  fileDescriptor?: object    // File descriptor
+  filePath: string // Target file path
+  currentContent?: string // Existing file content (if any)
+  incomingContent: string // New file content
+  fileDescriptor?: object // File descriptor
 }
 
 interface MergeHelpers {
-  language?: 'js' | 'ts'      // Language variant
+  language?: 'js' | 'ts' // Language variant
 }
 
 interface MergeResult {
-  content: string            // Merged content
-  changed: boolean           // Whether changes occurred
-  warnings?: Array<{         // Warning messages (optional)
+  content: string // Merged content
+  changed: boolean // Whether changes occurred
+  warnings?: Array<{
+    // Warning messages (optional)
     message: string
   }>
 }
@@ -390,11 +391,12 @@ export function merge(
 **Important Notes**:
 
 1. **File doesn't exist**: `currentContent` will be `null` or `undefined`, plugins must handle this:
+
    ```javascript
    export function merge(params, helpers) {
-     const current = params.currentContent 
-       ? JSON.parse(params.currentContent) 
-       : {}  // Use empty object as default when file doesn't exist
+     const current = params.currentContent
+       ? JSON.parse(params.currentContent)
+       : {} // Use empty object as default when file doesn't exist
      // ...
    }
    ```

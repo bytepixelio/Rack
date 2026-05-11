@@ -3,9 +3,9 @@
  */
 
 import { tmpdir } from 'node:os'
-import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { mkdir, rm } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { rm, mkdir } from 'node:fs/promises'
 
 export async function makeTmpDir(prefix = 'rack-test'): Promise<string> {
   const dir = join(tmpdir(), `${prefix}-${randomUUID()}`)

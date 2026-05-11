@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { readFile, access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 
 import type { Material } from './discover.js'
 

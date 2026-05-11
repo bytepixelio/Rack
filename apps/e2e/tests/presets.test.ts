@@ -6,7 +6,7 @@ import { startServer } from '../src/server.js'
 import { verifyBaseline } from '../src/baseline.js'
 import { createWorkspace } from '../src/workspace.js'
 import { loadSmoke, applySmoke } from '../src/assertions.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { it, expect, afterAll, describe, beforeAll } from 'vitest'
 import { discoverPresets, discoverRegistries } from '../src/discover.js'
 
 import type { Material } from '../src/discover.js'

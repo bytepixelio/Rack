@@ -21,9 +21,9 @@ vi.mock('../../../../src/lib/infra/prompts.js', () => ({
   }
 }))
 
-import { registerDoctorCommand } from '../../../../src/lib/commands/doctor/index.js'
-import { runChecks } from '../../../../src/lib/commands/doctor/checks.js'
 import { runCommand } from '../helpers.js'
+import { runChecks } from '../../../../src/lib/commands/doctor/checks.js'
+import { registerDoctorCommand } from '../../../../src/lib/commands/doctor/index.js'
 
 const runChecksMock = runChecks as unknown as ReturnType<typeof vi.fn>
 

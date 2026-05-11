@@ -179,14 +179,14 @@ LOG_LEVEL=info
 
 **Level Description**
 
-| Level   | Description                       | Use Case           |
-| ------- | --------------------------------- | ------------------ |
-| `trace` | Most detailed logs, all information | Deep debugging   |
-| `debug` | Debug information                 | Development        |
-| `info`  | General information (default)     | Production         |
-| `warn`  | Warning messages                  | Production         |
-| `error` | Error messages                    | Production         |
-| `fatal` | Fatal errors                      | Critical issues only |
+| Level   | Description                         | Use Case             |
+| ------- | ----------------------------------- | -------------------- |
+| `trace` | Most detailed logs, all information | Deep debugging       |
+| `debug` | Debug information                   | Development          |
+| `info`  | General information (default)       | Production           |
+| `warn`  | Warning messages                    | Production           |
+| `error` | Error messages                      | Production           |
+| `fatal` | Fatal errors                        | Critical issues only |
 
 ### Sensitive Header Redaction
 

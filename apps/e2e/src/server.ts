@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { rm, mkdtemp, writeFile } from 'node:fs/promises'
 import { buildApp } from '../../registry-server/src/app.js'
 
 import type { AddressInfo } from 'node:net'

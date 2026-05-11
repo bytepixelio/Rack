@@ -12,9 +12,9 @@ vi.mock('../../../../src/lib/rackrc.js', () => ({
   rackrc: { listRegistries: vi.fn() }
 }))
 
-import { registerListCommand } from '../../../../src/lib/commands/config/list.js'
-import { rackrc } from '../../../../src/lib/rackrc.js'
 import { runCommand } from '../helpers.js'
+import { rackrc } from '../../../../src/lib/rackrc.js'
+import { registerListCommand } from '../../../../src/lib/commands/config/list.js'
 
 const listMock = rackrc.listRegistries as unknown as ReturnType<typeof vi.fn>
 

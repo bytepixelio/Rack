@@ -21,8 +21,8 @@ import type { FastifyBaseLogger } from 'fastify'
 import type {
   WebhookJob,
   WebhookConfig,
-  WebhookConfigFile,
   RegistryEventType,
+  WebhookConfigFile,
   RegistryEventPayload,
   WebhookDeliveryResult
 } from '../types.js'

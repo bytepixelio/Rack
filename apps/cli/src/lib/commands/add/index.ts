@@ -9,9 +9,9 @@
 import { Command } from 'commander'
 import { addHelpText } from './help.js'
 import { addRegistry } from './pipeline.js'
-import { AppError } from '../../utils/errors.js'
 import { rackJson } from '../../rack-json.js'
 import { Logger } from '../../infra/logger.js'
+import { AppError } from '../../utils/errors.js'
 import { Prompter } from '../../infra/prompts.js'
 import { isPreset, canonicalizeIdentifier } from '../../registry/identifier.js'
 import {

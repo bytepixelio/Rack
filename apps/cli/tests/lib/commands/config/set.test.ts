@@ -20,9 +20,9 @@ vi.mock('../../../../src/lib/rackrc.js', () => ({
   }
 }))
 
-import { registerSetCommand } from '../../../../src/lib/commands/config/set.js'
-import { rackrc } from '../../../../src/lib/rackrc.js'
 import { runCommand } from '../helpers.js'
+import { rackrc } from '../../../../src/lib/rackrc.js'
+import { registerSetCommand } from '../../../../src/lib/commands/config/set.js'
 
 const loadMock = rackrc.load as unknown as ReturnType<typeof vi.fn>
 const setMock = rackrc.setRegistry as unknown as ReturnType<typeof vi.fn>

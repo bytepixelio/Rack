@@ -16,11 +16,7 @@ aside: false
   "description": "React tutorial project preset with TypeScript, Vite, React Router, etc.",
   "author": "John Doe",
   "tags": ["react", "tutorial", "typescript"],
-  "registries": [
-    "runtimes/node",
-    "build/vite",
-    "frameworks/react"
-  ]
+  "registries": ["runtimes/node", "build/vite", "frameworks/react"]
 }
 ```
 

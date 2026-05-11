@@ -16,10 +16,10 @@ vi.mock('../../../../src/lib/infra/http.js', () => {
   return { HttpClient: vi.fn(() => ({ get })), __get: get }
 })
 
-import { registerListCommand } from '../../../../src/lib/commands/list/index.js'
+import { runCommand } from '../helpers.js'
 import { rackrc } from '../../../../src/lib/rackrc.js'
 import * as httpModule from '../../../../src/lib/infra/http.js'
-import { runCommand } from '../helpers.js'
+import { registerListCommand } from '../../../../src/lib/commands/list/index.js'
 
 const getRegistryMock = rackrc.getRegistry as unknown as ReturnType<
   typeof vi.fn

@@ -15,10 +15,10 @@ vi.mock('../../../../src/lib/commands/add/pipeline.js', () => ({
   addRegistry: vi.fn()
 }))
 
-import { registerAddCommand } from '../../../../src/lib/commands/add/index.js'
+import { runCommand } from '../helpers.js'
 import { rackJson } from '../../../../src/lib/rack-json.js'
 import { addRegistry } from '../../../../src/lib/commands/add/pipeline.js'
-import { runCommand } from '../helpers.js'
+import { registerAddCommand } from '../../../../src/lib/commands/add/index.js'
 
 const readOrCreateMock = rackJson.readOrCreate as unknown as ReturnType<
   typeof vi.fn

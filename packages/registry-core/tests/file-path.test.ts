@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { validateFilePath, FILE_PATH_PATTERN } from '../src/file-path.js'
 
 describe('validateFilePath', () => {
@@ -82,9 +82,19 @@ describe('FILE_PATH_PATTERN', () => {
 
   it('agrees with validateFilePath on all test cases', () => {
     const paths = [
-      'templates/app.vue', './templates/app.vue', '.eslintrc.json',
-      '../evil', '.', '..', 'templates/../evil', '/absolute', '',
-      'templates//x', 'templates/%2e/x', 'templates/a?b', 'templates/a#b'
+      'templates/app.vue',
+      './templates/app.vue',
+      '.eslintrc.json',
+      '../evil',
+      '.',
+      '..',
+      'templates/../evil',
+      '/absolute',
+      '',
+      'templates//x',
+      'templates/%2e/x',
+      'templates/a?b',
+      'templates/a#b'
     ]
     for (const p of paths) {
       const regexResult = re.test(p)

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('../../../../src/lib/registry/client.js', () => ({
   registry: { fetchItem: vi.fn(), fetchItems: vi.fn() }
@@ -10,11 +10,11 @@ vi.mock('../../../../src/lib/pkg.js', () => ({
   pkg: { update: vi.fn() }
 }))
 
-import { addRegistry } from '../../../../src/lib/commands/add/pipeline.js'
+import { pkg } from '../../../../src/lib/pkg.js'
 import { registry } from '../../../../src/lib/registry/client.js'
 import { applyFiles } from '../../../../src/lib/pipeline/apply.js'
-import { pkg } from '../../../../src/lib/pkg.js'
 import { createItem, createMockLogger } from '../../../helpers/mocks.js'
+import { addRegistry } from '../../../../src/lib/commands/add/pipeline.js'
 import { AppError, ConflictError } from '../../../../src/lib/utils/errors.js'
 
 const fetchItemMock = registry.fetchItem as unknown as ReturnType<typeof vi.fn>

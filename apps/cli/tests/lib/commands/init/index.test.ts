@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import { makeTmpDir, cleanTmpDir } from '../../../helpers/tmp.js'
 import {
   it,
   vi,
@@ -7,8 +9,6 @@ import {
   beforeEach,
   type MockInstance
 } from 'vitest'
-import { join } from 'node:path'
-import { makeTmpDir, cleanTmpDir } from '../../../helpers/tmp.js'
 
 vi.mock('../../../../src/lib/commands/init/pipeline.js', () => ({
   initProject: vi.fn()
@@ -28,11 +28,11 @@ vi.mock('../../../../src/lib/infra/prompts.js', () => ({
   }
 }))
 
-import { registerInitCommand } from '../../../../src/lib/commands/init/index.js'
-import { initProject } from '../../../../src/lib/commands/init/pipeline.js'
+import { runCommand } from '../helpers.js'
 import { pkg } from '../../../../src/lib/pkg.js'
 import { git } from '../../../../src/lib/git.js'
-import { runCommand } from '../helpers.js'
+import { initProject } from '../../../../src/lib/commands/init/pipeline.js'
+import { registerInitCommand } from '../../../../src/lib/commands/init/index.js'
 
 const initProjectMock = initProject as unknown as ReturnType<typeof vi.fn>
 const installMock = pkg.install as unknown as ReturnType<typeof vi.fn>

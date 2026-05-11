@@ -118,10 +118,7 @@
         "mergeStrategy": { "$ref": "#/$defs/mergeStrategy" }
       },
       "required": ["target", "type"],
-      "anyOf": [
-        { "required": ["path"] },
-        { "required": ["content"] }
-      ]
+      "anyOf": [{ "required": ["path"] }, { "required": ["content"] }]
     }
   },
   "properties": {

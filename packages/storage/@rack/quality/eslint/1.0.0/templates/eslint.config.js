@@ -7,12 +7,7 @@ import typescript from '@typescript-eslint/eslint-plugin'
 
 export default [
   {
-    ignores: [
-      '**/dist/**',
-      '**/types/**',
-      '**/coverage/**',
-      'eslint.config.js'
-    ]
+    ignores: ['**/dist/**', '**/types/**', '**/coverage/**', 'eslint.config.js']
   },
   js.configs.recommended,
   {
