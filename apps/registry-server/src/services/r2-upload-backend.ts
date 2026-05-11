@@ -78,16 +78,17 @@ export class R2UploadBackend {
     const manifestPath = files.find(
       (p) => p.slice(localDir.length + 1) === 'registry.json'
     )
-    const others = manifestPath
-      ? files.filter((p) => p !== manifestPath)
-      : files
+    if (!manifestPath) {
+      throw new Error(
+        `uploadDirectory requires registry.json under ${localDir}`
+      )
+    }
+    const others = files.filter((p) => p !== manifestPath)
 
     for (const filePath of others) {
       await this.putLocalFile(filePath, localDir, keyPrefix)
     }
-    if (manifestPath) {
-      await this.putLocalFile(manifestPath, localDir, keyPrefix)
-    }
+    await this.putLocalFile(manifestPath, localDir, keyPrefix)
 
     this.logger.info(
       { keyPrefix, fileCount: files.length },
