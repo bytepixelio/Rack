@@ -201,12 +201,15 @@ For the full table of volumes / env vars / parallel-mode notes, see the Docker s
 # Must build from the repo root (the Dockerfile needs packages/auth-core + schema files from the root)
 docker build -f apps/registry-server/Dockerfile -t rack-registry .
 
-# Default run
+# Default run (the image sets STORAGE_ROOT=/data, SCHEMA_DIR=/app/schema,
+# AUTH_CONFIG_PATH=/app/config/auth.json, WEBHOOK_CONFIG_PATH=/app/config/webhooks.json
+# as defaults — no -e overrides needed)
 docker run -p 18080:8080 rack-registry
 
-# Persistent storage + custom auth + admin token
+# Persistent storage + custom auth + admin token (run from repo root)
 docker run -p 18080:8080 \
   -v $(pwd)/config/auth.json:/app/config/auth.json:ro \
+  -v $(pwd)/apps/registry-server/config/webhooks.json:/app/config/webhooks.json:ro \
   -v registry-data:/data \
   -e ADMIN_TOKEN=your-secret \
   rack-registry

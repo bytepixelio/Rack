@@ -245,6 +245,39 @@ describe('Registry routes with auth', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('should bypass namespace auth for admin token', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'registry-admin-test-'))
+    await mkdir(join(dir, '@rack', 'node', '1.0.0'), { recursive: true })
+    await writeFile(
+      join(dir, '@rack', 'node', '1.0.0', 'registry.json'),
+      JSON.stringify({ name: '@rack/node', version: '1.0.0' })
+    )
+    await writeFile(
+      join(dir, '@rack', 'node', 'versions.json'),
+      JSON.stringify({ versions: ['1.0.0'] })
+    )
+    await writeFile(
+      join(dir, 'auth.json'),
+      JSON.stringify({ '@rack': [{ token: 'valid-token', publish: true }] })
+    )
+    await writeFile(join(dir, '.healthcheck'), '')
+
+    const adminApp = await buildApp(
+      createConfig(dir, { adminToken: 'admin-token' })
+    )
+
+    const res = await adminApp.inject({
+      method: 'GET',
+      url: '/registries/@rack/node/1.0.0',
+      headers: { authorization: 'Bearer admin-token' }
+    })
+
+    expect(res.statusCode).toBe(200)
+
+    await adminApp.close()
+    await rm(dir, { recursive: true, force: true })
+  })
+
   it('should cache token across multiple getAuthToken calls', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'token-cache-test-'))
     await writeFile(join(dir, '.healthcheck'), '')

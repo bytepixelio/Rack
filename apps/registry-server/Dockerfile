@@ -16,7 +16,11 @@ RUN pnpm --filter @rack/registry-server build
 FROM node:22-slim
 
 WORKDIR /app
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    STORAGE_ROOT=/data \
+    SCHEMA_DIR=/app/schema \
+    AUTH_CONFIG_PATH=/app/config/auth.json \
+    WEBHOOK_CONFIG_PATH=/app/config/webhooks.json
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

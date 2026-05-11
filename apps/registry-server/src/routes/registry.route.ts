@@ -111,18 +111,22 @@ async function registryRoute(app: FastifyInstance): Promise<void> {
         throw new ForbiddenError('FORBIDDEN_NAMESPACE', 'Namespace not allowed')
       }
 
-      // Auth check
-      const authResult = request.verifyNamespaceAccess(locator.namespace)
-      if (!authResult.allowed && authResult.error) {
-        request.log.warn(
-          { namespace: locator.namespace, reason: authResult.error.code },
-          'Namespace access denied'
-        )
-        throw new AppError(
-          authResult.error.code,
-          authResult.error.message,
-          authResult.error.statusCode
-        )
+      // Auth check — admin token bypasses namespace-level auth so the same
+      // master credential that publishes can also read back (matches the
+      // Worker's `enforceNamespaceAccess` contract).
+      if (!request.isAdminToken()) {
+        const authResult = request.verifyNamespaceAccess(locator.namespace)
+        if (!authResult.allowed && authResult.error) {
+          request.log.warn(
+            { namespace: locator.namespace, reason: authResult.error.code },
+            'Namespace access denied'
+          )
+          throw new AppError(
+            authResult.error.code,
+            authResult.error.message,
+            authResult.error.statusCode
+          )
+        }
       }
 
       // Resolve resource and stream response
