@@ -15,7 +15,6 @@ import {
 } from '../registry/identifier.js'
 
 import type { Logger } from '../infra/logger.js'
-import type { Language } from '../registry/types.js'
 import type { ResolvedRegistryItem } from './types.js'
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -27,6 +26,12 @@ import type { ResolvedRegistryItem } from './types.js'
  * fetching and resolving each one. New entries added to the Map
  * are automatically visited by the iterator, so transitive
  * dependencies are resolved without an explicit queue.
+ *
+ * Each dep is fetched with its parent's `resolvedLanguage` so an
+ * explicit `:js`/`:ts` choice on a root genuinely flows downstream —
+ * `fetchItem` still lets a dep override via its own suffix (e.g. a JS
+ * registry that pins a TS-only sub-dep), but the default tracks the
+ * parent instead of getting reset to the project language at every hop.
  *
  * Transitive dependencies whose canonical id is in `installed` are
  * skipped — they're neither fetched nor included in the result, since
@@ -42,7 +47,6 @@ import type { ResolvedRegistryItem } from './types.js'
  * would be wrong.
  *
  * @param items     - Initial registry items (always included in the result)
- * @param language  - Language variant for fetching dependencies
  * @param logger    - Logger instance
  * @param installed - Identifiers already installed in the project; their
  *                    transitive appearance is suppressed. Defaults to empty.
@@ -54,17 +58,16 @@ import type { ResolvedRegistryItem } from './types.js'
  * @example
  * ```ts
  * // If A depends on B, and B depends on C:
- * const all = await resolveRegistryDependencies([A], 'ts', logger)
+ * const all = await resolveRegistryDependencies([A], logger)
  * // → [A, B, C]
  *
  * // If A is already installed and we're adding B (which depends on A):
- * const all = await resolveRegistryDependencies([B], 'ts', logger, ['A'])
+ * const all = await resolveRegistryDependencies([B], logger, ['A'])
  * // → [B]  (A is skipped — not re-fetched, not re-applied)
  * ```
  */
 export async function resolveRegistryDependencies(
   items: ResolvedRegistryItem[],
-  language: Language | undefined,
   logger: Logger,
   installed: Iterable<string> = []
 ): Promise<ResolvedRegistryItem[]> {
@@ -94,7 +97,10 @@ export async function resolveRegistryDependencies(
       }
 
       logger.debug(`Fetching dependency: ${depId}`)
-      resolved.set(key, await registry.fetchItem(depId, { language }))
+      resolved.set(
+        key,
+        await registry.fetchItem(depId, { language: current.resolvedLanguage })
+      )
     }
   }
 
