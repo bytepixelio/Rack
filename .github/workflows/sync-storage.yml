@@ -1,0 +1,54 @@
+name: Sync Storage to R2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/storage/schema/**'
+      - 'packages/storage/presets/**'
+      - '.github/workflows/sync-storage.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-storage
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Sync schema/ to R2
+        run: |
+          aws s3 sync packages/storage/schema/ "s3://${R2_BUCKET_NAME}/schema/" \
+            --delete \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
+      - name: Sync presets/ to R2
+        run: |
+          aws s3 sync packages/storage/presets/ "s3://${R2_BUCKET_NAME}/presets/" \
+            --delete \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
+      # Hit one schema and one preset through the Worker — confirms the freshly
+      # synced objects are visible at the public domain. A missing or stale
+      # object would surface as a non-2xx here.
+      - name: Post-sync read check
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            https://registry.rackjs.com/schemas/registry-item.json -o /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            https://registry.rackjs.com/presets/node/preset.json -o /dev/null
