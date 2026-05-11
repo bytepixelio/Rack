@@ -201,12 +201,15 @@ docker compose --env-file .env.r2.local -p rack-r2 up -d
 # 必须在仓库根目录构建 (Dockerfile 需要从根访问 packages/auth-core 和 schema)
 docker build -f apps/registry-server/Dockerfile -t rack-registry .
 
-# 默认运行
+# 默认运行 (镜像已设好 STORAGE_ROOT=/data、SCHEMA_DIR=/app/schema、
+# AUTH_CONFIG_PATH=/app/config/auth.json、WEBHOOK_CONFIG_PATH=/app/config/webhooks.json,
+# 无需额外 -e)
 docker run -p 18080:8080 rack-registry
 
-# 持久化存储 + 自定义 auth + admin token
+# 持久化存储 + 自定义 auth + admin token (在仓库根目录执行)
 docker run -p 18080:8080 \
   -v $(pwd)/config/auth.json:/app/config/auth.json:ro \
+  -v $(pwd)/apps/registry-server/config/webhooks.json:/app/config/webhooks.json:ro \
   -v registry-data:/data \
   -e ADMIN_TOKEN=your-secret \
   rack-registry
