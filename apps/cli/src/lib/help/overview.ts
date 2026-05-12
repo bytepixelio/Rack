@@ -15,22 +15,22 @@ Core concepts:
 
 Identifier syntax:
   @<namespace>/<path>[/<subpath>...][@<version>][:<language>]
-    @rack/tailwindcss
+    @rack/quality/eslint
     @rack/runtimes/node@1.0.0
-    @rack/vue:ts                   # force TypeScript variant
-    @presets/tutorial-project
+    @rack/runtimes/node:ts         # force TypeScript variant
+    @presets/node
 
   Namespaces:  @[a-z0-9][a-z0-9-_]*[a-z0-9]   (configure via 'rk config set')
   Path segments: [a-z0-9-]+
   Language:    ts | js  (optional; overrides registry's defaultLanguage)
 
   Identifiers without a namespace default to @rack
-  (e.g. 'tailwindcss' is resolved as '@rack/tailwindcss').
+  (e.g. 'quality/eslint' is resolved as '@rack/quality/eslint').
 
 Typical flow:
-  $ rk init -t @presets/tutorial-project -n my-app
+  $ rk init -t @presets/node -n my-app
   $ cd my-app
-  $ rk add @rack/tailwindcss
+  $ rk add @rack/testing/vitest
 
 Config:
   ~/.rackrc (JSON) holds registry URLs, tokens, and headers.

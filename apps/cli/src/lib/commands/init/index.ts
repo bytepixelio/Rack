@@ -43,7 +43,7 @@ interface InitCommandOptions {
    * file declares the same `target` and a merge strategy rewrites it.
    */
   force?: boolean
-  /** Template to use (e.g., '@presets/tutorial-project'). */
+  /** Template to use (e.g., '@presets/node'). */
   template: string
   /** Skip git repository initialization. */
   skipGit?: boolean

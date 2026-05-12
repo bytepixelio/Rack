@@ -35,7 +35,7 @@ export function registerAddCommand(program: Command): void {
     .description('Add a registry to the project')
     .argument(
       '<registry>',
-      'Registry identifier to add (e.g., @rack/tailwindcss)'
+      'Registry identifier to add (e.g., @rack/quality/eslint)'
     )
     .addHelpText('after', addHelpText)
     .action(async (identifier: string) => {

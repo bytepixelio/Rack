@@ -872,7 +872,7 @@ export async function preflight(targetDir: string): Promise<void> {
 - 如果产品接受残余风险：把 1.8 / 结论里的措辞改成“已通过 preflight 缓解常见失败，不提供完整 transaction”，并把这条作为低频残余风险记录。
 - 如果目标是严格原子性：在 apply 前 snapshot `package.json` 和 `rack.json`，把 `pkg.update` / `rackJson.update` 纳入同一个 commit/rollback 流程；任一后置写失败时恢复 manifest/package，并调用 `applyFiles` 的文件 rollback 或统一的 transaction journal。
 
-### 6.6 CLI 内置 help、测试和发布产物仍锁死不可运行示例
+### 6.6 CLI 内置 help、测试和发布产物仍锁死不可运行示例 ✅ 已解决
 
 位置：
 
