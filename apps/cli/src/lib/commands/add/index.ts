@@ -69,15 +69,28 @@ export function registerAddCommand(program: Command): void {
           (r) => canonicalizeIdentifier(r) === requestedKey
         )
         if (existingMatch) {
-          // Same canonical id but a different version is an upgrade
-          // request — Rack does not support that, so refuse loudly
-          // instead of silently keeping the old version (which is what
-          // exit-0 "already installed" would imply to CI). Identical
-          // versions (including both omitted) fall through to the
-          // friendly skip path.
+          // Same canonical id, mismatched version is an upgrade request —
+          // Rack does not support that, so refuse loudly instead of
+          // silently keeping the old version (which is what exit-0
+          // "already installed" would imply to CI). The check is
+          // asymmetric on purpose:
+          //
+          // - Both pinned, different version → real upgrade attempt; throw.
+          // - Installed unpinned, request pinned → legacy manifest, the
+          //   actual installed version is unknown so refuse conservatively
+          //   (§6.10 retains this for migration of old rack.json files).
+          // - Installed pinned, request unpinned → §6.10 writes pinned
+          //   identifiers, so the manifest is authoritative; treat as a
+          //   match and short-circuit.
+          // - Both unpinned, or both pinned to the same version → match.
           const installedVersion = parseNamespace(existingMatch).version
           const requestedVersion = parseNamespace(identifier).version
-          if (installedVersion !== requestedVersion) {
+          const mismatch =
+            (installedVersion !== undefined &&
+              requestedVersion !== undefined &&
+              installedVersion !== requestedVersion) ||
+            (installedVersion === undefined && requestedVersion !== undefined)
+          if (mismatch) {
             throw new VersionMismatchError(existingMatch, identifier)
           }
           displayAlreadyInstalled(identifier, existingMatch, logger)

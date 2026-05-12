@@ -37,7 +37,9 @@ describe('pipeline/install-plan buildInstallPlan', () => {
     expect(plan.resolvedDependencies).toEqual([])
     expect(plan.alreadyInstalled).toEqual([])
     expect(plan.toApply).toEqual([root])
-    expect(plan.toRecord).toEqual(['@rack/a'])
+    // toRecord pins the version returned by the registry server even when
+    // the user requested `@rack/a` unpinned — see §6.10.
+    expect(plan.toRecord).toEqual(['@rack/a@1.0.0'])
   })
 
   it('separates transitive dependencies from requested roots', async () => {
@@ -62,7 +64,7 @@ describe('pipeline/install-plan buildInstallPlan', () => {
       '@rack/a',
       '@rack/b'
     ])
-    expect(plan.toRecord).toEqual(['@rack/a', '@rack/b'])
+    expect(plan.toRecord).toEqual(['@rack/a@1.0.0', '@rack/b@1.0.0'])
   })
 
   it('exposes already-installed items and skips them from toApply', async () => {
@@ -84,7 +86,7 @@ describe('pipeline/install-plan buildInstallPlan', () => {
 
     expect(plan.alreadyInstalled).toEqual([installedA])
     expect(plan.toApply.map((i) => i.identifier)).toEqual(['@rack/b'])
-    expect(plan.toRecord).toEqual(['@rack/b'])
+    expect(plan.toRecord).toEqual(['@rack/b@1.0.0'])
     // A is fetched via fetchItems (for conflict checking), not fetchItem.
     expect(fetchItemMock).not.toHaveBeenCalled()
   })

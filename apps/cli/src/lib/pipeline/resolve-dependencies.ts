@@ -89,7 +89,17 @@ export async function resolveRegistryDependencies(
       if (installedId !== undefined) {
         const installedVersion = parseNamespace(installedId).version
         const requestedVersion = parseNamespace(depId).version
-        if (installedVersion !== requestedVersion) {
+        // Asymmetric check (§6.10): the version-pinned manifest is
+        // authoritative when present, so an unpinned dep against a
+        // pinned install is a match. The legacy case (unpinned install
+        // + pinned dep) stays conservative because the actually-installed
+        // version is unknown and silently choosing it would be wrong.
+        const mismatch =
+          (installedVersion !== undefined &&
+            requestedVersion !== undefined &&
+            installedVersion !== requestedVersion) ||
+          (installedVersion === undefined && requestedVersion !== undefined)
+        if (mismatch) {
           throw new VersionMismatchError(installedId, depId)
         }
         logger.debug(`Skipping already-installed dependency: ${depId}`)

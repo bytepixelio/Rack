@@ -132,7 +132,11 @@ export async function buildInstallPlan(
     resolvedDependencies,
     toApply,
     alreadyInstalled: installedItems,
-    toRecord: toApply.map((item) => item.identifier)
+    // Persist the version-pinned identifier so unpinned `rk add @rack/foo`
+    // / preset roots land in `rack.json.items` as `@rack/foo@1.0.0` — a
+    // later `rk add @rack/foo@1.0.0` then matches the existing entry
+    // instead of being treated as a `VERSION_MISMATCH` upgrade attempt.
+    toRecord: toApply.map((item) => item.resolvedIdentifier)
   }
 }
 

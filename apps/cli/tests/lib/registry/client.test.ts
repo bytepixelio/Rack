@@ -87,6 +87,33 @@ describe('registry/client fetchItem', () => {
     expect(item.identifier).toBe('@rack/vue')
   })
 
+  it('pins server-returned item.version into resolvedIdentifier for unpinned requests', async () => {
+    // Without this pin, an unpinned `@rack/vue` request would land in
+    // rack.json.items as `@rack/vue` and a later `rk add @rack/vue@1.0.0`
+    // would trip VERSION_MISMATCH against an effectively-equal install.
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue')
+    expect(item.resolvedIdentifier).toBe('@rack/vue@1.0.0')
+  })
+
+  it('preserves an explicit :language in resolvedIdentifier', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue:js')
+    expect(item.resolvedIdentifier).toBe('@rack/vue@1.0.0:js')
+  })
+
+  it('keeps the pinned version unchanged in resolvedIdentifier when caller already pinned it', async () => {
+    getRegistryMock.mockResolvedValue({ url: 'https://r.example.com' })
+    http.get.mockResolvedValue({ data: baseItem })
+
+    const item = await registry.fetchItem('@rack/vue@1.0.0')
+    expect(item.resolvedIdentifier).toBe('@rack/vue@1.0.0')
+  })
+
   it('strips trailing slashes from the registry base URL', async () => {
     getRegistryMock.mockResolvedValue({ url: 'https://r.example.com///' })
     http.get.mockResolvedValue({ data: baseItem })

@@ -154,6 +154,23 @@ describe('pipeline/resolve-dependencies', () => {
     ).rejects.toBeInstanceOf(VersionMismatchError)
   })
 
+  it('skips when installed pins a version and transitive dep is unpinned', async () => {
+    // §6.10: the pinned manifest is authoritative, so an unpinned dep
+    // against a pinned install is a no-op — the asymmetric counterpart
+    // to the legacy "unpinned installed + pinned dep" case above.
+    const a = createItem({
+      identifier: '@rack/a',
+      registryDependencies: ['@rack/b']
+    })
+
+    const got = await resolveRegistryDependencies([a], createMockLogger(), [
+      '@rack/b@1.0.0'
+    ])
+
+    expect(fetchItemMock).not.toHaveBeenCalled()
+    expect(got.map((i) => i.identifier)).toEqual(['@rack/a'])
+  })
+
   it('skips when installed and transitive dep pin the same version', async () => {
     const a = createItem({
       identifier: '@rack/a',

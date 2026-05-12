@@ -1052,7 +1052,7 @@ return { version: '0.0.0' }
 - 单测要覆盖真实 source layout：期望 `getCliVersion()` 等于 `apps/cli/package.json.version`，`getMinNodeVersion()` 等于 `engines.node` 的 minVersion。
 - 注释里的开发路径同步改成 `src/lib/utils/version.ts`，避免后续维护者继续按错误目录理解。
 
-### 6.10 `rack.json.items` 记录请求标识而不是解析后的实际版本，和“不支持升级”语义冲突
+### 6.10 `rack.json.items` 记录请求标识而不是解析后的实际版本，和“不支持升级”语义冲突 ✅ 已解决
 
 位置：
 

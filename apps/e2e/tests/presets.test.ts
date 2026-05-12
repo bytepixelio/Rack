@@ -52,7 +52,12 @@ describe('every preset scaffolds via rk init --ci', () => {
       const canonicalRegistries = preset.registries.map((r: string) =>
         r.startsWith('@') ? r : `@rack/${r}`
       )
-      expect(manifest.items).toEqual(
+      // rack.json.items records the version-pinned identifier (§6.10),
+      // so strip `@version` before matching the canonical preset list.
+      const installedCanonical = (manifest.items as string[]).map((id) =>
+        id.split(':')[0].replace(/@[^/]+$/, '')
+      )
+      expect(installedCanonical).toEqual(
         expect.arrayContaining(canonicalRegistries)
       )
       expect(manifest.items.length).toBeGreaterThanOrEqual(

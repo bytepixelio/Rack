@@ -122,4 +122,16 @@ export interface ResolvedRegistryItem extends RegistryItem {
    * plugin context, so a `:js` suffix on a root genuinely flows downstream.
    */
   resolvedLanguage: Language
+  /**
+   * Canonical identifier with `@version` always pinned to the version
+   * the server actually returned, preserving any explicit `:language`
+   * suffix from the original request. Pipeline phases write this back to
+   * `rack.json.items` so the manifest records exactly what landed on
+   * disk instead of leaking the user's unpinned shorthand — without that
+   * pin, a later `rk add @rack/foo@1.0.0` against an unpinned entry
+   * would be treated as a `VERSION_MISMATCH` upgrade attempt, and the
+   * planner's reciprocal-conflict fetch would re-resolve to "current
+   * latest" instead of the actually-installed version.
+   */
+  resolvedIdentifier: string
 }
