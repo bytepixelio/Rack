@@ -284,12 +284,15 @@ describe('init command project name fallback', () => {
     expect(initProjectMock).toHaveBeenCalled()
   })
 
-  it('uses basename(targetDir) when projectName is empty string', async () => {
-    await runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '-n', ''])
-    expect(initProjectMock).toHaveBeenCalled()
+  it('rejects an empty --name with VALIDATION_ERROR', async () => {
+    await expect(
+      runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '-n', ''])
+    ).rejects.toThrow('__exit__')
+    expect(exitSpy).toHaveBeenCalledWith(1)
+    expect(initProjectMock).not.toHaveBeenCalled()
   })
 
-  it('skips validateTargetDir when targetDir equals cwd', async () => {
+  it('skips validateTargetDir when --name is "."', async () => {
     await runCommand(registerInitCommand, [
       'init',
       '-t',
@@ -298,5 +301,58 @@ describe('init command project name fallback', () => {
       '.'
     ])
     expect(initProjectMock).toHaveBeenCalled()
+  })
+})
+
+describe('init command --name validation', () => {
+  // Without this guard `path.resolve(cwd, '../escape')` writes the scaffold
+  // outside cwd; `rack.json.name` would even end up containing the literal
+  // `..` segment. Reject anything that isn't a single safe segment.
+  it('rejects ".." which would escape to the parent directory', async () => {
+    await expect(
+      runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '-n', '..'])
+    ).rejects.toThrow('__exit__')
+    expect(exitSpy).toHaveBeenCalledWith(1)
+    expect(initProjectMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects relative paths that contain "/"', async () => {
+    await expect(
+      runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '-n', 'a/b'])
+    ).rejects.toThrow('__exit__')
+    expect(initProjectMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects relative paths with leading ".."', async () => {
+    await expect(
+      runCommand(registerInitCommand, [
+        'init',
+        '-t',
+        '@rack/vue',
+        '-n',
+        '../outside'
+      ])
+    ).rejects.toThrow('__exit__')
+    expect(initProjectMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects absolute POSIX paths', async () => {
+    await expect(
+      runCommand(registerInitCommand, [
+        'init',
+        '-t',
+        '@rack/vue',
+        '-n',
+        '/tmp/outside'
+      ])
+    ).rejects.toThrow('__exit__')
+    expect(initProjectMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects names containing a backslash', async () => {
+    await expect(
+      runCommand(registerInitCommand, ['init', '-t', '@rack/vue', '-n', 'a\\b'])
+    ).rejects.toThrow('__exit__')
+    expect(initProjectMock).not.toHaveBeenCalled()
   })
 })

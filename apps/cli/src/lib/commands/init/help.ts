@@ -25,6 +25,9 @@ Template identifier:
 Notes:
   - Without --ci you will be prompted for the project name if -n is omitted.
   - With --ci you must pass -n explicitly; init fails fast otherwise.
+  - -n/--name must be a single safe path segment (e.g. 'my-app').
+    "/", "\\", "..", and absolute paths are rejected; use "." to init
+    into the current directory instead.
   - -f/--force only allows init into an existing directory; it does NOT
     clean the directory. Conflicting files are resolved per-file by each
     registry's merge strategy (overwrite, json, env, ignore, custom).

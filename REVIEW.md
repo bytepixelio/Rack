@@ -969,7 +969,7 @@ try {
 - 增加 Worker 单测：损坏 `.auth/auth.json`、损坏 `versions.json`、mock bucket reject 时，都返回 Rack JSON 错误体。
 - 如需完全对齐 Server，可以把 error code/message 规则抽到 `registry-core` 或 Worker 自己的 `error-handler` helper。
 
-### 6.8 `rk init --name` 被当成路径使用，可写出当前工作目录
+### 6.8 `rk init --name` 被当成路径使用，可写出当前工作目录 ✅ 已解决
 
 位置：
 
