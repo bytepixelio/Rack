@@ -1009,7 +1009,7 @@ rk init -t @presets/node -n /tmp/outside --ci
 - 如果产品想支持输出路径：把选项语义改清楚，例如新增 `--dir <path>` / `--cwd`，文档写明允许路径；同时对绝对路径和逃逸 `cwd` 做二次确认，CI 模式下建议默认拒绝逃逸。
 - 无论走哪条，都增加单测覆盖 `../x`、`/tmp/x`、`a/b`、`.` 这几类边界。
 
-### 6.9 CLI 源码运行时找不到 `package.json`，版本和 Node engine 检查会退化
+### 6.9 CLI 源码运行时找不到 `package.json`，版本和 Node engine 检查会退化 ✅ 已解决
 
 位置：
 
