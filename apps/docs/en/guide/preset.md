@@ -14,14 +14,13 @@ Preset templates package a set of commonly used registries together to form comp
 # Without template - bootstrap from a single registry, then add the rest
 rk init -t runtimes/node -n my-project
 cd my-project
-rk add frameworks/vue
-rk add build/vite
-rk add features/vue-router
-rk add features/pinia
 rk add quality/eslint
+rk add quality/prettier
+rk add testing/vitest
+rk add build/typescript
 
 # With template - done in one step
-rk init -t @presets/tutorial-project -n my-project
+rk init -t @presets/node -n my-project
 ```
 
 ## Using Templates
@@ -29,21 +28,21 @@ rk init -t @presets/tutorial-project -n my-project
 #### Initialize Project
 
 ```bash
-rk init -t @presets/tutorial-project
+rk init -t @presets/node
 ```
 
 #### Specify Project Name
 
 ```bash
-rk init -t @presets/tutorial-project -n my-project
+rk init -t @presets/node -n my-project
 ```
 
 #### CI Mode
 
-Skip interactive prompts in CI environments.
+Skip interactive prompts in CI environments (`--ci` requires an explicit `-n`).
 
 ```bash
-rk init -t @presets/tutorial-project --ci
+rk init -t @presets/node -n my-project --ci
 ```
 
 ## Creating Templates
@@ -60,9 +59,9 @@ rk init -t @presets/tutorial-project --ci
   "tags": ["custom", "preset"],
   "registries": [
     "runtimes/node",
-    "frameworks/vue",
-    "build/vite",
-    "features/vue-router"
+    "quality/eslint",
+    "testing/vitest",
+    "build/typescript"
   ]
 }
 ```

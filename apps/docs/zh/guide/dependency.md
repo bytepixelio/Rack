@@ -6,6 +6,8 @@ aside: false
 
 Rack 会自动解析 Registry 之间的依赖关系, 确保所有必需的模块都被正确安装。
 
+> **示例说明**: 本页用 `frameworks/vue`、`features/vue-router` 等假设的 Registry 名称演示依赖解析。当前 `@rack/**` 真实提供的 Registry 列表见 [registry 文档](/zh/reference/cli)。
+
 ## 依赖声明
 
 Registry 通过 `registryDependencies` 字段声明依赖。

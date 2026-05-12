@@ -31,7 +31,7 @@ Namespaces give different registry sources independent resolution and access:
 - **Access control**: the server enforces tokens and publish permissions per namespace, so teams stay isolated.
 
 ::: tip Official Registry Shorthand
-Official registries can omit the `@rack` prefix and use forms like `runtimes/node`, `frameworks/vue` (CLI automatically resolves to `@rack/runtimes/node`).
+Official registries can omit the `@rack` prefix and use forms like `runtimes/node`, `quality/eslint` (CLI automatically resolves to `@rack/runtimes/node`).
 :::
 
 ## Namespace Format
@@ -205,9 +205,9 @@ If the namespace is not configured, fall back to the `@rack` source.
 }
 
 # Command (shorthand form)
-rk add frameworks/vue
+rk add quality/eslint
 # → Shorthand, automatically resolved to @rack
-# → Final URL: https://registry.rackjs.com/registries/@rack/frameworks/vue
+# → Final URL: https://registry.rackjs.com/registries/@rack/quality/eslint
 ```
 
 ## Registry URL Structure

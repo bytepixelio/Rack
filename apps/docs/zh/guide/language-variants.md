@@ -6,6 +6,8 @@ aside: false
 
 Rack 支持语言变体, 即同一个 Registry 根据项目使用的语言 (`JavaScript` 或 `TypeScript`) 提供不同的配置和文件。
 
+> **示例说明**: 本文以 `frameworks/vue` 这一假设的 Registry 来讲解 `languages` 的写法。当前 `@rack/**` 官方 Registry 没有声明 `languages` 字段, 下面的命令需要你在自己的命名空间下发布对应 Registry 后才能直接运行。
+
 ## 为什么需要语言变体？
 
 同一个技术栈在 `JavaScript` 和 `TypeScript` 项目中往往需要不同的配置。
@@ -166,14 +168,11 @@ rk add frameworks/vue:js
 
 ```bash
 # 完整格式: @namespace/path/to/registry:language
-rk add @rack/runtimes/node:ts          # 官方 Node.js TypeScript 变体
-rk add @rack/runtimes/node:js          # 官方 Node.js JavaScript 变体
-rk add @rack/frameworks/vue:ts         # 官方 Vue.js TypeScript 变体
+rk add @mycompany/frameworks/vue:ts    # 自定义 Vue.js TypeScript 变体
+rk add @mycompany/frameworks/vue:js    # 自定义 Vue.js JavaScript 变体
 rk add @company/internal-tools:js      # 私有 Registry JavaScript 变体
 
-# 简写格式（省略 @rack 命名空间）
-rk add runtimes/node:ts
-rk add runtimes/node:js
+# 简写格式（省略命名空间, 走 ~/.rackrc 默认源, 默认指向 @rack）
 rk add frameworks/vue:ts
 rk add frameworks/vue:js
 ```
