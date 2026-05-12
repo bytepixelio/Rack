@@ -302,6 +302,22 @@ describe('init command project name fallback', () => {
     ])
     expect(initProjectMock).toHaveBeenCalled()
   })
+
+  it('uses cwd basename as rack.json.name when --name is "."', async () => {
+    // `"."` is truthy, so a naive `projectName || basename` would store the
+    // literal `"."`. Make sure we actually substitute the cwd basename.
+    const { readFile } = await import('node:fs/promises')
+    const { basename } = await import('node:path')
+    await runCommand(registerInitCommand, [
+      'init',
+      '-t',
+      '@rack/vue',
+      '-n',
+      '.'
+    ])
+    const manifest = JSON.parse(await readFile(join(tmp, 'rack.json'), 'utf8'))
+    expect(manifest.name).toBe(basename(tmp))
+  })
 })
 
 describe('init command --name validation', () => {
