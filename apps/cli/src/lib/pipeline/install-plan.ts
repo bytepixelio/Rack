@@ -18,6 +18,7 @@
 import { sortItems } from './sort.js'
 import { registry } from '../registry/client.js'
 import { validateNoConflicts } from './conflict.js'
+import { DuplicateRegistryError } from '../utils/errors.js'
 import { canonicalizeIdentifier } from '../registry/identifier.js'
 import { resolveRegistryDependencies } from './resolve-dependencies.js'
 
@@ -58,6 +59,9 @@ export interface BuildInstallPlanParams {
  *
  * @param params - Plan inputs (requested roots, installed identifiers, logger, language)
  * @returns       Fully-populated install plan
+ * @throws {DuplicateRegistryError} If two roots share the same canonical
+ *                                  `namespace/path` (typically a preset
+ *                                  that lists the same registry twice)
  * @throws {ConflictError}        If any two registries conflict
  * @throws {VersionMismatchError} If a transitive dep targets a different
  *                                version of an already-installed registry
@@ -76,6 +80,14 @@ export async function buildInstallPlan(
   params: BuildInstallPlanParams
 ): Promise<InstallPlan> {
   const { logger, language, requested, installedRegistries = [] } = params
+
+  // 0. Reject duplicate roots up front. A preset that lists the same
+  // canonical registry twice (e.g. `runtimes/node@1.0.0` +
+  // `runtimes/node@2.0.0`, or `frameworks/vue:ts` + `frameworks/vue:js`)
+  // would otherwise be silently deduped further down — the user sees a
+  // "two registries" preset that only applied one. Surface it as a hard
+  // error so the preset gets fixed instead.
+  validateNoDuplicateRoots(requested)
 
   // 1. BFS transitive deps; transitive deps whose canonical id matches an
   // already-installed registry are dropped here (their files and
@@ -125,6 +137,27 @@ export async function buildInstallPlan(
 }
 
 // ─── Internal ───────────────────────────────────────────────────────────────
+
+/**
+ * Reject installs whose `requested` list contains the same canonical
+ * `namespace/path` more than once. Catches misconfigured presets where
+ * different `@version` / `:language` suffixes (or even literal duplicates)
+ * collide on the canonical key the planner uses to dedupe downstream.
+ *
+ * @throws {DuplicateRegistryError} If two or more roots share a canonical key
+ */
+function validateNoDuplicateRoots(requested: ResolvedRegistryItem[]): void {
+  const groups = new Map<string, string[]>()
+  for (const item of requested) {
+    const key = canonicalizeIdentifier(item.identifier)
+    const ids = groups.get(key) ?? []
+    ids.push(item.identifier)
+    groups.set(key, ids)
+  }
+  for (const [canonical, ids] of groups) {
+    if (ids.length > 1) throw new DuplicateRegistryError(canonical, ids)
+  }
+}
 
 /**
  * Surface a clear warning when one or more installed registries failed to

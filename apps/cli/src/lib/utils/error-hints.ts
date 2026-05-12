@@ -50,7 +50,11 @@ export const ERROR_HINTS: Record<string, string> = {
     'Rack does not support upgrading registries — scaffolded files ' +
     'belong to the user once written. To switch versions, remove the ' +
     'existing entry from rack.json.items (and clean up the files it ' +
-    "scaffolded), then re-run 'rk add' with the desired version."
+    "scaffolded), then re-run 'rk add' with the desired version.",
+  DUPLICATE_REGISTRY:
+    'A preset (or multi-root install) referenced the same registry more ' +
+    'than once with different version or language suffixes. Edit the ' +
+    'preset so each registry appears at most once.'
 }
 
 /**

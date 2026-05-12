@@ -145,6 +145,31 @@ export class VersionMismatchError extends AppError {
   }
 }
 
+/**
+ * Error thrown when a single install request contains the same registry
+ * more than once at the root level — typically a misconfigured preset
+ * that lists the same canonical `namespace/path` twice (with or without
+ * differing `@version` / `:language` suffixes).
+ *
+ * Without this guard the planner silently dedupes by canonical key and
+ * keeps whichever entry sorts first, so a preset that *looks* like it
+ * installs `runtimes/node@1.0.0` and `runtimes/node@2.0.0` would actually
+ * only apply one — picking the other version is a bug, not a feature.
+ */
+export class DuplicateRegistryError extends AppError {
+  constructor(
+    /** Canonical `namespace/path` shared by every duplicate. */
+    public readonly canonical: string,
+    /** All identifier forms that collided on this canonical key. */
+    public readonly identifiers: string[]
+  ) {
+    super(
+      'DUPLICATE_REGISTRY',
+      `Cannot install duplicate registry ${canonical} — requested as: ${identifiers.join(', ')}.`
+    )
+  }
+}
+
 // ─── Merge ──────────────────────────────────────────────────────────────────
 
 /**

@@ -5,9 +5,12 @@ vi.mock('../../../src/lib/registry/client.js', () => ({
 }))
 
 import { registry } from '../../../src/lib/registry/client.js'
-import { ConflictError } from '../../../src/lib/utils/errors.js'
 import { createItem, createMockLogger } from '../../helpers/mocks.js'
 import { buildInstallPlan } from '../../../src/lib/pipeline/install-plan.js'
+import {
+  ConflictError,
+  DuplicateRegistryError
+} from '../../../src/lib/utils/errors.js'
 
 const fetchItemMock = registry.fetchItem as unknown as ReturnType<typeof vi.fn>
 const fetchItemsMock = registry.fetchItems as unknown as ReturnType<
@@ -170,6 +173,69 @@ describe('pipeline/install-plan buildInstallPlan', () => {
     expect(logger.warn).not.toHaveBeenCalledWith(
       expect.stringContaining('Conflict check is degraded')
     )
+  })
+
+  it('rejects roots that pin different versions of the same registry', async () => {
+    // Preset misconfig: same canonical id at two versions. Silently picking
+    // one (current map-based dedupe) would scaffold a different version than
+    // the preset advertised.
+    await expect(
+      buildInstallPlan({
+        requested: [
+          createItem({ identifier: '@rack/runtimes/node@1.0.0' }),
+          createItem({ identifier: '@rack/runtimes/node@2.0.0' })
+        ],
+        logger: createMockLogger()
+      })
+    ).rejects.toBeInstanceOf(DuplicateRegistryError)
+  })
+
+  it('rejects roots that combine different language variants of the same registry', async () => {
+    await expect(
+      buildInstallPlan({
+        requested: [
+          createItem({ identifier: '@rack/frameworks/vue:ts' }),
+          createItem({ identifier: '@rack/frameworks/vue:js' })
+        ],
+        logger: createMockLogger()
+      })
+    ).rejects.toBeInstanceOf(DuplicateRegistryError)
+  })
+
+  it('rejects roots that repeat the same identifier verbatim', async () => {
+    // Even with identical suffixes the silent-dedupe hides the bug, so the
+    // duplicate is surfaced regardless of whether the suffixes differ.
+    const err = await buildInstallPlan({
+      requested: [
+        createItem({ identifier: '@rack/a' }),
+        createItem({ identifier: '@rack/a' })
+      ],
+      logger: createMockLogger()
+    }).then(
+      () => null,
+      (e: unknown) => e
+    )
+    expect(err).toBeInstanceOf(DuplicateRegistryError)
+    expect((err as DuplicateRegistryError).canonical).toBe('@rack/a')
+    expect((err as DuplicateRegistryError).identifiers).toEqual([
+      '@rack/a',
+      '@rack/a'
+    ])
+  })
+
+  it('rejects roots whose identifiers normalize to the same canonical key', async () => {
+    // Different surface forms (`vue` default-namespaced vs `@rack/vue`,
+    // mixed casing) collapse to the same canonical key and would still be
+    // silently deduped without this guard.
+    await expect(
+      buildInstallPlan({
+        requested: [
+          createItem({ identifier: 'vue' }),
+          createItem({ identifier: '@RACK/Vue' })
+        ],
+        logger: createMockLogger()
+      })
+    ).rejects.toBeInstanceOf(DuplicateRegistryError)
   })
 
   it('forwards the language override to fetchItems for installed items', async () => {

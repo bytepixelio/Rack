@@ -688,7 +688,7 @@ apps/docs/.vitepress/cache/deps/vitepress___@vueuse_core.js
 
 其中 `dist` 已有覆盖，但 `coverage` 也属于 test 产物，建议一起保持与 `.prettierignore` 的构建/测试产物排除策略一致。修复后应按 CI 顺序复跑 `pnpm build && pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm test:e2e`。
 
-### 6.2 Preset 里同一 registry 的不同版本/语言会被静默去重
+### 6.2 Preset 里同一 registry 的不同版本/语言会被静默去重 ✅ 已解决
 
 位置：
 
