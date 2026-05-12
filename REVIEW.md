@@ -1106,7 +1106,7 @@ toRecord: toApply.map((item) => item.identifier)
 - 迁移策略：读取旧的无版本 `rack.json.items` 时，可以维持当前保守 `VERSION_MISMATCH`，但新写入的 manifest 不应再产生无版本 installed entry。
 - 对应调整 `add/index.test.ts` / `resolve-dependencies.test.ts`：新安装无版本请求后，manifest 应包含解析后的版本；只有旧 manifest 的无版本项才需要走“unknown version”保守错误。
 
-### 6.11 e2e registry 发现逻辑不支持 SemVer build metadata，合法版本会被漏测
+### 6.11 e2e registry 发现逻辑不支持 SemVer build metadata，合法版本会被漏测 ✅ 已解决
 
 位置：
 

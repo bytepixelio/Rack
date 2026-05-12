@@ -143,6 +143,9 @@ importers:
 
   apps/e2e:
     dependencies:
+      '@rack/registry-core':
+        specifier: workspace:*
+        version: link:../../packages/registry-core
       '@rack/registry-server':
         specifier: workspace:*
         version: link:../registry-server

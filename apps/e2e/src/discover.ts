@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { SEMVER_PATTERN } from '@rack/registry-core'
 import { access, readdir, readFile } from 'node:fs/promises'
 
 export interface Preset {
@@ -27,7 +28,13 @@ export interface Material {
   registryJsonPath: string
 }
 
-const SEMVER = /^\d+\.\d+\.\d+(?:-[\w.-]+)?$/
+// Reuse the protocol-level SemVer pattern from registry-core so the e2e
+// discovery layer accepts every version shape the schema and server do —
+// including `+build` metadata (§6.11). The previous private regex omitted
+// build metadata and silently misclassified `1.0.0+build.42` directories
+// as path segments, dropping the material from the materials/presets
+// suites.
+const SEMVER = SEMVER_PATTERN
 
 /**
  * Discover every `registry.json` under a storage root by walking
