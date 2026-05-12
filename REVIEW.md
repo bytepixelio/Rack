@@ -916,7 +916,7 @@ expect(help).toContain('$ rk add @rack/tailwindcss')
 - `help.test.ts` 改为断言真实官方示例，或只断言语义结构，不断言虚构 identifier。
 - 发布前必须重新 `pnpm --filter rackjs-cli build`，确认 `apps/cli/dist/bin.js` 与 source 一致。
 
-### 6.7 Worker 缺少全局异常处理，内部异常会绕过 JSON 错误协议
+### 6.7 Worker 缺少全局异常处理，内部异常会绕过 JSON 错误协议 ✅ 已解决
 
 位置：
 

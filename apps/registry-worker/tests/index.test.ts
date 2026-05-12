@@ -160,4 +160,80 @@ describe('Worker top-level routing', () => {
     expect(head.status).toBe(200)
     expect(await head.text()).toBe('')
   })
+
+  describe('global error handler', () => {
+    // Bucket whose every read rejects — simulates R2 platform errors that
+    // the registry-server's Fastify error plugin would otherwise translate
+    // into a Rack-shaped JSON 500. Without the top-level try/catch the
+    // Worker would let the rejection bubble back to the Cloudflare runtime,
+    // breaking protocol parity.
+    const bucketThatRejects = (): R2Bucket =>
+      ({
+        get: async () => {
+          throw new Error('R2 unavailable')
+        },
+        head: async () => {
+          throw new Error('R2 unavailable')
+        },
+        list: async () => {
+          throw new Error('R2 unavailable')
+        },
+        put: async () => null,
+        delete: async () => {}
+      }) as unknown as R2Bucket
+
+    it('returns 500 INTERNAL_SERVER_ERROR when R2 throws on a registry read', async () => {
+      const res = await fire(
+        { BUCKET: bucketThatRejects() },
+        'https://w.example.com/registries/@rack/lib/1.0.0'
+      )
+
+      expect(res.status).toBe(500)
+      const body = (await res.json()) as { code: string; message: string }
+      expect(body.code).toBe('INTERNAL_SERVER_ERROR')
+      expect(body.message).toBe('Internal server error')
+      expect(res.headers.get('content-type')).toBe('application/json')
+      expect(res.headers.get('cache-control')).toBe('no-store')
+    })
+
+    it('returns 500 INTERNAL_SERVER_ERROR when /namespaces listing throws', async () => {
+      const res = await fire(
+        { BUCKET: bucketThatRejects() },
+        'https://w.example.com/namespaces'
+      )
+
+      expect(res.status).toBe(500)
+      const body = (await res.json()) as { code: string }
+      expect(body.code).toBe('INTERNAL_SERVER_ERROR')
+    })
+
+    it('returns 500 INTERNAL_SERVER_ERROR when versions.json is corrupt JSON', async () => {
+      // R2 returns an object but obj.json() throws on parse — exactly what
+      // the registry-server's error plugin catches via its global handler.
+      const bucket = createMockBucket({
+        '@rack/lib/versions.json': '{ not valid json'
+      })
+
+      const res = await fire(
+        { BUCKET: bucket },
+        'https://w.example.com/registries/@rack/lib'
+      )
+
+      expect(res.status).toBe(500)
+      const body = (await res.json()) as { code: string }
+      expect(body.code).toBe('INTERNAL_SERVER_ERROR')
+      expect(res.headers.get('cache-control')).toBe('no-store')
+    })
+
+    it('strips body for HEAD on 500 responses', async () => {
+      const head = await fire(
+        { BUCKET: bucketThatRejects() },
+        'https://w.example.com/registries/@rack/lib/1.0.0',
+        { method: 'HEAD' }
+      )
+
+      expect(head.status).toBe(500)
+      expect(await head.text()).toBe('')
+    })
+  })
 })
