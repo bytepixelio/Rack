@@ -118,11 +118,15 @@ export function registerInitCommand(program: Command): void {
           () => initProject({ template, targetDir }, templateLanguage, logger)
         )
 
+        // When the user passes `-n .` (init into cwd), `projectName` is the
+        // literal `"."` — useless as a stored project name. Fall back to the
+        // cwd basename so rack.json carries a real identifier. A plain `||`
+        // doesn't catch this because `"."` is truthy.
         const manifest = rackJson.generate({
           template,
           language: templateLanguage,
           items: pipelineResult.appliedRegistries,
-          name: projectName || path.basename(targetDir)
+          name: projectName === '.' ? path.basename(targetDir) : projectName
         })
         await writeJSON(path.join(targetDir, 'rack.json'), manifest)
 
