@@ -8,7 +8,7 @@
  */
 
 import worker from '../src/index.js'
-import { it, expect, describe } from 'vitest'
+import { it, vi, expect, describe, afterEach, beforeEach } from 'vitest'
 import { createMockBucket } from './helpers/mock-bucket.js'
 
 interface Env {
@@ -181,6 +181,16 @@ describe('Worker top-level routing', () => {
         put: async () => null,
         delete: async () => {}
       }) as unknown as R2Bucket
+
+    // Silence the `console.error('Worker dispatch failed:', …)` that the
+    // top-level catch in src/index.ts emits — these cases intentionally
+    // provoke that branch, so the stderr is expected noise, not signal.
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+    })
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
 
     it('returns 500 INTERNAL_SERVER_ERROR when R2 throws on a registry read', async () => {
       const res = await fire(
