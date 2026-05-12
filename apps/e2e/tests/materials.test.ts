@@ -68,8 +68,14 @@ describe('every @rack/* registry is installable via rk add', () => {
       )
 
       expect(manifestAfterSecond.items).toEqual(manifestAfterFirst.items)
+      // §6.10: rack.json.items records the pinned identifier
+      // (`@rack/build/typescript@1.0.0`), so compare canonical prefix.
+      const stripVersion = (s: string): string =>
+        s.split(':')[0].replace(/@[^/]+$/, '')
       expect(
-        manifestAfterSecond.items.filter((x: string) => x === id)
+        (manifestAfterSecond.items as string[]).filter(
+          (x) => stripVersion(x) === id
+        )
       ).toHaveLength(1)
     } finally {
       await ws.cleanup()

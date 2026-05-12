@@ -19,8 +19,8 @@ interface PackageJson {
 
 /** Possible locations of package.json relative to this file. */
 const PACKAGE_PATHS = [
-  '../package.json', // dist/cli.js   → apps/cli/package.json (production)
-  '../../package.json' // src/utils/version.ts → apps/cli/package.json (development)
+  '../package.json', // dist/bin.js                → apps/cli/package.json (production)
+  '../../../package.json' // src/lib/utils/version.ts → apps/cli/package.json (development)
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────

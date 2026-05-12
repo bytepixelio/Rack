@@ -6,6 +6,8 @@ aside: false
 
 The priority system is the core mechanism that Rack uses to determine installation order and resolve file conflicts between registries.
 
+> **Example disclaimer**: this page uses hypothetical registries (`runtimes/node`, `frameworks/vue`, `build/vite`, …) to illustrate priority ordering. The actual `@rack/**` registries published today are listed in [the CLI reference](/reference/cli).
+
 ## Why Priorities Matter?
 
 When you combine multiple registries you face two challenges: **installation order** and **file conflicts**.

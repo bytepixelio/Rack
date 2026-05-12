@@ -9,6 +9,7 @@ import {
   RackJsonError,
   getErrorMessage,
   InvalidNamespaceError,
+  DuplicateRegistryError,
   RegistryNotFoundError,
   CircularDependencyError
 } from '../../../src/lib/utils/errors.js'
@@ -79,5 +80,18 @@ describe('utils/errors', () => {
 
   it('ConfigError uses code CONFIG_ERROR', () => {
     expect(new ConfigError('bad').code).toBe('CONFIG_ERROR')
+  })
+
+  it('DuplicateRegistryError captures the canonical key and every offender', () => {
+    const e = new DuplicateRegistryError('@rack/vue', [
+      '@rack/vue:ts',
+      '@rack/vue:js'
+    ])
+    expect(e.code).toBe('DUPLICATE_REGISTRY')
+    expect(e.canonical).toBe('@rack/vue')
+    expect(e.identifiers).toEqual(['@rack/vue:ts', '@rack/vue:js'])
+    expect(e.message).toContain('@rack/vue')
+    expect(e.message).toContain('@rack/vue:ts')
+    expect(e.message).toContain('@rack/vue:js')
   })
 })

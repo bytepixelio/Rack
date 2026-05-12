@@ -30,7 +30,25 @@ export default {
       )
     }
 
-    const response = await dispatch(request, env)
+    // Route handlers throw on unrecoverable internal failures (corrupt
+    // R2 JSON, bucket rejection, etc.) instead of returning a Response.
+    // Catch them here so the Worker contract matches the Fastify server
+    // — both flavors of the registry surface a Rack-shaped
+    // `{ code, message }` body with `Cache-Control: no-store`, not the
+    // platform default 500 / opaque error page Cloudflare would emit.
+    let response: Response
+    try {
+      response = await dispatch(request, env)
+    } catch (error) {
+      console.error('Worker dispatch failed:', error)
+      response = json(
+        {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Internal server error'
+        },
+        500
+      )
+    }
 
     // RFC 9110 §9.3.2: HEAD must return the same headers/status as GET
     // but no body. The route handlers reuse the GET shape (and may have

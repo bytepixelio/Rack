@@ -50,7 +50,12 @@ describe.skipIf(process.env.RACK_REGISTRY_URL)(
         const manifest = JSON.parse(
           await readFile(path.join(ws.cwd, 'rack.json'), 'utf8')
         )
-        expect(manifest.items).toEqual(expect.arrayContaining(['@toy/dep']))
+        // rack.json.items records the version-pinned identifier so a
+        // later install with the same canonical id matches by version
+        // instead of being misread as a VERSION_MISMATCH (see §6.10).
+        expect(manifest.items).toEqual(
+          expect.arrayContaining(['@toy/dep@1.0.0'])
+        )
       } finally {
         await ws.cleanup()
       }

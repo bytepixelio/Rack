@@ -11,8 +11,11 @@ export default [
       '/*.js',
       '**/*.json',
       '**/dist/**',
+      '**/coverage/**',
+      'eslint.config.js',
       '**/node_modules/**',
-      'eslint.config.js'
+      '**/.vitepress/dist/**',
+      '**/.vitepress/cache/**'
     ]
   },
   js.configs.recommended,

@@ -43,7 +43,7 @@ interface InitCommandOptions {
    * file declares the same `target` and a merge strategy rewrites it.
    */
   force?: boolean
-  /** Template to use (e.g., '@presets/tutorial-project'). */
+  /** Template to use (e.g., '@presets/node'). */
   template: string
   /** Skip git repository initialization. */
   skipGit?: boolean
@@ -94,6 +94,7 @@ export function registerInitCommand(program: Command): void {
         }
 
         const projectName = options.name ?? (await promptProjectName(prompter))
+        validateProjectName(projectName)
         const targetDir = path.resolve(cwd, projectName)
 
         displayProjectInfo({ projectName, template, targetDir }, logger)
@@ -154,6 +155,43 @@ async function promptProjectName(prompter: Prompter): Promise<string> {
     (await prompter.text({ message: 'Project name:', initial: fallback })) ??
     fallback
   )
+}
+
+/**
+ * Reject project names that would resolve outside the current directory or
+ * embed path separators. `--name` is documented as a project name, but the
+ * underlying `path.resolve(cwd, name)` would otherwise accept `..`,
+ * absolute paths, and embedded slashes — quietly scaffolding into parent
+ * or absolute directories and writing those values into `rack.json.name`.
+ *
+ * `.` is preserved as the single special value meaning "init into the
+ * current directory"; all other names must be safe single segments.
+ *
+ * @param name - Resolved project name (from `--name` or the interactive prompt)
+ * @throws {AppError} With code `VALIDATION_ERROR` if the name is unsafe
+ */
+function validateProjectName(name: string): void {
+  if (name === '.') return
+
+  if (!name) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'Project name cannot be empty. Pass a single-segment name or "." for the current directory.'
+    )
+  }
+
+  if (
+    name === '..' ||
+    name.includes('/') ||
+    name.includes('\\') ||
+    path.isAbsolute(name)
+  ) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      `Invalid project name "${name}": must be a single safe path segment ` +
+        `(no "/", "\\", "..", or absolute paths). Use "." to init into the current directory.`
+    )
+  }
 }
 
 /**

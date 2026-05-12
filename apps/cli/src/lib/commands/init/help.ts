@@ -9,22 +9,25 @@
 
 export const initHelpText = `
 Examples:
-  $ rk init -t @presets/tutorial-project -n my-app
-  $ rk init -t @rack/runtimes/node --ci -n svc        # CI mode requires -n
-  $ rk init -t @presets/nextjs-app -f                  # allow init into an existing dir (no cleanup)
-  $ rk init -t @presets/x --skip-install --skip-git    # scaffold only
+  $ rk init -t @presets/node -n my-app
+  $ rk init -t @rack/runtimes/node --ci -n svc          # CI mode requires -n
+  $ rk init -t @presets/node-library -n my-lib -f       # allow init into an existing dir (no cleanup)
+  $ rk init -t @presets/node -n s --skip-install --skip-git  # scaffold only
 
 Template identifier:
   -t accepts either a preset (@presets/<path>) or a single registry
   (@<namespace>/<path>[@<version>][:<language>]). Examples:
-    @presets/tutorial-project
+    @presets/node
     @rack/runtimes/node
     @rack/runtimes/node@1.0.0
-    @rack/vue:ts                   # force TypeScript variant (ts | js)
+    @rack/runtimes/node:ts         # force TypeScript variant (ts | js)
 
 Notes:
   - Without --ci you will be prompted for the project name if -n is omitted.
   - With --ci you must pass -n explicitly; init fails fast otherwise.
+  - -n/--name must be a single safe path segment (e.g. 'my-app').
+    "/", "\\", "..", and absolute paths are rejected; use "." to init
+    into the current directory instead.
   - -f/--force only allows init into an existing directory; it does NOT
     clean the directory. Conflicting files are resolved per-file by each
     registry's merge strategy (overwrite, json, env, ignore, custom).

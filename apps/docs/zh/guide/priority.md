@@ -6,6 +6,8 @@ aside: false
 
 优先级系统是 Rack 解决 Registry 安装顺序和文件冲突的核心机制。
 
+> **示例说明**: 下文用 `runtimes/node` / `frameworks/vue` / `build/vite` 等假设的 Registry 名称演示优先级排序。`@rack/**` 当前真实提供的 Registry 列表见 [registry 文档](/zh/reference/cli)。
+
 ## 为什么需要优先级？
 
 当组合多个 Registry 时, 会遇到两个关键问题, 分别是**安装顺序**和**文件冲突**。

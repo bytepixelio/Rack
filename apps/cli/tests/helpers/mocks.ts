@@ -46,7 +46,7 @@ export function createMockPrompter(
 export function createItem(
   overrides: Partial<ResolvedRegistryItem> = {}
 ): ResolvedRegistryItem {
-  return {
+  const merged: ResolvedRegistryItem = {
     name: 'demo',
     type: 'registry:feature',
     version: '1.0.0',
@@ -55,6 +55,23 @@ export function createItem(
     identifier: '@rack/demo',
     registryUrl: 'https://registry.example.com/registries/@rack/demo/1.0.0',
     resolvedLanguage: 'ts',
+    resolvedIdentifier: '@rack/demo@1.0.0',
     ...overrides
   }
+  // Mirror the production rule (canonical id pinned to item.version) when
+  // a test overrides `identifier` / `version` without spelling out the
+  // resolved form. Strip any trailing `@version` and `:language` from the
+  // override and re-attach the pinned version so test fixtures stay terse.
+  if (
+    overrides.resolvedIdentifier === undefined &&
+    (overrides.identifier !== undefined || overrides.version !== undefined)
+  ) {
+    const idNoLang = merged.identifier.split(':')[0]
+    const lastAt = idNoLang.lastIndexOf('@')
+    // The leading `@namespace/...` form means the first `@` is at index 0;
+    // only treat a later `@` as the version separator.
+    const idNoVersion = lastAt > 0 ? idNoLang.slice(0, lastAt) : idNoLang
+    merged.resolvedIdentifier = `${idNoVersion}@${merged.version}`
+  }
+  return merged
 }

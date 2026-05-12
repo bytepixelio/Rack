@@ -52,7 +52,7 @@ describe('command help output', () => {
       '--help'
     ])
     expect(help).toContain('Examples:')
-    expect(help).toContain('$ rk init -t @presets/tutorial-project')
+    expect(help).toContain('$ rk init -t @presets/node')
     expect(help).toContain('Template identifier:')
     expect(help).toContain('@presets/')
   })
@@ -63,10 +63,11 @@ describe('command help output', () => {
       '--help'
     ])
     expect(help).toContain('Examples:')
-    expect(help).toContain('$ rk add @rack/tailwindcss')
+    expect(help).toContain('$ rk add @rack/quality/eslint')
     expect(help).toContain('Preconditions:')
     expect(help).toContain('REGISTRY_NOT_FOUND')
     expect(help).toContain('CONFLICT')
+    expect(help).toContain('DUPLICATE_REGISTRY')
   })
 
   it('list --help shows examples and discovery flow', () => {

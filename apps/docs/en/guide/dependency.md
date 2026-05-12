@@ -6,6 +6,8 @@ aside: false
 
 Rack automatically resolves dependencies between registries, ensuring all required modules are correctly installed.
 
+> **Example disclaimer**: this page uses hypothetical registries (`frameworks/vue`, `features/vue-router`, …) to illustrate dependency resolution. The actual `@rack/**` registries published today are listed in [the CLI reference](/reference/cli).
+
 ## Dependency Declaration
 
 Registries declare dependencies using the `registryDependencies` field.

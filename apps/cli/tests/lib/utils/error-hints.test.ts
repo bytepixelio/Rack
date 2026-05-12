@@ -7,16 +7,17 @@ import {
 describe('error-hints', () => {
   it('covers every AppError code thrown by the CLI', () => {
     const expected = [
-      'REGISTRY_NOT_FOUND',
-      'INVALID_NAMESPACE',
-      'CONFLICT',
-      'CIRCULAR_DEPENDENCY',
-      'RACK_JSON_ERROR',
-      'CONFIG_ERROR',
-      'HTTP_ERROR',
       'TIMEOUT',
+      'CONFLICT',
+      'HTTP_ERROR',
       'MERGE_FAILED',
-      'VALIDATION_ERROR'
+      'CONFIG_ERROR',
+      'RACK_JSON_ERROR',
+      'VALIDATION_ERROR',
+      'INVALID_NAMESPACE',
+      'REGISTRY_NOT_FOUND',
+      'DUPLICATE_REGISTRY',
+      'CIRCULAR_DEPENDENCY'
     ]
     for (const code of expected) {
       expect(ERROR_HINTS[code], `missing hint for ${code}`).toBeTypeOf('string')

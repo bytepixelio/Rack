@@ -31,7 +31,7 @@ aside: false
 - **访问控制**: 服务端按命名空间维度配置 Token 与发布权限, 不同团队互不影响。
 
 ::: tip 官方 Registry 简写
-官方 Registry 可以省略 `@rack` 前缀, 直接使用 `runtimes/node`, `frameworks/vue` 等形式 (CLI 会自动解析为 `@rack/runtimes/node`)。
+官方 Registry 可以省略 `@rack` 前缀, 直接使用 `runtimes/node`, `quality/eslint` 等形式 (CLI 会自动解析为 `@rack/runtimes/node`)。
 :::
 
 ## 命名空间格式
@@ -205,9 +205,9 @@ rk add @company/ui-kit
 }
 
 # 命令 (简写形式)
-rk add frameworks/vue
+rk add quality/eslint
 # → 简写格式, 自动解析为 @rack
-# → 最终 URL: https://registry.rackjs.com/registries/@rack/frameworks/vue
+# → 最终 URL: https://registry.rackjs.com/registries/@rack/quality/eslint
 ```
 
 ## Registry URL 结构

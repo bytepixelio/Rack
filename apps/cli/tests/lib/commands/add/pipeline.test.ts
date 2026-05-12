@@ -65,7 +65,9 @@ describe('add/pipeline addRegistry', () => {
       createMockLogger()
     )
 
-    expect(result.appliedRegistries).toEqual(['@rack/vue'])
+    // appliedRegistries comes from plan.toRecord, which pins the
+    // server-returned version — see §6.10.
+    expect(result.appliedRegistries).toEqual(['@rack/vue@1.0.0'])
     expect(result.initialRegistries).toEqual(['@rack/vue'])
     expect(result.scripts).toEqual({ dev: 'vite' })
     expect(result.dependencies).toEqual({ vue: '^3.0.0' })
@@ -210,7 +212,7 @@ describe('add/pipeline addRegistry', () => {
       createMockLogger()
     )
 
-    expect(result.appliedRegistries).toEqual(['@rack/b'])
+    expect(result.appliedRegistries).toEqual(['@rack/b@1.0.0'])
     expect(result.dependencies).toEqual({ b: '^1.0.0' })
     expect(applyMock).toHaveBeenCalledWith(
       [expect.objectContaining({ identifier: '@rack/b' })],

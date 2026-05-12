@@ -51,7 +51,9 @@ describe('init/pipeline initProject', () => {
       createMockLogger()
     )
     expect(result.initialRegistries).toEqual(['@rack/vue'])
-    expect(result.appliedRegistries).toEqual(['@rack/vue'])
+    // appliedRegistries comes from plan.toRecord, which pins the
+    // server-returned version — see §6.10.
+    expect(result.appliedRegistries).toEqual(['@rack/vue@1.0.0'])
     expect(result.scripts).toEqual({ dev: 'vite' })
     expect(pkgUpdateMock).toHaveBeenCalledWith('/t', expect.any(Object))
   })

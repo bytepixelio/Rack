@@ -122,15 +122,21 @@ describe('add command', () => {
     expect(addRegistryMock).not.toHaveBeenCalled()
   })
 
-  it('errors out when installed pins a version but request omits one', async () => {
+  it('treats as idempotent when installed pins a version and request omits one', async () => {
+    // §6.10: rack.json.items now records the pinned identifier, so the
+    // manifest is authoritative. A later `rk add @rack/vue` against an
+    // installed `@rack/vue@1.0.0` is the user asking for "whatever's
+    // there" — short-circuit instead of throwing a misleading upgrade
+    // error. The legacy direction (unpinned installed + pinned request)
+    // stays conservative; see the test above.
     readOrCreateMock.mockResolvedValue({
       items: ['@rack/vue@1.0.0'],
       language: 'ts'
     })
-    await expect(
-      runCommand(registerAddCommand, ['add', '@rack/vue'])
-    ).rejects.toThrow('__exit__')
+    await runCommand(registerAddCommand, ['add', '@rack/vue'])
     expect(addRegistryMock).not.toHaveBeenCalled()
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(exitSpy).not.toHaveBeenCalled()
   })
 
   it('short-circuits when versions match exactly (both pinned identical)', async () => {

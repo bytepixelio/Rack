@@ -109,11 +109,24 @@ async function fetchItem(
     const resolvedLanguage: Language =
       parsed.language ?? options.language ?? item.defaultLanguage ?? 'ts'
 
+    // Always pin the server-returned version into the resolved identifier
+    // — preserve only an *explicit* `:language` suffix the user typed, so
+    // unpinned shorthand requests still get a fully-resolved identifier
+    // written to rack.json. See ResolvedRegistryItem.resolvedIdentifier
+    // for why pinning matters.
+    const resolvedIdentifier = formatCanonicalIdentifier({
+      path: parsed.path,
+      namespace: parsed.namespace,
+      version: item.version,
+      ...(parsed.language && { language: parsed.language })
+    })
+
     return {
       ...applyLanguageOverrides(item, resolvedLanguage),
       identifier: canonicalId,
       registryUrl,
-      resolvedLanguage
+      resolvedLanguage,
+      resolvedIdentifier
     }
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) {

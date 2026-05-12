@@ -6,6 +6,8 @@ aside: false
 
 Rack supports language variants, where a single registry provides different configurations and files based on the project's language (`JavaScript` or `TypeScript`).
 
+> **Example disclaimer**: this guide uses a hypothetical `frameworks/vue` registry to illustrate the `languages` field. The current `@rack/**` official registries do not declare `languages`, so the commands below assume you've published an equivalent registry under your own namespace.
+
 ## Why Language Variants?
 
 The same tech stack often requires different configurations in `JavaScript` and `TypeScript` projects.
@@ -166,14 +168,11 @@ rk add frameworks/vue:js
 
 ```bash
 # Full format: @namespace/path/to/registry:language
-rk add @rack/runtimes/node:ts          # Official Node.js TypeScript variant
-rk add @rack/runtimes/node:js          # Official Node.js JavaScript variant
-rk add @rack/frameworks/vue:ts         # Official Vue.js TypeScript variant
+rk add @mycompany/frameworks/vue:ts    # Custom Vue.js TypeScript variant
+rk add @mycompany/frameworks/vue:js    # Custom Vue.js JavaScript variant
 rk add @company/internal-tools:js      # Private registry JavaScript variant
 
-# Shorthand format (omit @rack namespace)
-rk add runtimes/node:ts
-rk add runtimes/node:js
+# Shorthand format (omit the namespace, resolves via ~/.rackrc default — usually @rack)
 rk add frameworks/vue:ts
 rk add frameworks/vue:js
 ```
