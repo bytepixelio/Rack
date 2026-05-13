@@ -27,11 +27,11 @@ Uploads go through the Fastify `registry-server` (which writes to the same R2 bu
 
 The Worker enforces the same namespace-token policy as the server, via the shared [`@rack/auth-core`](../../packages/auth-core) package. To operate it you only need to know:
 
-- `config/auth.json` (repo-root) is the single source of truth. [`.github/workflows/sync-auth.yml`](../../.github/workflows/sync-auth.yml) pushes it to R2 at `.auth/auth.json` on every change.
+- `config/auth.json` (repo-root) is the single source of truth. [`.github/workflows/sync-auth.yml`](../../.github/workflows/sync-auth.yml) pushes it to R2 at `.auth/auth.json` on every change. The workflow is parameterized by `secrets.R2_BUCKET_NAME` (defaults to `rack-registry`) and `vars.REGISTRY_PUBLIC_URL` (defaults to `https://registry.rackjs.com`) so fork / self-host deployments can target their own R2 + Worker without editing the file.
 - Namespaces must be declared in `auth.json`; `[]` means anonymous, a non-empty token array requires a matching, non-expired token in `Authorization: Bearer …` or `X-Registry-Token: …`.
 - An optional `ADMIN_TOKEN` Workers secret acts as a cross-namespace bypass — set it to the same value as the server's `ADMIN_TOKEN`.
 
-For the full decision tree, cache behavior, and coupling guarantees with the server, see [ARCHITECTURE.md#auth-flow](./docs/ARCHITECTURE.md#auth-flow).
+For the full decision tree, cache behavior, and coupling guarantees with the server, see [ARCHITECTURE.md#auth-flow](./docs/ARCHITECTURE.md#auth-flow). The Worker caches `auth.json` for 10 minutes per isolate; the `sync-auth.yml` post-deploy `curl` check therefore only proves the Worker is reachable, **not** that the freshly uploaded config is already live. Local validation runs against `@rack/auth-core` before upload, so shape-level breaks fail in CI before they reach R2.
 
 **Bootstrap warning:** before the first deploy with auth, ensure `.auth/auth.json` exists in R2 (trigger `Sync Auth Config` via Actions, or `wrangler r2 object put rack-registry/.auth/auth.json --file config/auth.json --content-type application/json --remote`). Without it, every `/registries/**` request returns 403.
 
