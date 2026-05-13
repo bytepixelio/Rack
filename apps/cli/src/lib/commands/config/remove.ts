@@ -7,7 +7,7 @@ import { rackrc } from '../../rackrc.js'
 import { Logger } from '../../infra/logger.js'
 import { configRemoveHelpText } from './help.js'
 import { Prompter } from '../../infra/prompts.js'
-import { DEFAULT_NAMESPACE } from '../../../constants.js'
+import { PRESETS_NAMESPACE, DEFAULT_NAMESPACE } from '../../../constants.js'
 import {
   validateNamespace,
   checkRegistryExists,
@@ -41,10 +41,11 @@ export function registerRemoveCommand(configCommand: Command): void {
         try {
           validateNamespace(namespace)
 
-          if (namespace === DEFAULT_NAMESPACE) {
-            throw new Error(
-              `Cannot remove default namespace '${DEFAULT_NAMESPACE}'`
-            )
+          if (
+            namespace === DEFAULT_NAMESPACE ||
+            namespace === PRESETS_NAMESPACE
+          ) {
+            throw new Error(`Cannot remove built-in namespace '${namespace}'`)
           }
 
           await checkRegistryExists(namespace)

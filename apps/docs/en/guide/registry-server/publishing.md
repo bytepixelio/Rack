@@ -194,9 +194,11 @@ The `path` segments are derived from the registry's `type` (or explicit top-leve
 ```json
 {
   "code": "UNAUTHORIZED",
-  "message": "Authentication token is required"
+  "message": "Authentication required for upload. Provide a namespace token or admin token via Authorization or X-Registry-Token."
 }
 ```
+
+The server returns this **before** reading the multipart body (§6.20), so an unauthenticated upload doesn't burn upload bandwidth or temp disk on the server.
 
 **Solution**: Add token
 

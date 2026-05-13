@@ -210,6 +210,8 @@ Implementation lives in `lib/auth.ts`. Three points worth calling out:
 
 **In-memory cache.** `auth.json` is parsed once per Worker isolate and held for `CACHE_TTL_MS = 600_000` (10 minutes). This means token revocation propagates with up to a 10-minute lag. The cache is **module-scoped** — every cold-started isolate re-reads the R2 object, and `clearAuthCache()` exists only for tests.
 
+> §6.22 caveat for `sync-auth.yml` operators: because this cache is per-isolate, the post-sync `curl` check at the end of the workflow can succeed on a stale cached config even when the freshly-uploaded `auth.json` would fail to parse. The workflow runs `parseAuthConfig` locally against the file before upload to catch shape errors, but post-deploy "the new config is live" can only be confirmed by waiting out the TTL (or rolling isolates with a Worker redeploy).
+
 **Delegation to `@rack/auth-core`.** Parsing (`parseAuthConfig`) and verification (`verifyAccess`, `isNamespaceAllowed`, `extractToken`) all live in the shared package. The Worker contributes only the R2 read and the cache layer — keeping the decision logic identical to the server is a hard requirement (see [Coupling points](#coupling-points)).
 
 **Bootstrap caveat.** Until the first run of `sync-auth.yml` (or a manual `wrangler r2 object put`), R2 has no `.auth/auth.json` object. The Worker treats a missing file as an empty config, so every namespace-gated request returns `403 FORBIDDEN_NAMESPACE`. This is intentional — failing closed is safer than serving content with no policy.

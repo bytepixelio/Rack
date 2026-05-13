@@ -16,6 +16,7 @@ function createConfig(
     nodeEnv: 'test',
     host: '127.0.0.1',
     logLevel: 'silent',
+    trustProxy: false,
     storageBackend: 'local' as const,
     schemaDir: join(storageRoot, 'schema'),
     authConfigPath: join(storageRoot, 'auth.json'),

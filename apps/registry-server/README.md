@@ -128,23 +128,24 @@ After a successful upload, `uploaded` and `version.created` events are delivered
 
 Copy `.env.example` to `.env`:
 
-| Variable               | Default                  | Description                                                             |
-| ---------------------- | ------------------------ | ----------------------------------------------------------------------- |
-| `PORT`                 | `8080`                   | Server port (1–65535)                                                   |
-| `HOST`                 | `0.0.0.0`                | Bind address                                                            |
-| `STORAGE_ROOT`         | `../../packages/storage` | Storage root directory                                                  |
-| `STORAGE_BACKEND`      | `local`                  | Upload storage backend: `local` or `r2`                                 |
-| `AUTH_CONFIG_PATH`     | `../../config/auth.json` | Auth config path (repo-root `config/auth.json`, shared with the Worker) |
-| `WEBHOOK_CONFIG_PATH`  | `config/webhooks.json`   | Webhook config path                                                     |
-| `LOG_LEVEL`            | `info`                   | Log level                                                               |
-| `NODE_ENV`             | `development`            | Runtime environment                                                     |
-| `ADMIN_TOKEN`          | —                        | System-level admin token; bypasses namespace auth for reads and uploads |
-| `R2_BUCKET_NAME`       | —                        | R2 bucket name (required when `STORAGE_BACKEND=r2`)                     |
-| `R2_ACCOUNT_ID`        | —                        | Cloudflare account ID (required when `STORAGE_BACKEND=r2`)              |
-| `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)               |
-| `R2_SECRET_ACCESS_KEY` | —                        | R2 API secret access key (required when `STORAGE_BACKEND=r2`)           |
+| Variable               | Default                  | Description                                                                                                                                       |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                 | `8080`                   | Server port (1–65535)                                                                                                                             |
+| `HOST`                 | `0.0.0.0`                | Bind address                                                                                                                                      |
+| `STORAGE_ROOT`         | `../../packages/storage` | Storage root directory                                                                                                                            |
+| `STORAGE_BACKEND`      | `local`                  | Upload storage backend: `local` or `r2`                                                                                                           |
+| `AUTH_CONFIG_PATH`     | `../../config/auth.json` | Auth config path (repo-root `config/auth.json`, shared with the Worker)                                                                           |
+| `WEBHOOK_CONFIG_PATH`  | `config/webhooks.json`   | Webhook config path                                                                                                                               |
+| `LOG_LEVEL`            | `info`                   | Log level                                                                                                                                         |
+| `NODE_ENV`             | `development`            | Runtime environment                                                                                                                               |
+| `ADMIN_TOKEN`          | —                        | System-level admin token; bypasses namespace auth for reads and uploads                                                                           |
+| `TRUST_PROXY`          | `false`                  | Whether to trust `X-Forwarded-For` for rate limiting. `true` / `false` / hop count (`1`, `2`, …). Required behind Nginx / ALB / Cloudflare Tunnel |
+| `R2_BUCKET_NAME`       | —                        | R2 bucket name (required when `STORAGE_BACKEND=r2`)                                                                                               |
+| `R2_ACCOUNT_ID`        | —                        | Cloudflare account ID (required when `STORAGE_BACKEND=r2`)                                                                                        |
+| `R2_ACCESS_KEY_ID`     | —                        | R2 API access key ID (required when `STORAGE_BACKEND=r2`)                                                                                         |
+| `R2_SECRET_ACCESS_KEY` | —                        | R2 API secret access key (required when `STORAGE_BACKEND=r2`)                                                                                     |
 
-Compression (gzip/deflate/br) is always enabled. Cache-Control is set per route using `@rack/registry-core` cache tiers (`no-store` for errors/health, `max-age=60` for listings, `max-age=86400` for schemas/presets, `immutable` for versioned content). Rate limiting is fixed at 1200 requests per client IP per minute.
+Compression (gzip/deflate/br) is always enabled. Cache-Control is set per route using `@rack/registry-core` cache tiers (`no-store` for errors/health, `max-age=60` for listings, `max-age=86400` for schemas/presets, `immutable` for versioned content). Rate limiting is fixed at 1200 requests per client IP per minute; when running behind a reverse proxy, set `TRUST_PROXY=true` (or a hop count) so the limiter follows `X-Forwarded-For` instead of bucketing every caller into the proxy IP. 429 responses use Rack's standard `{ code, message }` body shape.
 
 ### Auth configuration (`auth.json`)
 
@@ -219,7 +220,7 @@ project name and give r2 mode its own env file + project name + host port.
 
 Create `apps/registry-server/.env.r2.local` (gitignored via `.env.*.local`):
 
-```env
+```bash
 STORAGE_BACKEND=r2
 R2_BUCKET_NAME=rack-registry
 R2_ACCOUNT_ID=...

@@ -265,7 +265,7 @@ Retry-After: 60
 ```
 
 ::: tip Reverse Proxy Configuration
-When deploying behind a reverse proxy (e.g., Nginx), ensure `X-Forwarded-For` is correctly forwarded so each real client IP is counted independently.
+Behind a reverse proxy (Nginx, ALB, Cloudflare Tunnel, …), forwarding `X-Forwarded-For` is not enough on its own — also set `TRUST_PROXY=true` (or a hop count) on the server so Fastify follows the chain. Without it, every real client collapses into the proxy's IP and shares the same per-IP bucket. See [Configuration § Basic Configuration](./configuration.md#basic-configuration).
 :::
 
 ## Backup Strategy

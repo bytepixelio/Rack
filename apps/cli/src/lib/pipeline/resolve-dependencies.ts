@@ -7,12 +7,9 @@
  * different forms (e.g. `utils`, `@rack/utils`) are deduplicated.
  */
 
+import { AppError } from '../utils/errors.js'
 import { registry } from '../registry/client.js'
-import { VersionMismatchError } from '../utils/errors.js'
-import {
-  parseNamespace,
-  canonicalizeIdentifier
-} from '../registry/identifier.js'
+import { canonicalizeIdentifier } from '../registry/identifier.js'
 
 import type { Logger } from '../infra/logger.js'
 import type { ResolvedRegistryItem } from './types.js'
@@ -40,11 +37,11 @@ import type { ResolvedRegistryItem } from './types.js'
  * separate `fetchItems(installedRegistries)` path, so reciprocal
  * conflicts remain enforceable.
  *
- * When the canonical id matches but the version specifier differs (e.g.
- * `@rack/a@1.0.0` installed vs `@rack/a@2.0.0` requested by a transitive
- * dep), throws {@link VersionMismatchError} — Rack does not support
- * upgrading installed registries, and silently picking either version
- * would be wrong.
+ * `registryDependencies` does not support `@version` or `:language`
+ * suffixes (enforced by `packages/storage/schema/registry-item.json`).
+ * Self-hosted registries that bypass the Registry Server's upload
+ * validation could still emit suffixed entries; surface those as
+ * `VALIDATION_ERROR` instead of half-honoring the unsupported syntax.
  *
  * @param items     - Initial registry items (always included in the result)
  * @param logger    - Logger instance
@@ -52,8 +49,8 @@ import type { ResolvedRegistryItem } from './types.js'
  *                    transitive appearance is suppressed. Defaults to empty.
  * @returns All registries including transitive dependencies (deduplicated),
  *          excluding any whose canonical id appears in `installed`.
- * @throws {VersionMismatchError} If a transitive dep targets a different
- *          version of an already-installed registry.
+ * @throws {AppError} With code `VALIDATION_ERROR` if a `registryDependencies`
+ *          entry includes an `@version` or `:language` suffix.
  *
  * @example
  * ```ts
@@ -71,10 +68,8 @@ export async function resolveRegistryDependencies(
   logger: Logger,
   installed: Iterable<string> = []
 ): Promise<ResolvedRegistryItem[]> {
-  // Keep the original installed identifier per canonical key so we can
-  // compare versions later — `canonicalizeIdentifier` strips `@version`.
-  const satisfied = new Map<string, string>()
-  for (const id of installed) satisfied.set(canonicalizeIdentifier(id), id)
+  const satisfied = new Set<string>()
+  for (const id of installed) satisfied.add(canonicalizeIdentifier(id))
 
   const resolved = new Map(
     items.map((i) => [canonicalizeIdentifier(i.identifier), i])
@@ -82,26 +77,12 @@ export async function resolveRegistryDependencies(
 
   for (const current of resolved.values()) {
     for (const depId of current.registryDependencies ?? []) {
+      assertUnpinnedDependency(depId, current.identifier)
+
       const key = canonicalizeIdentifier(depId)
       if (resolved.has(key)) continue
 
-      const installedId = satisfied.get(key)
-      if (installedId !== undefined) {
-        const installedVersion = parseNamespace(installedId).version
-        const requestedVersion = parseNamespace(depId).version
-        // Asymmetric check (§6.10): the version-pinned manifest is
-        // authoritative when present, so an unpinned dep against a
-        // pinned install is a match. The legacy case (unpinned install
-        // + pinned dep) stays conservative because the actually-installed
-        // version is unknown and silently choosing it would be wrong.
-        const mismatch =
-          (installedVersion !== undefined &&
-            requestedVersion !== undefined &&
-            installedVersion !== requestedVersion) ||
-          (installedVersion === undefined && requestedVersion !== undefined)
-        if (mismatch) {
-          throw new VersionMismatchError(installedId, depId)
-        }
+      if (satisfied.has(key)) {
         logger.debug(`Skipping already-installed dependency: ${depId}`)
         continue
       }
@@ -115,4 +96,39 @@ export async function resolveRegistryDependencies(
   }
 
   return Array.from(resolved.values())
+}
+
+// ─── Internal ───────────────────────────────────────────────────────────────
+
+/**
+ * Reject `registryDependencies` entries that pin a version or language.
+ *
+ * The registry-item schema (`packages/storage/schema/registry-item.json`)
+ * limits `registryDependencies` to bare `@namespace/path` or shorthand
+ * `path` — pinning is not part of the protocol. A self-hosted registry
+ * that skips Server-side validation could still emit `@rack/x@1.0.0`;
+ * partially honoring it would let the runtime drift from the documented
+ * protocol, so refuse the input outright.
+ *
+ * @param depId       - Dependency identifier from `registryDependencies`
+ * @param parentId    - Parent registry identifier (for error context)
+ * @throws {AppError} With code `VALIDATION_ERROR` when `depId` contains
+ *                    `@version` or `:language`.
+ */
+function assertUnpinnedDependency(depId: string, parentId: string): void {
+  // Namespace prefix `@ns/...` is fine; only an `@` *after* the
+  // namespace introduces a version pin. Strip the leading `@<ns>/`
+  // before scanning so shorthand `foo` and full `@ns/foo` are checked
+  // identically.
+  const tail = depId.startsWith('@')
+    ? depId.slice(1).split('/').slice(1).join('/')
+    : depId
+  if (tail.includes('@') || tail.includes(':')) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      `registryDependencies entry "${depId}" (declared by ${parentId}) includes a version ` +
+        'or language suffix, which is not supported. ' +
+        'Remove the @version / :language suffix and republish the registry.'
+    )
+  }
 }

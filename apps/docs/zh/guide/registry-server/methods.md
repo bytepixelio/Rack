@@ -177,7 +177,7 @@ JSON Schema 在镜像里 `/app/schema` 路径下, **不**走外部卷, 改 schem
 
 需要把上传后的包落到 Cloudflare R2 时, 在 `apps/registry-server/.env.r2.local`(已经在 gitignore 里) 里写:
 
-```env
+```bash
 STORAGE_BACKEND=r2
 R2_BUCKET_NAME=...
 R2_ACCOUNT_ID=...
@@ -298,6 +298,10 @@ server {
     }
 }
 ```
+
+::: warning 服务端也要信任代理
+仅在 Nginx 透传 `X-Forwarded-For` 还不够 —— Registry Server 默认只看连接 IP, 必须额外设置 `TRUST_PROXY=true` (或代理跳数, 如 `TRUST_PROXY=1`), 速率限制才会按真实客户端 IP 计数。否则所有用户共享代理 IP 的同一个 1200/min 配额。详见 [Configuration § 基础配置](./configuration.md#基础配置)。
+:::
 
 启用配置:
 

@@ -21,4 +21,28 @@ describe('GET /presets/:name', () => {
 
     expect(res.status).toBe(404)
   })
+
+  it('returns 400 INVALID_PRESET for decoded traversal (§6.21)', async () => {
+    // The Worker dispatcher decodes %2e%2e%2fsecret to '../secret'
+    // before calling the handler; the validator rejects it as a 400
+    // instead of leaking the path into bucket.get and silently 404ing.
+    const bucket = createMockBucket({})
+    const res = await handlePreset(bucket, '../secret')
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      code: 'INVALID_PRESET',
+      message: expect.stringContaining('Preset name must match')
+    })
+  })
+
+  it('returns 400 INVALID_PRESET for an uppercase preset name', async () => {
+    const bucket = createMockBucket({})
+    const res = await handlePreset(bucket, 'Tutorial')
+
+    expect(res.status).toBe(400)
+    expect((await res.json()) as { code: string }).toMatchObject({
+      code: 'INVALID_PRESET'
+    })
+  })
 })

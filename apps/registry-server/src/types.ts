@@ -46,6 +46,25 @@ export interface Config {
   /** Storage backend for uploads: 'local' (default) or 'r2' */
   storageBackend: StorageBackend
 
+  /**
+   * Fastify `trustProxy` setting. Controls whether `request.ip` follows
+   * the `X-Forwarded-For` chain instead of the connection IP. Required
+   * when the server runs behind Nginx / ALB / Cloudflare Tunnel so the
+   * rate limiter keys per real client IP rather than per proxy IP
+   * (§6.19). Defaults to `false`. Accepts:
+   *
+   *  - `false` (default) — use the connection IP. Right for bare
+   *    deployments without a reverse proxy.
+   *  - `true` — trust the entire `X-Forwarded-For` chain. Use only when
+   *    a single trusted proxy stands between clients and the server.
+   *  - hop count (`1`, `2`, …) — trust the last *N* hops. Use when
+   *    chained proxies (e.g. CDN → ALB → server) sit in front; pick
+   *    the count that matches your deployment.
+   *
+   * Maps from `TRUST_PROXY=<true|false|N>` in the environment.
+   */
+  trustProxy: boolean | number
+
   /** R2 configuration (required when storageBackend is 'r2') */
   r2?: {
     accountId: string

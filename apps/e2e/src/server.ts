@@ -82,6 +82,7 @@ export async function startServer(
     port: 0,
     storageRoot,
     nodeEnv: 'test',
+    trustProxy: false,
     host: '127.0.0.1',
     logLevel: 'silent',
     storageBackend: 'local',

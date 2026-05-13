@@ -9,7 +9,7 @@
  * are not leaked to anyone who cannot access them.
  */
 
-import { CACHE_HEADERS } from '@rack/registry-core'
+import { CACHE_HEADERS, NAMESPACE_PATTERN } from '@rack/registry-core'
 import {
   AppError,
   NotFoundError,
@@ -45,10 +45,16 @@ export default async function namespaceRoute(
     async (request, reply) => {
       const { namespace } = request.params
 
-      if (!namespace.startsWith('@')) {
+      // §6.24: validate against the full namespace pattern (not just
+      // `startsWith('@')`). Discovery callers that hit
+      // `/namespaces/@Bad/registries` previously slipped past this
+      // check and surfaced as a 403/404/500 further down, depending on
+      // whether the namespace happened to exist in `auth.json` or on
+      // disk.
+      if (!NAMESPACE_PATTERN.test(namespace)) {
         throw new ValidationError(
           'INVALID_NAMESPACE',
-          'Namespace must start with @'
+          `Namespace must match ${NAMESPACE_PATTERN.source}`
         )
       }
 

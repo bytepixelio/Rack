@@ -55,6 +55,25 @@ describe('StorageService', () => {
     expect(namespaces).toEqual(['@alpha', '@zoo'])
   })
 
+  it('rejects namespace directories that do not match NAMESPACE_PATTERN (§6.24)', async () => {
+    // Pre-fix the filter was just `startsWith('@')`, so a stray
+    // `@bad./` or `@bad_/` directory on disk would surface in
+    // discovery while every install against it failed downstream as
+    // `INVALID_PATH`. The fix routes through the same pattern the
+    // URL parser, schema, and auth-core use.
+    //
+    // (Uppercase `@Rack` would also be rejected, but a case-insensitive
+    // filesystem like macOS HFS+/APFS collapses it onto `@rack` here.
+    // The auth-core unit tests cover the casing case directly.)
+    await mkdir(join(tempDir, '@rack'))
+    await mkdir(join(tempDir, '@bad.'))
+    await mkdir(join(tempDir, '@bad_'))
+    await mkdir(join(tempDir, '@ok-ns'))
+
+    const namespaces = await storage.findNamespaces()
+    expect(namespaces).toEqual(['@ok-ns', '@rack'])
+  })
+
   // ─── findRegistries ──────────────────────────────────────────────────────
 
   // The new contract: a directory is a registry iff it contains a

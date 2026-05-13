@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'config/auth.json'
+      - 'packages/auth-core/**'
       - '.github/workflows/sync-auth.yml'
   workflow_dispatch:
 
@@ -25,16 +26,61 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile --filter @rack/registry-worker
+      # Install both auth-core (for the validator) and registry-worker
+      # (for wrangler) workspaces so the next steps can run.
+      - run: pnpm install --frozen-lockfile --filter @rack/registry-worker --filter @rack/auth-core
 
+      # §6.22: validate config/auth.json *before* shipping it to R2. The
+      # Worker caches `.auth/auth.json` for 10 minutes, so the public
+      # post-sync read below can keep returning 200 from cached config
+      # while a freshly-uploaded broken auth.json is unusable. Running
+      # the same parser here means schema-level breaks fail the workflow
+      # at this step rather than going live silently. `tsx` runs the
+      # source TS directly because auth-core is consumed as workspace
+      # source (no published build artifact).
+      - name: Validate config/auth.json with @rack/auth-core
+        run: |
+          pnpm dlx tsx -e "
+            import { readFile } from 'node:fs/promises';
+            import { parseAuthConfig } from './packages/auth-core/src/index.ts';
+
+            const raw = JSON.parse(await readFile('./config/auth.json', 'utf8'));
+            const cfg = parseAuthConfig(raw);
+            if (cfg.errors.length > 0) {
+              console.error('auth.json validation failed:');
+              for (const e of cfg.errors) console.error('  -', e.namespace, '->', e.reason);
+              process.exit(1);
+            }
+            console.log('auth.json OK: namespaces =', [...cfg.allowedNamespaces].sort().join(', '));
+          "
+
+      # The bucket name, account, and post-sync URL come from secrets /
+      # repo variables so fork / self-host deployments can point at their
+      # own R2 + Worker without editing this file. Falls back to the
+      # upstream defaults when the variables are unset so a clean upstream
+      # clone keeps working.
       - name: Upload auth.json to R2
         working-directory: apps/registry-worker
-        run: pnpm exec wrangler r2 object put rack-registry/.auth/auth.json --file ../../config/auth.json --content-type application/json --remote
+        run: |
+          pnpm exec wrangler r2 object put "${BUCKET}/.auth/auth.json" \
+            --file ../../config/auth.json \
+            --content-type application/json \
+            --remote
         env:
+          BUCKET: ${{ secrets.R2_BUCKET_NAME || 'rack-registry' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # Read an anonymous-read namespace — confirms the Worker can still parse
-      # auth.json after the sync. A broken auth.json would surface as 500 here.
-      - name: Post-sync read check
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused https://registry.rackjs.com/registries/@rack/runtimes/node/versions
+      # Read an anonymous-read namespace through the public Worker URL —
+      # confirms the deployment is still reachable. NOTE: due to the
+      # Worker's 10-minute auth-config cache, this only proves the
+      # Worker is *running*, not that the freshly-uploaded auth.json has
+      # been picked up yet. For stricter post-deploy verification, run a
+      # manual reload or roll Workers isolates. See
+      # apps/registry-worker/docs/ARCHITECTURE.md for cache TTL details.
+      - name: Post-sync read check (Worker reachability only)
+        env:
+          REGISTRY_PUBLIC_URL: ${{ vars.REGISTRY_PUBLIC_URL || 'https://registry.rackjs.com' }}
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused \
+            "${REGISTRY_PUBLIC_URL}/registries/@rack/runtimes/node/versions"

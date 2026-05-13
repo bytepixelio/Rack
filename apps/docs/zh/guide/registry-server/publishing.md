@@ -193,9 +193,11 @@ curl -X POST "$SERVER_URL/registries" \
 ```json
 {
   "code": "UNAUTHORIZED",
-  "message": "Authentication token is required"
+  "message": "Authentication required for upload. Provide a namespace token or admin token via Authorization or X-Registry-Token."
 }
 ```
+
+服务端会在读取 multipart 请求体之前**直接**返回该错误（见 §6.20），未携带 Token 的上传不会消耗服务器的上传带宽和临时磁盘。
 
 **解决方法**: 添加 Token
 

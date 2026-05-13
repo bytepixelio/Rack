@@ -129,6 +129,18 @@ describe('list command', () => {
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
+  it('exits with REGISTRY_NOT_FOUND when --registry points to an unconfigured namespace', async () => {
+    // §6.16: unknown namespaces no longer silently fall back to the
+    // default registry; rk list must surface "namespace not configured"
+    // rather than dispatch a request to the wrong source.
+    getRegistryMock.mockResolvedValue(null)
+    await expect(
+      runCommand(registerListCommand, ['list', '--registry', '@ghost'])
+    ).rejects.toThrow('__exit__')
+    expect(exitSpy).toHaveBeenCalledWith(1)
+    expect(httpGetMock).not.toHaveBeenCalled()
+  })
+
   it('shows a friendly message when an empty namespace list is returned', async () => {
     httpGetMock.mockResolvedValue({ data: { namespaces: [] } })
     await runCommand(registerListCommand, ['list'])

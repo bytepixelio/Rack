@@ -91,7 +91,7 @@ Rack uses the official source by default; the configuration file lives at `~/.ra
 }
 ```
 
-All namespaces not explicitly configured fall back to the `@rack` source.
+Only the built-in `@rack` and `@presets` namespaces are pre-configured. Any other namespace (private or self-hosted) must be wired up explicitly with `rk config set <namespace> --url <url>`; unknown namespaces fail with `REGISTRY_NOT_FOUND` instead of silently hitting the default source.
 
 ### Add Private Source
 
@@ -173,7 +173,7 @@ Configuration for @company:
 rk config remove @company
 ```
 
-After removal, the namespace falls back to the default `@rack` source. The default `@rack` namespace cannot be removed.
+After removal, the namespace has no configuration; subsequent `rk add @<namespace>/...` calls fail with `REGISTRY_NOT_FOUND` until it is reconfigured. The built-in `@rack` and `@presets` namespaces ship in the default config and reappear after removal the next time the CLI loads `~/.rackrc`.
 
 ## Namespace Resolution Rules
 
@@ -194,9 +194,9 @@ rk add @company/ui-kit
 # → Uses https://registry.company.com
 ```
 
-#### 2. Fall Back to Default Source
+#### 2. Shorthand Resolves to `@rack`
 
-If the namespace is not configured, fall back to the `@rack` source.
+When the identifier has no namespace prefix (e.g. `quality/eslint`), the parser injects `@rack/` so it hits the default source. Unknown namespaces (`@unconfigured/x`) do **not** fall back — they raise `REGISTRY_NOT_FOUND`.
 
 ```bash
 # Configuration

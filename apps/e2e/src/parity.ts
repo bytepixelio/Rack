@@ -33,10 +33,18 @@ export interface SeedSpec {
   files: Record<string, unknown>
 }
 
-/** Expected response — `code` only checked when supplied. */
+/** Expected response — `code` and `headers` are only checked when supplied. */
 export interface Expectation {
   status: number
   code?: string
+  /**
+   * Subset of response headers that must match exactly. Header names are
+   * lowercased for comparison so callers can pass `Content-Type` or
+   * `content-type` interchangeably. Use this for protocol-level parity
+   * (§6.17): both runtimes must answer `text/typescript` for a `.ts`
+   * file even though their HTTP libraries are completely different.
+   */
+  headers?: Record<string, string>
 }
 
 /**
@@ -62,6 +70,13 @@ export interface ParityCase {
   seed?: SeedSpec
   /** ADMIN_TOKEN supplied to both runtimes. Defaults to `admin-token`. */
   adminToken?: string
+  /**
+   * Force the Worker R2 mock to paginate `list()` at this page size.
+   * The Server reads from a real filesystem, so its results are not
+   * paginated; this option only shapes the Worker mock. Used by the
+   * §6.18 case to exercise `truncated: true` + cursor walking.
+   */
+  workerListPageSize?: number
 }
 
 interface Env {
@@ -145,6 +160,7 @@ export async function seedServer(
       adminToken,
       nodeEnv: 'test',
       logLevel: 'silent',
+      trustProxy: false,
       host: '127.0.0.1',
       storageBackend: 'local',
       storageRoot: tempDir,
@@ -158,9 +174,13 @@ export async function seedServer(
 // ─── Worker seeding ──────────────────────────────────────────────────
 
 /** Build a minimal R2 bucket backed by an in-memory Map. */
-export function createMockBucket(spec: SeedSpec): R2BucketLike {
+export function createMockBucket(
+  spec: SeedSpec,
+  options: { listPageSize?: number } = {}
+): R2BucketLike {
   const enc = new TextEncoder()
   const store = new Map<string, string>()
+  const pageSize = options.listPageSize
 
   store.set('.auth/auth.json', JSON.stringify(spec.authConfig))
   for (const [k, v] of Object.entries(spec.files)) {
@@ -192,11 +212,12 @@ export function createMockBucket(spec: SeedSpec): R2BucketLike {
   return {
     get: async (key) => (store.has(key) ? toBody(key, store.get(key)!) : null),
     head: async (key) => (store.has(key) ? toHead(key, store.get(key)!) : null),
-    list: async (options = {}) => {
-      const prefix = options.prefix ?? ''
-      const delimiter = options.delimiter ?? ''
+    list: async (listOptions = {}) => {
+      const prefix = listOptions.prefix ?? ''
+      const delimiter = listOptions.delimiter ?? ''
       const objects: R2ObjectLike[] = []
-      const prefixes = new Set<string>()
+      const prefixes: string[] = []
+      const seen = new Set<string>()
 
       for (const [key, data] of store) {
         if (!key.startsWith(prefix)) continue
@@ -204,14 +225,46 @@ export function createMockBucket(spec: SeedSpec): R2BucketLike {
           const rest = key.slice(prefix.length)
           const idx = rest.indexOf(delimiter)
           if (idx !== -1) {
-            prefixes.add(prefix + rest.slice(0, idx + 1))
+            const p = prefix + rest.slice(0, idx + 1)
+            if (!seen.has(p)) {
+              seen.add(p)
+              prefixes.push(p)
+            }
             continue
           }
         }
         objects.push(toHead(key, data))
       }
 
-      return { objects, truncated: false, delimitedPrefixes: [...prefixes] }
+      // Deterministic ordering — R2 returns keys in lexicographic order
+      // and the namespace handler now relies on cursor pagination.
+      prefixes.sort()
+      objects.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+
+      const items: Array<{ kind: 'object' | 'prefix'; value: unknown }> = [
+        ...prefixes.map((p) => ({ kind: 'prefix' as const, value: p })),
+        ...objects.map((o) => ({ kind: 'object' as const, value: o }))
+      ]
+
+      const start = listOptions.cursor
+        ? Number.parseInt(listOptions.cursor, 10)
+        : 0
+      const end = pageSize
+        ? Math.min(items.length, start + pageSize)
+        : items.length
+      const slice = items.slice(start, end)
+      const truncated = end < items.length
+
+      return {
+        objects: slice
+          .filter((item) => item.kind === 'object')
+          .map((item) => item.value as R2ObjectLike),
+        truncated,
+        delimitedPrefixes: slice
+          .filter((item) => item.kind === 'prefix')
+          .map((item) => item.value as string),
+        cursor: truncated ? String(end) : undefined
+      }
     }
   }
 }
@@ -240,7 +293,9 @@ export async function fireServer(c: ParityCase): Promise<InjectResponse> {
 
 /** Fire the case at the Worker handler. Pass `clearAuthCache` separately. */
 export function fireWorker(c: ParityCase): Promise<Response> {
-  const bucket = createMockBucket(c.seed ?? DEFAULT_SEED)
+  const bucket = createMockBucket(c.seed ?? DEFAULT_SEED, {
+    listPageSize: c.workerListPageSize
+  })
   const headers = new Headers(c.headers ?? {})
   const env: Env = { BUCKET: bucket, ADMIN_TOKEN: c.adminToken ?? ADMIN_TOKEN }
   const request = new Request(`http://w${c.path}`, { method: 'GET', headers })

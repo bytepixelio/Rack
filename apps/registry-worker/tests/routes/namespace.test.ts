@@ -78,6 +78,101 @@ describe('GET /namespaces', () => {
     expect(body.namespaces).toEqual([])
   })
 
+  it('filters out R2 prefixes that violate NAMESPACE_PATTERN (§6.24)', async () => {
+    // `@Bad/` and `@bad./` would surface in delimited listing pre-fix
+    // because the filter was just `startsWith('@')`.
+    const bucket = createMockBucket(
+      {
+        '@rack/runtimes/node/versions.json': { versions: ['1.0.0'] },
+        '@Bad/x/versions.json': { versions: ['1.0.0'] },
+        '@bad./x/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        authConfig: {
+          '@rack': [],
+          // @Bad / @bad. would normally be rejected by auth-core's
+          // own NAMESPACE_PATTERN check, but storage-side filtering
+          // also has to drop them so discovery never sees them in the
+          // first place.
+          '@Bad': [],
+          '@bad.': []
+        }
+      }
+    )
+    const res = await handleNamespaces(bucket, undefined, mockRequest())
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { namespaces: string[] }
+    expect(body.namespaces).toEqual(['@rack'])
+  })
+
+  it('paginates R2 list until truncated=false (§6.18)', async () => {
+    // Pre-fix, handleNamespaces called bucket.list once with no cursor
+    // loop and silently dropped every namespace past the first page.
+    // Force the mock bucket to return 2 entries per page so the 4
+    // namespace prefixes (`@a/`–`@d/`) plus the `.auth/` prefix split
+    // across multiple truncated pages, then assert all four namespaces
+    // appear in the response.
+    const bucket = createMockBucket(
+      {
+        '@a/lib/versions.json': { versions: ['1.0.0'] },
+        '@b/lib/versions.json': { versions: ['1.0.0'] },
+        '@c/lib/versions.json': { versions: ['1.0.0'] },
+        '@d/lib/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        listPageSize: 2,
+        authConfig: { '@a': [], '@b': [], '@c': [], '@d': [] }
+      }
+    )
+    const listSpy = vi.spyOn(bucket, 'list')
+
+    const res = await handleNamespaces(bucket, undefined, mockRequest())
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { namespaces: string[] }
+    expect(body.namespaces).toEqual(['@a', '@b', '@c', '@d'])
+    // The handler must walk the cursor at least twice — a single list
+    // call could not have surfaced all four namespaces given the page
+    // cap of 2. Subsequent calls all carry a cursor string forwarded
+    // from the previous page.
+    expect(listSpy.mock.calls.length).toBeGreaterThanOrEqual(2)
+    for (const call of listSpy.mock.calls.slice(1)) {
+      expect(call[0]).toMatchObject({ cursor: expect.any(String) })
+    }
+  })
+
+  it('keeps auth filtering correct across paginated pages (§6.18)', async () => {
+    // Authentication must apply *after* the full namespace set has been
+    // collected, otherwise a secret namespace that only appears on
+    // page 2 could leak when the caller has no token.
+    const bucket = createMockBucket(
+      {
+        '@a/lib/versions.json': { versions: ['1.0.0'] },
+        '@b/lib/versions.json': { versions: ['1.0.0'] },
+        '@c/lib/versions.json': { versions: ['1.0.0'] },
+        '@secret/x/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        listPageSize: 2,
+        authConfig: {
+          '@a': [],
+          '@b': [],
+          '@c': [],
+          '@secret': [{ token: 'tok-s' }]
+        }
+      }
+    )
+
+    const anon = await handleNamespaces(bucket, undefined, mockRequest())
+    const anonBody = (await anon.json()) as { namespaces: string[] }
+    expect(anonBody.namespaces).toEqual(['@a', '@b', '@c'])
+
+    const auth = await handleNamespaces(bucket, undefined, mockRequest('tok-s'))
+    const authBody = (await auth.json()) as { namespaces: string[] }
+    expect(authBody.namespaces).toContain('@secret')
+  })
+
   it('reuses the shared TTL cache instead of re-reading .auth/auth.json', async () => {
     const bucket = createMockBucket(
       { '@rack/runtimes/node/versions.json': { versions: ['1.0.0'] } },
@@ -189,6 +284,36 @@ describe('GET /namespaces/:namespace/registries', () => {
       undefined,
       mockRequest(),
       'rack'
+    )
+
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for an uppercase namespace (§6.24)', async () => {
+    // `@Rack` slipped past the `startsWith('@')` filter pre-fix and
+    // reached `bucket.list`, where it would surface as a misleading
+    // 404 / FORBIDDEN_NAMESPACE depending on R2 state.
+    const bucket = createMockBucket({})
+    const res = await handleNamespaceRegistries(
+      bucket,
+      undefined,
+      mockRequest(),
+      '@Rack'
+    )
+
+    expect(res.status).toBe(400)
+    expect((await res.json()) as { code: string }).toMatchObject({
+      code: 'INVALID_NAMESPACE'
+    })
+  })
+
+  it('returns 400 for a namespace with a trailing underscore', async () => {
+    const bucket = createMockBucket({})
+    const res = await handleNamespaceRegistries(
+      bucket,
+      undefined,
+      mockRequest(),
+      '@bad_'
     )
 
     expect(res.status).toBe(400)

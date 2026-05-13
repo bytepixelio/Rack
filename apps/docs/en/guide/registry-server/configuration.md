@@ -19,12 +19,13 @@ cp .env.example .env
 
 ### Basic Configuration
 
-| Variable    | Default       | Description         |
-| ----------- | ------------- | ------------------- |
-| `PORT`      | `8080`        | Server port         |
-| `HOST`      | `0.0.0.0`     | Server bind address |
-| `NODE_ENV`  | `development` | Runtime environment |
-| `LOG_LEVEL` | `info`        | Log level           |
+| Variable      | Default       | Description                                                                                                                                              |
+| ------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`        | `8080`        | Server port                                                                                                                                              |
+| `HOST`        | `0.0.0.0`     | Server bind address                                                                                                                                      |
+| `NODE_ENV`    | `development` | Runtime environment                                                                                                                                      |
+| `LOG_LEVEL`   | `info`        | Log level                                                                                                                                                |
+| `TRUST_PROXY` | `false`       | Whether to trust `X-Forwarded-For`. Accepts `true` / `false` / positive hop count. Required behind reverse proxies for per-client rate limiting (§6.19). |
 
 **Example Configuration**
 
@@ -34,6 +35,8 @@ PORT=8080
 HOST=0.0.0.0
 NODE_ENV=production
 LOG_LEVEL=info
+# Behind Nginx / ALB / Cloudflare Tunnel: follow X-Forwarded-For
+TRUST_PROXY=true
 ```
 
 ::: tip Listen Address
@@ -158,7 +161,17 @@ The following values are compiled into the server and cannot be changed via envi
 | Max upload size   | `100 MB`         | Maximum file upload size                                              |
 
 ::: tip Rate Limiting
-Rate limits are applied **per client IP**. When deploying behind a reverse proxy (e.g., Nginx), ensure `X-Forwarded-For` is correctly forwarded so each real client IP is counted independently. When the limit is exceeded, the server returns `429 Too Many Requests` with `{ "statusCode": 429, "error": "Too Many Requests", "message": "Rate limit exceeded, retry in X" }`
+Rate limits are applied **per client IP**. When deploying behind a reverse proxy (Nginx / ALB / Cloudflare Tunnel / …), forwarding `X-Forwarded-For` alone is **not** enough — also set `TRUST_PROXY=true` (or a hop count like `1` / `2`) on the server so Fastify follows the chain; otherwise every real client collapses into the proxy's IP and shares the same 1200/min bucket.
+
+When the limit is exceeded, the server returns `429 Too Many Requests` with the standard Rack error body:
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "Rate limit exceeded. Try again in 30s"
+}
+```
+
 :::
 
 ## Authentication Configuration

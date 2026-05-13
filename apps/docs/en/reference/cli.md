@@ -140,7 +140,7 @@ After setting the configuration, the command prints the new entry. `--token` is 
 
 #### Security Notes
 
-- **Namespace format**: must start with `@`; the default `@rack` namespace cannot be removed.
+- **Namespace format**: must start with `@`; the built-in `@rack` and `@presets` namespaces cannot be removed.
 - **Credentials are printed in cleartext**: `rk config get/list` does **not** mask tokens or sensitive headers in the current version. Protect your `~/.rackrc` and terminal output accordingly.
 
 ### Examples

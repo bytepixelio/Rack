@@ -63,8 +63,9 @@ export interface BuildInstallPlanParams {
  *                                  `namespace/path` (typically a preset
  *                                  that lists the same registry twice)
  * @throws {ConflictError}        If any two registries conflict
- * @throws {VersionMismatchError} If a transitive dep targets a different
- *                                version of an already-installed registry
+ * @throws {AppError}             With code `VALIDATION_ERROR` if a transitive
+ *                                `registryDependencies` entry pins a version
+ *                                or language (schema-forbidden suffix)
  *
  * @example
  * ```ts

@@ -17,7 +17,11 @@ import { homedir } from 'node:os'
 import { ConfigError } from './utils/errors.js'
 import { isString, isPlainObject } from 'lodash-es'
 import { readJSON, writeJSON, pathExists } from './infra/fs.js'
-import { DEFAULT_NAMESPACE, DEFAULT_REGISTRY_URL } from '../constants.js'
+import {
+  PRESETS_NAMESPACE,
+  DEFAULT_NAMESPACE,
+  DEFAULT_REGISTRY_URL
+} from '../constants.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,14 +60,24 @@ const CONFIG_PATH = path.join(homedir(), '.rackrc')
 // ─── Internal ────────────────────────────────────────────────────────────────
 
 /**
- * Build the default configuration with only the `@rack` namespace.
+ * Build the default configuration with the built-in `@rack` and
+ * `@presets` namespaces.
+ *
+ * `@presets` shares the same registry root as `@rack` because presets
+ * are served from `/presets/<name>` on the same Registry Server, not a
+ * separate host. Wiring it up explicitly here removes the previous
+ * `getRegistry()` "unknown namespace falls back to default" behavior
+ * (§6.16), so private namespaces that the user forgot to configure
+ * surface as `REGISTRY_NOT_FOUND` instead of silently hitting the
+ * default public registry.
  *
  * @returns Default configuration
  */
 function getDefaultConfig(): RackConfig {
   return {
     registries: {
-      [DEFAULT_NAMESPACE]: DEFAULT_REGISTRY_URL
+      [DEFAULT_NAMESPACE]: DEFAULT_REGISTRY_URL,
+      [PRESETS_NAMESPACE]: DEFAULT_REGISTRY_URL
     }
   }
 }
@@ -155,17 +169,23 @@ function resolveRegistry(entry: RegistryEntry): ResolvedRegistry {
 /**
  * Get registry configuration for a specific namespace.
  *
- * Falls back to the default namespace when the requested
- * namespace is not configured.
+ * Returns `null` when the namespace is not configured. Built-in
+ * namespaces (`@rack`, `@presets`) ship in the default config so they
+ * never miss; any other namespace requires an explicit
+ * `rk config set <namespace> --url <url>`. The previous "fall back to
+ * the default namespace" behavior was removed (§6.16) because it routed
+ * unconfigured private namespaces to the public registry — surfacing as
+ * misleading 403/404s instead of "namespace not configured".
  *
  * @param namespace - Registry namespace (e.g. `@rack`)
- * @returns Resolved registry
+ * @returns Resolved registry, or `null` if the namespace has no entry
  */
-async function getRegistry(namespace: string): Promise<ResolvedRegistry> {
+async function getRegistry(
+  namespace: string
+): Promise<ResolvedRegistry | null> {
   const config = await load()
-  const entry =
-    config.registries[namespace] ?? config.registries[DEFAULT_NAMESPACE]
-  return resolveRegistry(entry)
+  const entry = config.registries[namespace]
+  return entry === undefined ? null : resolveRegistry(entry)
 }
 
 /**

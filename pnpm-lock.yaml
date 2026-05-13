@@ -186,6 +186,9 @@ importers:
       '@fastify/rate-limit':
         specifier: ^10.1.1
         version: 10.3.0
+      '@rack/registry-core':
+        specifier: workspace:*
+        version: link:../../packages/registry-core
       ajv:
         specifier: 8.20.0
         version: 8.20.0
@@ -204,9 +207,6 @@ importers:
       fastify-plugin:
         specifier: ^5.0.1
         version: 5.1.0
-      mime-types:
-        specifier: 3.0.2
-        version: 3.0.2
       pino:
         specifier: ^9.5.0
         version: 9.14.0
@@ -226,15 +226,9 @@ importers:
       '@rack/auth-core':
         specifier: workspace:*
         version: link:../../packages/auth-core
-      '@rack/registry-core':
-        specifier: workspace:*
-        version: link:../../packages/registry-core
       '@types/form-data':
         specifier: 2.5.2
         version: 2.5.2
-      '@types/mime-types':
-        specifier: 3.0.1
-        version: 3.0.1
       '@types/node':
         specifier: 25.6.2
         version: 25.6.2
@@ -1815,9 +1809,6 @@ packages:
   '@types/mdurl@2.0.0':
     resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
-  '@types/mime-types@3.0.1':
-    resolution: {integrity: sha512-xRMsfuQbnRq1Ef+C+RKaENOxXX87Ygl38W1vDfPHRku02TgQr+Qd8iivLtAMcR0KF5/29xlnFihkTlbqFrGOVQ==}
-
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
@@ -3350,10 +3341,6 @@ packages:
   mime-types@2.1.35:
     resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
     engines: {node: '>= 0.6'}
-
-  mime-types@3.0.2:
-    resolution: {integrity: sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==}
-    engines: {node: '>=18'}
 
   mimic-fn@1.2.0:
     resolution: {integrity: sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==}
@@ -6253,8 +6240,6 @@ snapshots:
 
   '@types/mdurl@2.0.0': {}
 
-  '@types/mime-types@3.0.1': {}
-
   '@types/node@12.20.55': {}
 
   '@types/node@25.6.2':
@@ -7890,10 +7875,6 @@ snapshots:
   mime-types@2.1.35:
     dependencies:
       mime-db: 1.52.0
-
-  mime-types@3.0.2:
-    dependencies:
-      mime-db: 1.54.0
 
   mimic-fn@1.2.0: {}
 

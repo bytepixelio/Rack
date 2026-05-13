@@ -25,6 +25,7 @@ export type { ValidatedFilePath } from './file-path.js'
 
 export type { RegistryStore } from './listing.js'
 
+export { mimeType } from './mime.js'
 export { validateFilePath, FILE_PATH_PATTERN } from './file-path.js'
 export { parseRegistryUrl } from './parser.js'
 export { deriveSegments } from './segments.js'
@@ -39,5 +40,7 @@ export {
   CACHE_HEADERS,
   SCHEMA_FILES,
   SEMVER_PATTERN,
-  CATEGORY_BY_TYPE
+  CATEGORY_BY_TYPE,
+  NAMESPACE_PATTERN,
+  PATH_SEGMENT_PATTERN
 } from './constants.js'

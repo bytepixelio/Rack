@@ -15,6 +15,7 @@ function createConfig(storageRoot: string, authConfigPath?: string): Config {
     port: 0,
     storageRoot,
     nodeEnv: 'test',
+    trustProxy: false,
     host: '127.0.0.1',
     logLevel: 'silent',
     storageBackend: 'local',
@@ -148,6 +149,45 @@ describe('POST /registries', () => {
 
     expect(res.statusCode).toBe(401)
     expect(res.json().code).toBe('UNAUTHORIZED')
+    await app.close()
+  })
+
+  it('does not consume the multipart body when no auth token is provided (§6.20)', async () => {
+    // Pre-fix, the route called request.file() + saveToTemp +
+    // verifyChecksum + extractTarGz before authenticating, so an
+    // unauthenticated 401 still cost a full upload + extraction. After
+    // §6.20 the route returns 401 before touching the upload service.
+    const app = await buildApp(createConfig(tempDir))
+    const saveSpy = vi.spyOn(app.uploadService, 'saveToTemp')
+    const extractSpy = vi.spyOn(app.uploadService, 'extractTarGz')
+
+    const { tarPath, checksum } = await createTestPackage(tempDir, {
+      name: 'no-auth',
+      version: '1.0.0',
+      namespace: '@rack'
+    })
+    const tarContent = await readFile(tarPath)
+    const { body, boundary } = buildMultipart(
+      { checksum },
+      {
+        name: 'package',
+        filename: 'pkg.tar.gz',
+        content: tarContent,
+        contentType: 'application/gzip'
+      }
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/registries',
+      headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+      payload: body
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(res.json().code).toBe('UNAUTHORIZED')
+    expect(saveSpy).not.toHaveBeenCalled()
+    expect(extractSpy).not.toHaveBeenCalled()
     await app.close()
   })
 
