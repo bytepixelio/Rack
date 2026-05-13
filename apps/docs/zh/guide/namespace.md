@@ -91,7 +91,7 @@ Rack 默认使用官方源, 配置文件位于 `~/.rackrc`。
 }
 ```
 
-所有未明确配置的命名空间都会回退到 `@rack` 源。
+默认配置内置 `@rack` 与 `@presets` 两个命名空间。除此之外的命名空间（私有或自托管）必须通过 `rk config set <namespace> --url <url>` 显式配置；未配置的命名空间会直接返回 `REGISTRY_NOT_FOUND` 错误, 不再静默回退到默认源。
 
 ### 添加私有源
 
@@ -173,7 +173,7 @@ Configuration for @company:
 rk config remove @company
 ```
 
-移除后, 该命名空间会回退到默认的 `@rack` 源。默认的 `@rack` 命名空间禁止删除。
+移除后, 该命名空间在 `~/.rackrc` 中不存在, `rk add @<namespace>/...` 会返回 `REGISTRY_NOT_FOUND`, 直到重新配置。内置的 `@rack` 与 `@presets` 命名空间随默认配置发布; 即使被删除, CLI 下次加载 `~/.rackrc` 时仍会回填。
 
 ## 命名空间解析规则
 
@@ -194,9 +194,9 @@ rk add @company/ui-kit
 # → 使用 https://registry.company.com
 ```
 
-#### 2. 回退到默认源
+#### 2. 简写解析为 `@rack`
 
-如果命名空间未配置, 回退到 `@rack` 源。
+当标识符没有命名空间前缀（如 `quality/eslint`）时, parser 会自动补上 `@rack/`, 由默认源响应。但 `@unconfigured/x` 这类未配置的命名空间不再回退, 会直接抛 `REGISTRY_NOT_FOUND`。
 
 ```bash
 # 配置

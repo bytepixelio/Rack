@@ -53,5 +53,5 @@ Examples:
   $ rk config remove @corp -f        # skip confirmation
 
 Notes:
-  - The default @rack namespace cannot be removed.
+  - The built-in @rack and @presets namespaces cannot be removed.
 `

@@ -33,9 +33,10 @@ describe('rackrc', () => {
     const { rackrc } = await loadRackrc()
     const cfg = await rackrc.load()
     expect(cfg.registries['@rack']).toBe('https://registry.rackjs.com')
+    expect(cfg.registries['@presets']).toBe('https://registry.rackjs.com')
   })
 
-  it('load merges user config with default @rack entry', async () => {
+  it('load merges user config with default @rack and @presets entries', async () => {
     await writeFile(
       rcPath,
       JSON.stringify({ registries: { '@acme': 'https://acme.com' } })
@@ -43,6 +44,7 @@ describe('rackrc', () => {
     const { rackrc } = await loadRackrc()
     const cfg = await rackrc.load()
     expect(cfg.registries['@rack']).toBe('https://registry.rackjs.com')
+    expect(cfg.registries['@presets']).toBe('https://registry.rackjs.com')
     expect(cfg.registries['@acme']).toBe('https://acme.com')
   })
 
@@ -50,7 +52,10 @@ describe('rackrc', () => {
     await writeFile(rcPath, JSON.stringify({ registries: 'oops' }))
     const { rackrc } = await loadRackrc()
     const cfg = await rackrc.load()
-    expect(cfg.registries).toEqual({ '@rack': 'https://registry.rackjs.com' })
+    expect(cfg.registries).toEqual({
+      '@rack': 'https://registry.rackjs.com',
+      '@presets': 'https://registry.rackjs.com'
+    })
   })
 
   it('load throws ConfigError when the file contains invalid JSON', async () => {
@@ -123,9 +128,17 @@ describe('rackrc', () => {
     })
   })
 
-  it('getRegistry falls back to default namespace when not configured', async () => {
+  it('getRegistry returns null for an unconfigured namespace (no fallback)', async () => {
     const { rackrc } = await loadRackrc()
-    expect(await rackrc.getRegistry('@unknown')).toEqual({
+    expect(await rackrc.getRegistry('@unknown')).toBeNull()
+  })
+
+  it('getRegistry returns the default registry URL for the built-in @presets namespace', async () => {
+    // §6.16: presets share `@rack`'s registry root, so the default
+    // config wires both namespaces to the same URL; unknown namespaces
+    // no longer fall back to default.
+    const { rackrc } = await loadRackrc()
+    expect(await rackrc.getRegistry('@presets')).toEqual({
       url: 'https://registry.rackjs.com'
     })
   })
@@ -160,6 +173,7 @@ describe('rackrc', () => {
     const { rackrc } = await loadRackrc()
     const all = await rackrc.listRegistries()
     expect(all['@rack']).toEqual({ url: 'https://registry.rackjs.com' })
+    expect(all['@presets']).toEqual({ url: 'https://registry.rackjs.com' })
     expect(all['@acme']).toEqual({
       url: 'https://acme.com',
       headers: { Authorization: 'Bearer T' }

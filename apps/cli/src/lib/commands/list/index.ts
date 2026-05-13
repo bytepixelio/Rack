@@ -12,6 +12,7 @@ import { listHelpText } from './help.js'
 import { Logger } from '../../infra/logger.js'
 import { HttpClient } from '../../infra/http.js'
 import { DEFAULT_NAMESPACE } from '../../../constants.js'
+import { RegistryNotFoundError } from '../../utils/errors.js'
 import { displayNamespaces, displayRegistries } from './display.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -62,6 +63,13 @@ export function registerListCommand(program: Command): void {
         try {
           const target = options.registry ?? DEFAULT_NAMESPACE
           const registry = await rackrc.getRegistry(target)
+          if (!registry) {
+            throw new RegistryNotFoundError(
+              `No registry configured for namespace: ${target}. ` +
+                `Run 'rk config set ${target} --url <url>' first.`,
+              target
+            )
+          }
           const baseUrl = registry.url.replace(/\/+$/, '')
 
           if (namespace) {

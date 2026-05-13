@@ -13,8 +13,12 @@ export interface Workspace {
  *
  * Lays out a tmp directory containing a `home/` (used as `HOME` so the CLI
  * picks up a synthetic `~/.rackrc`) and a `work/` (used as the CLI's cwd).
- * The `.rackrc` points the `@rack` namespace at the given registry URL;
- * unknown namespaces (e.g. `@presets`) fall back to `@rack` in the CLI.
+ * The `.rackrc` points both `@rack` and `@presets` at the given registry
+ * URL — §6.16 removed the implicit "unknown namespace falls back to
+ * default" so each namespace the e2e suite touches must be wired up
+ * explicitly. Built-in namespaces still come pre-populated from
+ * `getDefaultConfig()`, but the test harness writes them out anyway to
+ * pin behavior against the in-process test server URL.
  */
 export async function createWorkspace(registryUrl: string): Promise<Workspace> {
   const root = await mkdtemp(path.join(tmpdir(), 'rack-e2e-ws-'))
@@ -24,7 +28,12 @@ export async function createWorkspace(registryUrl: string): Promise<Workspace> {
   await mkdir(home, { recursive: true })
   await mkdir(cwd, { recursive: true })
 
-  const rackrc = { registries: { '@rack': registryUrl } }
+  const rackrc = {
+    registries: {
+      '@rack': registryUrl,
+      '@presets': registryUrl
+    }
+  }
   await writeFile(path.join(home, '.rackrc'), JSON.stringify(rackrc))
 
   return {

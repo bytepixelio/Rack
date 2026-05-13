@@ -71,10 +71,21 @@ describe('config remove', () => {
     expect(removeMock).not.toHaveBeenCalled()
   })
 
-  it('refuses to remove the default @rack namespace', async () => {
+  it('refuses to remove the built-in @rack namespace', async () => {
     loadMock.mockResolvedValue({ registries: { '@rack': 'x' } })
     await expect(
       runCommand(program, ['config', 'remove', '@rack'])
+    ).rejects.toThrow('__exit__')
+    expect(exitSpy).toHaveBeenCalledWith(1)
+    expect(removeMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses to remove the built-in @presets namespace', async () => {
+    // @presets ships in the default config (§6.16) so removing it would
+    // leave preset-fetching with no configured registry.
+    loadMock.mockResolvedValue({ registries: { '@presets': 'x' } })
+    await expect(
+      runCommand(program, ['config', 'remove', '@presets'])
     ).rejects.toThrow('__exit__')
     expect(exitSpy).toHaveBeenCalledWith(1)
     expect(removeMock).not.toHaveBeenCalled()

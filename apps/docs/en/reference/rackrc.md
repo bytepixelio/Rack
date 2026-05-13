@@ -63,7 +63,7 @@ It's recommended to use the `rk config` command to maintain `.rackrc` and avoid 
 
 - **Incremental updates**: `set` merges with the existing entry; fields not provided are preserved. `--header` adds onto existing `headers`, with same-key entries replaced.
 - **Token shorthand**: `--token` is stored as a separate `token` field and expanded into `Authorization: Bearer <token>` for both display and outgoing requests.
-- **Namespace protection**: the default `@rack` namespace cannot be removed; `set/get/remove` only check that a namespace starts with `@`, and the full regex is enforced when `rk init` / `rk add` parse identifiers.
+- **Namespace protection**: the built-in `@rack` and `@presets` namespaces cannot be removed; `set/get/remove` only check that a namespace starts with `@`, and the full regex is enforced when `rk init` / `rk add` parse identifiers. `@presets` defaults to the same registry root as `@rack` (§6.16); unknown namespaces no longer fall back — they raise `REGISTRY_NOT_FOUND`.
 
 > The current version of `rk config get/list` does not mask tokens or sensitive headers, and `rk config set` does not perform a connectivity probe on `--url`. Use `rk doctor` if you want to verify a source is reachable.
 
