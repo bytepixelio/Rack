@@ -7,9 +7,13 @@
  */
 
 import { json, notFound, badRequest } from '../lib/response.js'
-import { CACHE_HEADERS, listRegistries } from '@rack/registry-core'
 import { loadAuthConfig, enforceNamespaceAccess } from '../lib/auth.js'
 import { extractToken, filterAllowedNamespaces } from '@rack/auth-core'
+import {
+  CACHE_HEADERS,
+  listRegistries,
+  NAMESPACE_PATTERN
+} from '@rack/registry-core'
 
 import type { RegistryStore } from '@rack/registry-core'
 
@@ -33,7 +37,10 @@ export async function handleNamespaces(
     const page = await bucket.list({ delimiter: '/', cursor })
     for (const prefix of page.delimitedPrefixes ?? []) {
       const trimmed = prefix.replace(/\/$/, '')
-      if (trimmed.startsWith('@')) collected.add(trimmed)
+      // §6.24: filter by the full namespace pattern. A stray prefix
+      // like `@Bad/` or `@bad./` would otherwise reach the auth filter
+      // and surface as a visible-but-not-installable namespace.
+      if (NAMESPACE_PATTERN.test(trimmed)) collected.add(trimmed)
     }
     cursor = page.truncated ? page.cursor : undefined
   } while (cursor)
@@ -59,8 +66,11 @@ export async function handleNamespaceRegistries(
   request: Request,
   namespace: string
 ): Promise<Response> {
-  if (!namespace.startsWith('@')) {
-    return badRequest('INVALID_NAMESPACE', 'Namespace must start with @')
+  if (!NAMESPACE_PATTERN.test(namespace)) {
+    return badRequest(
+      'INVALID_NAMESPACE',
+      `Namespace must match ${NAMESPACE_PATTERN.source}`
+    )
   }
 
   // Auth check (reuses the same flow as /registries/**)

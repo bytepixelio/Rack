@@ -78,6 +78,34 @@ describe('GET /namespaces', () => {
     expect(body.namespaces).toEqual([])
   })
 
+  it('filters out R2 prefixes that violate NAMESPACE_PATTERN (§6.24)', async () => {
+    // `@Bad/` and `@bad./` would surface in delimited listing pre-fix
+    // because the filter was just `startsWith('@')`.
+    const bucket = createMockBucket(
+      {
+        '@rack/runtimes/node/versions.json': { versions: ['1.0.0'] },
+        '@Bad/x/versions.json': { versions: ['1.0.0'] },
+        '@bad./x/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        authConfig: {
+          '@rack': [],
+          // @Bad / @bad. would normally be rejected by auth-core's
+          // own NAMESPACE_PATTERN check, but storage-side filtering
+          // also has to drop them so discovery never sees them in the
+          // first place.
+          '@Bad': [],
+          '@bad.': []
+        }
+      }
+    )
+    const res = await handleNamespaces(bucket, undefined, mockRequest())
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { namespaces: string[] }
+    expect(body.namespaces).toEqual(['@rack'])
+  })
+
   it('paginates R2 list until truncated=false (§6.18)', async () => {
     // Pre-fix, handleNamespaces called bucket.list once with no cursor
     // loop and silently dropped every namespace past the first page.
@@ -256,6 +284,36 @@ describe('GET /namespaces/:namespace/registries', () => {
       undefined,
       mockRequest(),
       'rack'
+    )
+
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for an uppercase namespace (§6.24)', async () => {
+    // `@Rack` slipped past the `startsWith('@')` filter pre-fix and
+    // reached `bucket.list`, where it would surface as a misleading
+    // 404 / FORBIDDEN_NAMESPACE depending on R2 state.
+    const bucket = createMockBucket({})
+    const res = await handleNamespaceRegistries(
+      bucket,
+      undefined,
+      mockRequest(),
+      '@Rack'
+    )
+
+    expect(res.status).toBe(400)
+    expect((await res.json()) as { code: string }).toMatchObject({
+      code: 'INVALID_NAMESPACE'
+    })
+  })
+
+  it('returns 400 for a namespace with a trailing underscore', async () => {
+    const bucket = createMockBucket({})
+    const res = await handleNamespaceRegistries(
+      bucket,
+      undefined,
+      mockRequest(),
+      '@bad_'
     )
 
     expect(res.status).toBe(400)

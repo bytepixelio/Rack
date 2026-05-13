@@ -157,6 +157,43 @@ describe('parseAuthConfig', () => {
     expect(() => parseAuthConfig('x')).toThrow('must be an object')
     expect(() => parseAuthConfig([])).toThrow('must be an object')
   })
+
+  it('rejects an uppercase namespace key (§6.24)', () => {
+    // `@Rack` is rejected by NAMESPACE_PATTERN — without this guard,
+    // discovery on Server / Worker would surface `@Rack` while every
+    // install attempt failed as INVALID_PATH downstream.
+    const config = parseAuthConfig({
+      '@Rack': [{ token: 't', publish: true }]
+    })
+    expect(config.allowedNamespaces.has('@Rack')).toBe(false)
+    expect(config.tokens.has('@Rack')).toBe(false)
+    expect(config.errors[0]).toMatchObject({
+      namespace: '@Rack',
+      reason: expect.stringContaining('does not match the namespace pattern')
+    })
+  })
+
+  it('rejects a namespace key ending with `_`', () => {
+    const config = parseAuthConfig({ '@bad_': [] })
+    expect(config.allowedNamespaces.has('@bad_')).toBe(false)
+    expect(config.errors[0]?.reason).toContain('namespace pattern')
+  })
+
+  it('rejects a namespace key containing a dot', () => {
+    const config = parseAuthConfig({ '@bad.x': [] })
+    expect(config.allowedNamespaces.has('@bad.x')).toBe(false)
+    expect(config.errors[0]?.reason).toContain('namespace pattern')
+  })
+
+  it('keeps valid sibling namespaces when one key is invalid', () => {
+    const config = parseAuthConfig({
+      '@good': [],
+      '@Bad': [{ token: 't' }]
+    })
+    expect(config.allowedNamespaces.has('@good')).toBe(true)
+    expect(config.allowedNamespaces.has('@Bad')).toBe(false)
+    expect(config.errors).toHaveLength(1)
+  })
 })
 
 describe('emptyAuthConfig', () => {

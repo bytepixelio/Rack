@@ -200,6 +200,28 @@ describe('Namespace routes', () => {
     expect(res.json().code).toBe('INVALID_NAMESPACE')
   })
 
+  it('returns 400 for an uppercase namespace (§6.24)', async () => {
+    // Pre-fix, `@Rack` slipped past `startsWith('@')` and then surfaced
+    // as a downstream 403/404/500 depending on auth/storage state.
+    const res = await app.inject({
+      method: 'GET',
+      url: '/namespaces/%40Rack/registries'
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('INVALID_NAMESPACE')
+  })
+
+  it('returns 400 for a namespace with a trailing underscore', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/namespaces/%40bad_/registries'
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('INVALID_NAMESPACE')
+  })
+
   it('returns 404 for declared namespace with no storage', async () => {
     await writeFile(
       join(tempDir, 'auth.json'),

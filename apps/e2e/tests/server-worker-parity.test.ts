@@ -284,6 +284,21 @@ const listingCases: ParityCase[] = [
     path: '/namespaces/rack/registries',
     headers: { authorization: `Bearer ${NS_TOKEN}` },
     expect: { status: 400, code: 'INVALID_NAMESPACE' }
+  },
+  {
+    name: 'list registries for uppercase namespace → 400 INVALID_NAMESPACE (§6.24)',
+    // Pre-§6.24 the route only checked startsWith('@'), so `@Rack`
+    // slipped past and surfaced as 403/404/500 depending on auth and
+    // storage state.
+    path: '/namespaces/%40Rack/registries',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    expect: { status: 400, code: 'INVALID_NAMESPACE' }
+  },
+  {
+    name: 'list registries for namespace with trailing underscore → 400',
+    path: '/namespaces/%40bad_/registries',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    expect: { status: 400, code: 'INVALID_NAMESPACE' }
   }
 ]
 

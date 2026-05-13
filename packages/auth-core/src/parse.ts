@@ -20,6 +20,20 @@ import type {
 } from './types.js'
 
 /**
+ * Namespace key pattern — mirrors `NAMESPACE_PATTERN` in
+ * `@rack/registry-core` and `namespace.pattern` in
+ * `packages/storage/schema/registry-item.json`.
+ *
+ * Kept inline here so this package stays dependency-free, but the
+ * three source locations must agree byte-for-byte. If you change one,
+ * change the others — Server discovery, Worker discovery, and the URL
+ * parser all reject namespaces that fall outside this shape (§6.24),
+ * so a parser that accepted laxer values would silently grow
+ * "visible-but-not-installable" namespaces.
+ */
+const NAMESPACE_KEY_PATTERN = /^@[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/
+
+/**
  * Parse an `expiresAt` value into a Date.
  *
  * Three states:
@@ -124,6 +138,20 @@ export function parseAuthConfig(raw: unknown): AuthConfig {
   const errors: AuthConfigError[] = []
 
   for (const [namespace, rawTokens] of Object.entries(config)) {
+    // Reject malformed namespace keys (§6.24). Without this guard,
+    // `@Rack` / `@bad.` / `@bad_` in `auth.json` end up in
+    // `allowedNamespaces`, so Server discovery and Worker discovery
+    // happily list them — but `parseRegistryUrl()` then rejects every
+    // install attempt as `INVALID_PATH`, surfacing as a confusing
+    // "visible but not installable" namespace. Treating the key as
+    // a validation error matches what URL parsing already does.
+    if (!NAMESPACE_KEY_PATTERN.test(namespace)) {
+      errors.push({
+        namespace,
+        reason: `Namespace key "${namespace}" does not match the namespace pattern (${NAMESPACE_KEY_PATTERN.source})`
+      })
+      continue
+    }
     try {
       const tokenMap = parseNamespaceTokens(namespace, rawTokens)
       allowedNamespaces.add(namespace)

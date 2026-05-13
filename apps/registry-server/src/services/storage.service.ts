@@ -8,7 +8,11 @@
 
 import semver from 'semver'
 import { sep, join, relative } from 'path'
-import { listRegistries, SEMVER_PATTERN } from '@rack/registry-core'
+import {
+  listRegistries,
+  SEMVER_PATTERN,
+  NAMESPACE_PATTERN
+} from '@rack/registry-core'
 import {
   rm,
   stat,
@@ -151,20 +155,24 @@ export class StorageService {
    * Discover all namespaces in storage.
    *
    * A namespace is any directory in the storage root whose name
-   * starts with `@`.
+   * matches `NAMESPACE_PATTERN` — the same kebab-case shape the URL
+   * parser, the schema, and `@rack/auth-core` enforce. Pre-§6.24 the
+   * filter was just `startsWith('@')`, so a stray `@Rack/` or `@bad.`
+   * directory on disk would surface in discovery while every install
+   * against it failed as `INVALID_PATH`.
    *
    * @returns Sorted list of namespace names
    *
    * @example
-   * // Storage root contains: @rack/, @company/, presets/, schema/
+   * // Storage root contains: @rack/, @company/, presets/, schema/, @Bad/
    * await storage.findNamespaces()
-   * // → ['@company', '@rack']
+   * // → ['@company', '@rack']  (@Bad rejected by NAMESPACE_PATTERN)
    */
   async findNamespaces(): Promise<string[]> {
     const entries = await readdir(this.storageRoot, { withFileTypes: true })
 
     return entries
-      .filter((e) => e.isDirectory() && e.name.startsWith('@'))
+      .filter((e) => e.isDirectory() && NAMESPACE_PATTERN.test(e.name))
       .map((e) => e.name)
       .sort()
   }
