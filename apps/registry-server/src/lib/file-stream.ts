@@ -5,9 +5,8 @@
  * Content-Type headers and HEAD request support.
  */
 
-import mime from 'mime-types'
-import { extname } from 'path'
 import { stat } from 'fs/promises'
+import { mimeType } from '@rack/registry-core'
 import { createReadStream } from 'fs'
 import { NotFoundError, ForbiddenError } from './errors.js'
 
@@ -16,8 +15,12 @@ import type { FastifyReply, FastifyRequest, FastifyBaseLogger } from 'fastify'
 /**
  * Get the MIME type for a file path.
  *
- * Overrides the standard library for `.ts` files which would otherwise
- * return `video/mp2t` instead of `text/typescript`.
+ * Delegates to `@rack/registry-core`'s shared {@link mimeType} so the
+ * Worker and Server return byte-identical `Content-Type` headers for
+ * the same template path (§6.17). The override is needed in particular
+ * for `.ts` files, which the standard mime-types tables map to
+ * `video/mp2t` — Rack needs `text/typescript` so browsers, editors,
+ * and CDN previews highlight the file correctly.
  *
  * @param filePath - Absolute or relative file path
  * @returns MIME type string
@@ -28,9 +31,7 @@ import type { FastifyReply, FastifyRequest, FastifyBaseLogger } from 'fastify'
  * getMimeType('unknown.xyz')    // → 'application/octet-stream'
  */
 export function getMimeType(filePath: string): string {
-  if (extname(filePath) === '.ts') return 'text/typescript'
-
-  return mime.lookup(filePath) || 'application/octet-stream'
+  return mimeType(filePath)
 }
 
 /** Options for {@link streamFileResponse}. */

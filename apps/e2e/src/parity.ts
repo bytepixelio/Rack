@@ -33,10 +33,18 @@ export interface SeedSpec {
   files: Record<string, unknown>
 }
 
-/** Expected response — `code` only checked when supplied. */
+/** Expected response — `code` and `headers` are only checked when supplied. */
 export interface Expectation {
   status: number
   code?: string
+  /**
+   * Subset of response headers that must match exactly. Header names are
+   * lowercased for comparison so callers can pass `Content-Type` or
+   * `content-type` interchangeably. Use this for protocol-level parity
+   * (§6.17): both runtimes must answer `text/typescript` for a `.ts`
+   * file even though their HTTP libraries are completely different.
+   */
+  headers?: Record<string, string>
 }
 
 /**

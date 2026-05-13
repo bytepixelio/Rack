@@ -2,7 +2,9 @@
  * HTTP response helpers.
  */
 
-import { CACHE_HEADERS } from '@rack/registry-core'
+import { mimeType, CACHE_HEADERS } from '@rack/registry-core'
+
+export { mimeType }
 
 /** Return a JSON response. Defaults to `no-store` — pass a `CACHE_HEADERS` tier for cacheable responses. */
 export function json(
@@ -43,34 +45,6 @@ export function streamObject(
       'Content-Length': obj.size.toString()
     }
   })
-}
-
-/** Guess Content-Type from file extension. */
-export function mimeType(path: string): string {
-  const ext = path.split('.').pop()?.toLowerCase()
-  const map: Record<string, string> = {
-    css: 'text/css',
-    ts: 'text/plain',
-    yml: 'text/yaml',
-    png: 'image/png',
-    gif: 'image/gif',
-    jsx: 'text/plain',
-    tsx: 'text/plain',
-    html: 'text/html',
-    yaml: 'text/yaml',
-    txt: 'text/plain',
-    jpg: 'image/jpeg',
-    woff: 'font/woff',
-    jpeg: 'image/jpeg',
-    woff2: 'font/woff2',
-    md: 'text/markdown',
-    svg: 'image/svg+xml',
-    js: 'text/javascript',
-    mjs: 'text/javascript',
-    cjs: 'text/javascript',
-    json: 'application/json'
-  }
-  return map[ext ?? ''] ?? 'application/octet-stream'
 }
 
 /** Read an R2 JSON file and parse it. */

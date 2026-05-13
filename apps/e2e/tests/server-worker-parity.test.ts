@@ -172,6 +172,55 @@ const endpointCases: ParityCase[] = [
   }
 ]
 
+// ─── Content-Type parity (§6.17) ─────────────────────────────────────
+
+// Storage keys omit the `/files/` URL prefix — the route maps
+// `/registries/@ns/path/ver/files/<rel>` to the bare `@ns/path/ver/<rel>`
+// key in both runtimes.
+const TS_SEED = {
+  authConfig: { '@rack': [{ token: NS_TOKEN }] },
+  files: {
+    '@rack/lib/versions.json': { versions: ['1.0.0'] },
+    '@rack/lib/1.0.0/registry.json': { name: '@rack/lib', version: '1.0.0' },
+    '@rack/lib/1.0.0/src/index.ts': 'export const x = 1\n',
+    '@rack/lib/1.0.0/src/App.tsx': 'export const App = () => null\n',
+    '@rack/lib/1.0.0/src/app.jsx': 'export const App = () => null\n'
+  }
+}
+
+const mimeParityCases: ParityCase[] = [
+  {
+    name: 'GET .ts file → Content-Type text/typescript',
+    path: '/registries/@rack/lib/1.0.0/files/src/index.ts',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    seed: TS_SEED,
+    expect: {
+      status: 200,
+      headers: { 'content-type': 'text/typescript' }
+    }
+  },
+  {
+    name: 'GET .tsx file → Content-Type text/typescript',
+    path: '/registries/@rack/lib/1.0.0/files/src/App.tsx',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    seed: TS_SEED,
+    expect: {
+      status: 200,
+      headers: { 'content-type': 'text/typescript' }
+    }
+  },
+  {
+    name: 'GET .jsx file → Content-Type text/javascript',
+    path: '/registries/@rack/lib/1.0.0/files/src/app.jsx',
+    headers: { authorization: `Bearer ${NS_TOKEN}` },
+    seed: TS_SEED,
+    expect: {
+      status: 200,
+      headers: { 'content-type': 'text/javascript' }
+    }
+  }
+]
+
 // ─── Namespace listing cases ─────────────────────────────────────────
 
 const listingCases: ParityCase[] = [
@@ -218,12 +267,39 @@ function runCases(cases: ParityCase[]): void {
       const body = (await workerRes.json()) as { code?: string }
       expect(body.code, 'worker body.code').toBe(wExp.code)
     }
+
+    if (sExp.headers) {
+      for (const [name, value] of Object.entries(sExp.headers)) {
+        const key = name.toLowerCase()
+        const got = serverRes.headers[key]
+        // Fastify's `Content-Type` may carry `; charset=utf-8`; match
+        // on the media-type prefix so the parity contract stays tight
+        // without coupling to charset defaults.
+        const actual = Array.isArray(got) ? got[0] : got
+        expect(actual ?? '', `server header ${name}`).toMatch(
+          new RegExp(`^${escapeRegExp(value)}(?:;|$)`)
+        )
+      }
+    }
+    if (wExp.headers) {
+      for (const [name, value] of Object.entries(wExp.headers)) {
+        const actual = workerRes.headers.get(name) ?? ''
+        expect(actual, `worker header ${name}`).toMatch(
+          new RegExp(`^${escapeRegExp(value)}(?:;|$)`)
+        )
+      }
+    }
   })
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 describe('Server ↔ Worker parity', () => {
   describe('protected namespace auth', () => runCases(authCases))
   describe('malformed registry URL', () => runCases(malformedCases))
   describe('endpoint status / body codes', () => runCases(endpointCases))
+  describe('template Content-Type parity', () => runCases(mimeParityCases))
   describe('namespace listing', () => runCases(listingCases))
 })

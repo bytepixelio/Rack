@@ -91,6 +91,37 @@ describe('GET /registries/*', () => {
       expect(res.status).toBe(200)
     })
 
+    it('should return text/typescript for .ts files (§6.17)', async () => {
+      // Parity guard: Server sends text/typescript for .ts, the Worker
+      // used to send text/plain. Both runtimes now share `mimeType()`
+      // from @rack/registry-core; lock the Worker side in here so a
+      // future refactor that drops the shared helper is caught locally
+      // even if the parity matrix is skipped.
+      const bucket = createMockBucket({
+        '@rack/node/1.0.0/src/index.ts': 'export const x = 1\n'
+      })
+      const res = await callRegistry(
+        bucket,
+        '@rack/node/1.0.0/files/src/index.ts'
+      )
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toBe('text/typescript')
+    })
+
+    it('should return text/typescript for .tsx files', async () => {
+      const bucket = createMockBucket({
+        '@rack/node/1.0.0/src/App.tsx': 'export const App = () => null\n'
+      })
+      const res = await callRegistry(
+        bucket,
+        '@rack/node/1.0.0/files/src/App.tsx'
+      )
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toBe('text/typescript')
+    })
+
     it('should return 404 for missing file', async () => {
       const bucket = createMockBucket({})
       const res = await callRegistry(
