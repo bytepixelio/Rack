@@ -265,7 +265,7 @@ Retry-After: 60
 ```
 
 ::: tip 反向代理配置
-在反向代理（如 Nginx）后部署时, 需确保正确透传 `X-Forwarded-For`, 否则所有请求会被视为同一 IP 而共享配额。
+反向代理（Nginx / ALB / Cloudflare Tunnel 等）后部署时, 仅透传 `X-Forwarded-For` 还不够 —— 还需在服务端设置 `TRUST_PROXY=true` (或代理跳数), Fastify 默认只看连接 IP, 否则所有真实客户端会共享代理 IP 的同一个配额。详见 [Configuration § 基础配置](./configuration.md#基础配置)。
 :::
 
 ## 备份策略

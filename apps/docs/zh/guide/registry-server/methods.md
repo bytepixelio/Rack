@@ -299,6 +299,10 @@ server {
 }
 ```
 
+::: warning 服务端也要信任代理
+仅在 Nginx 透传 `X-Forwarded-For` 还不够 —— Registry Server 默认只看连接 IP, 必须额外设置 `TRUST_PROXY=true` (或代理跳数, 如 `TRUST_PROXY=1`), 速率限制才会按真实客户端 IP 计数。否则所有用户共享代理 IP 的同一个 1200/min 配额。详见 [Configuration § 基础配置](./configuration.md#基础配置)。
+:::
+
 启用配置:
 
 ```bash

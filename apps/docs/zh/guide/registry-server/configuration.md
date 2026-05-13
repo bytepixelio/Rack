@@ -19,12 +19,13 @@ cp .env.example .env
 
 ### 基础配置
 
-| 变量名      | 默认值        | 说明         |
-| ----------- | ------------- | ------------ |
-| `PORT`      | `8080`        | 服务监听端口 |
-| `HOST`      | `0.0.0.0`     | 服务绑定地址 |
-| `NODE_ENV`  | `development` | 运行环境     |
-| `LOG_LEVEL` | `info`        | 日志级别     |
+| 变量名        | 默认值        | 说明                                                                                                                     |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`        | `8080`        | 服务监听端口                                                                                                             |
+| `HOST`        | `0.0.0.0`     | 服务绑定地址                                                                                                             |
+| `NODE_ENV`    | `development` | 运行环境                                                                                                                 |
+| `LOG_LEVEL`   | `info`        | 日志级别                                                                                                                 |
+| `TRUST_PROXY` | `false`       | 是否信任 `X-Forwarded-For`。值: `true` / `false` / 正整数跳数。反向代理后必须设置, 否则速率限制按代理 IP 聚合 (见 §6.19) |
 
 **示例配置**
 
@@ -34,6 +35,8 @@ PORT=8080
 HOST=0.0.0.0
 NODE_ENV=production
 LOG_LEVEL=info
+# Nginx / ALB / Cloudflare Tunnel 后: 信任 X-Forwarded-For
+TRUST_PROXY=true
 ```
 
 ::: tip 监听地址
@@ -158,7 +161,17 @@ WEBHOOK_CONFIG_PATH=config/webhooks.json
 | 最大上传大小       | `100 MB`   | 最大文件上传大小                                    |
 
 ::: tip 速率限制
-速率限制按**客户端 IP 独立计数**。在反向代理（如 Nginx）后部署时, 需确保正确透传 `X-Forwarded-For`, 否则所有请求会被视为同一 IP 而共享配额。超出限制时返回 `429 Too Many Requests`, 响应体格式为 `{ "statusCode": 429, "error": "Too Many Requests", "message": "Rate limit exceeded, retry in X" }`
+速率限制按**客户端 IP 独立计数**。在反向代理（如 Nginx / ALB / Cloudflare Tunnel）后部署时, 仅"透传 `X-Forwarded-For`" 不够 —— 还必须在服务端将 `TRUST_PROXY` 设为 `true` 或代理跳数 (如 `1`、`2`); 否则 Fastify 默认只看连接 IP, 所有真实客户端会被合并到代理 IP 的同一个 1200/min 配额。
+
+超出限制时返回 `429 Too Many Requests`, 响应体为 Rack 统一错误格式:
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "Rate limit exceeded. Try again in 30s"
+}
+```
+
 :::
 
 ## 认证配置

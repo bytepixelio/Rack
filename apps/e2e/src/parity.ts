@@ -160,6 +160,7 @@ export async function seedServer(
       adminToken,
       nodeEnv: 'test',
       logLevel: 'silent',
+      trustProxy: false,
       host: '127.0.0.1',
       storageBackend: 'local',
       storageRoot: tempDir,

@@ -156,4 +156,60 @@ describe('loadConfig', () => {
     const config = await loadWithEnv({ STORAGE_BACKEND: 'local' })
     expect(config.r2).toBeUndefined()
   })
+
+  // ─── Trust proxy (§6.19) ───────────────────────────────────────────────────
+
+  // Each case explicitly clears STORAGE_BACKEND because the
+  // r2-backend "should throw" test leaves env vars dangling when
+  // loadConfig throws (the cleanup loop in loadWithEnv never runs).
+
+  it('defaults trustProxy to false when TRUST_PROXY unset', async () => {
+    const config = await loadWithEnv({
+      TRUST_PROXY: undefined,
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(false)
+  })
+
+  it('parses TRUST_PROXY=true → true', async () => {
+    const config = await loadWithEnv({
+      TRUST_PROXY: 'true',
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(true)
+  })
+
+  it('parses TRUST_PROXY=false → false', async () => {
+    const config = await loadWithEnv({
+      TRUST_PROXY: 'false',
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(false)
+  })
+
+  it('parses positive integer hop count', async () => {
+    const config = await loadWithEnv({
+      TRUST_PROXY: '2',
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(2)
+  })
+
+  it('treats unsupported strings as false', async () => {
+    // Strings like `loopback` are valid Fastify values but cannot be
+    // safely passed via env without parsing IP ranges; reject them.
+    const config = await loadWithEnv({
+      TRUST_PROXY: 'loopback',
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(false)
+  })
+
+  it('treats zero / negative integers as false', async () => {
+    const config = await loadWithEnv({
+      TRUST_PROXY: '0',
+      STORAGE_BACKEND: undefined
+    })
+    expect(config.trustProxy).toBe(false)
+  })
 })

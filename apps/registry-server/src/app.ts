@@ -62,7 +62,14 @@ function getLoggerConfig(config: Config) {
  * @returns Configured Fastify instance ready to listen
  */
 export async function buildApp(config: Config): Promise<FastifyInstance> {
-  const app = Fastify({ logger: getLoggerConfig(config) })
+  const app = Fastify({
+    logger: getLoggerConfig(config),
+    // §6.19: the rate limiter keys per `request.ip`, which means a
+    // deployment behind Nginx / ALB / Cloudflare Tunnel needs Fastify
+    // to follow `X-Forwarded-For` — otherwise every client shares the
+    // proxy's IP and one user can starve the whole bucket.
+    trustProxy: config.trustProxy
+  })
 
   // ── Third-party plugins ──────────────────────────────────────────────
 

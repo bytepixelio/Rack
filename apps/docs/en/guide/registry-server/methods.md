@@ -299,6 +299,10 @@ server {
 }
 ```
 
+::: warning Server must also trust the proxy
+Forwarding `X-Forwarded-For` from Nginx is only half of the configuration. By default Registry Server only inspects the connection IP, so you also need `TRUST_PROXY=true` (or a hop count like `TRUST_PROXY=1`) on the server for the rate limiter to key per real client IP. Without it every user shares the proxy's IP and one client can starve the entire 1200/min bucket. See [Configuration § Basic Configuration](./configuration.md#basic-configuration).
+:::
+
 Enable configuration:
 
 ```bash

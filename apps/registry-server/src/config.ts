@@ -28,6 +28,30 @@ function parsePort(value: string | undefined, fallback: number): number {
 }
 
 /**
+ * Parse the `TRUST_PROXY` environment variable.
+ *
+ * Mirrors Fastify's accepted `trustProxy` values:
+ *  - `true` / `false` (case-insensitive) — toggle full trust.
+ *  - positive integer string (`1`, `2`, …) — trust N proxy hops.
+ *  - missing / anything else → `false` (no proxy).
+ *
+ * Strings like `loopback`, IP ranges, or callbacks are not supported
+ * via env; if you need them, edit `app.ts` directly.
+ *
+ * @param value - Raw `TRUST_PROXY` value
+ * @returns Fastify-compatible trust setting
+ */
+function parseTrustProxy(value: string | undefined): boolean | number {
+  if (!value) return false
+  const trimmed = value.trim()
+  if (trimmed.toLowerCase() === 'true') return true
+  if (trimmed.toLowerCase() === 'false') return false
+  const hops = Number.parseInt(trimmed, 10)
+  if (!Number.isNaN(hops) && hops > 0) return hops
+  return false
+}
+
+/**
  * Load server configuration from environment variables.
  *
  * @returns Fully resolved configuration object
@@ -37,6 +61,7 @@ export function loadConfig(): Config {
     PORT,
     SCHEMA_DIR,
     ADMIN_TOKEN,
+    TRUST_PROXY,
     STORAGE_ROOT,
     HOST = '0.0.0.0',
     AUTH_CONFIG_PATH,
@@ -64,6 +89,7 @@ export function loadConfig(): Config {
     port: parsePort(PORT, 8080),
     schemaDir: SCHEMA_DIR || resolve(storageRoot, 'schema'),
     adminToken: ADMIN_TOKEN?.trim() || undefined,
+    trustProxy: parseTrustProxy(TRUST_PROXY),
     authConfigPath:
       AUTH_CONFIG_PATH || resolve(process.cwd(), '../../config/auth.json'),
     webhookConfigPath:
