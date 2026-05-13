@@ -76,7 +76,22 @@ async function dispatch(request: Request, env: Env): Promise<Response> {
 
   const presetMatch = pathname.match(/^\/presets\/([^/]+)$/)
   if (presetMatch) {
-    return handlePreset(env.BUCKET, presetMatch[1])
+    // Decode percent-encoded preset names so the validator in
+    // handlePreset sees the same form Fastify produces after path-param
+    // decoding (§6.21). A bare `%2e%2e%2fsecret` would otherwise slip
+    // past the regex (`[^/]+` matches the encoded form) and reach
+    // bucket.get with an undecoded key — silently 404 on the Worker
+    // while the Server's resolver 500s on the same input.
+    let presetName: string
+    try {
+      presetName = decodeURIComponent(presetMatch[1])
+    } catch {
+      return json(
+        { code: 'INVALID_PRESET', message: 'Invalid preset name encoding' },
+        400
+      )
+    }
+    return handlePreset(env.BUCKET, presetName)
   }
 
   const schemaMatch = pathname.match(/^\/schemas\/([^/]+)$/)

@@ -221,6 +221,50 @@ const mimeParityCases: ParityCase[] = [
   }
 ]
 
+// ─── Preset cases (§6.21) ────────────────────────────────────────────
+
+const PRESET_SEED = {
+  authConfig: { '@rack': [] },
+  files: {
+    'presets/tutorial/preset.json': {
+      name: 'tutorial',
+      version: '1.0.0',
+      registries: ['runtimes/node']
+    }
+  }
+}
+
+const presetCases: ParityCase[] = [
+  {
+    name: 'GET /presets/<existing> → 200',
+    path: '/presets/tutorial',
+    seed: PRESET_SEED,
+    expect: { status: 200 }
+  },
+  {
+    name: 'GET /presets/<missing> → 404 NOT_FOUND',
+    path: '/presets/missing',
+    seed: PRESET_SEED,
+    expect: { status: 404, code: 'NOT_FOUND' }
+  },
+  {
+    name: 'GET /presets/<encoded-traversal> → 400 INVALID_PRESET',
+    // %2e%2e%2fsecret decodes to ../secret. Server validator (after
+    // Fastify decode) and Worker validator (after dispatcher decode)
+    // both reject this with 400 instead of letting the path leak into
+    // the storage layer.
+    path: '/presets/%2e%2e%2fsecret',
+    seed: PRESET_SEED,
+    expect: { status: 400, code: 'INVALID_PRESET' }
+  },
+  {
+    name: 'GET /presets/<uppercase> → 400 INVALID_PRESET',
+    path: '/presets/Tutorial',
+    seed: PRESET_SEED,
+    expect: { status: 400, code: 'INVALID_PRESET' }
+  }
+]
+
 // ─── Namespace listing cases ─────────────────────────────────────────
 
 const listingCases: ParityCase[] = [
@@ -301,6 +345,7 @@ describe('Server ↔ Worker parity', () => {
   describe('malformed registry URL', () => runCases(malformedCases))
   describe('endpoint status / body codes', () => runCases(endpointCases))
   describe('template Content-Type parity', () => runCases(mimeParityCases))
+  describe('preset routes', () => runCases(presetCases))
   describe('namespace listing', () => runCases(listingCases))
 
   describe('namespace pagination (§6.18)', () => {

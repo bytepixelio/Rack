@@ -64,4 +64,28 @@ describe('Preset routes', () => {
 
     expect(res.statusCode).toBe(404)
   })
+
+  it('returns 400 INVALID_PRESET for encoded traversal (§6.21)', async () => {
+    // Pre-fix, `/presets/%2e%2e%2fsecret` decoded to `../secret`,
+    // `resolvePresetPath` threw a plain `Error('Path traversal …')`,
+    // and the global handler bubbled it as 500 INTERNAL_SERVER_ERROR.
+    // The Worker silently 404'd the same URL, breaking Server/Worker
+    // parity.
+    const res = await app.inject({
+      method: 'GET',
+      url: '/presets/%2e%2e%2fsecret'
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('INVALID_PRESET')
+  })
+
+  it('returns 400 INVALID_PRESET for an uppercase preset name', async () => {
+    // Schema enforces kebab-case lowercase; an upper-case name is a
+    // client error, not a 404 or a 500.
+    const res = await app.inject({ method: 'GET', url: '/presets/Tutorial' })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('INVALID_PRESET')
+  })
 })
