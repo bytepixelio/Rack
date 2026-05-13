@@ -177,7 +177,7 @@ JSON Schemas live at `/app/schema` **inside the image** — not on a volume — 
 
 To send uploaded packages to Cloudflare R2 instead of local disk, put the following in `apps/registry-server/.env.r2.local` (already gitignored):
 
-```env
+```bash
 STORAGE_BACKEND=r2
 R2_BUCKET_NAME=...
 R2_ACCOUNT_ID=...

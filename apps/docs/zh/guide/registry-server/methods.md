@@ -177,7 +177,7 @@ JSON Schema 在镜像里 `/app/schema` 路径下, **不**走外部卷, 改 schem
 
 需要把上传后的包落到 Cloudflare R2 时, 在 `apps/registry-server/.env.r2.local`(已经在 gitignore 里) 里写:
 
-```env
+```bash
 STORAGE_BACKEND=r2
 R2_BUCKET_NAME=...
 R2_ACCOUNT_ID=...

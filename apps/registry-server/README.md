@@ -220,7 +220,7 @@ project name and give r2 mode its own env file + project name + host port.
 
 Create `apps/registry-server/.env.r2.local` (gitignored via `.env.*.local`):
 
-```env
+```bash
 STORAGE_BACKEND=r2
 R2_BUCKET_NAME=rack-registry
 R2_ACCOUNT_ID=...
