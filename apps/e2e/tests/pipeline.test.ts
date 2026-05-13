@@ -31,7 +31,9 @@ describe.skipIf(process.env.RACK_REGISTRY_URL)(
     })
 
     it('rk add @toy/dep auto-installs its registryDependencies', async () => {
-      const ws = await createWorkspace(server.url)
+      const ws = await createWorkspace(server.url, {
+        extraNamespaces: ['@toy']
+      })
       try {
         const result = await runCli(['add', '@toy/dep'], {
           cwd: ws.cwd,
