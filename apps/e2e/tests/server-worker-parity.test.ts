@@ -302,4 +302,50 @@ describe('Server ↔ Worker parity', () => {
   describe('endpoint status / body codes', () => runCases(endpointCases))
   describe('template Content-Type parity', () => runCases(mimeParityCases))
   describe('namespace listing', () => runCases(listingCases))
+
+  describe('namespace pagination (§6.18)', () => {
+    // Body-level case: the matrix runner only checks status/code, but
+    // here we need to compare the full `namespaces` array because the
+    // bug returned the wrong *content*, not the wrong status. Force
+    // the Worker mock to paginate at 2 entries/page so a 4-namespace
+    // bucket needs a cursor walk to surface every entry.
+    const PAGINATED_SEED = {
+      authConfig: {
+        '@a': [],
+        '@b': [],
+        '@c': [],
+        '@d': []
+      },
+      files: {
+        '@a/lib/versions.json': { versions: ['1.0.0'] },
+        '@b/lib/versions.json': { versions: ['1.0.0'] },
+        '@c/lib/versions.json': { versions: ['1.0.0'] },
+        '@d/lib/versions.json': { versions: ['1.0.0'] }
+      }
+    }
+
+    it('Worker walks cursor pages and matches Server result', async () => {
+      const c: ParityCase = {
+        name: 'paginated /namespaces',
+        path: '/namespaces',
+        seed: PAGINATED_SEED,
+        workerListPageSize: 2,
+        expect: { status: 200 }
+      }
+
+      const [serverRes, workerRes] = await Promise.all([
+        fireServer(c),
+        fireWorker(c)
+      ])
+      expect(serverRes.statusCode).toBe(200)
+      expect(workerRes.status).toBe(200)
+
+      const serverBody = serverRes.json() as { namespaces: string[] }
+      const workerBody = (await workerRes.json()) as { namespaces: string[] }
+
+      const expected = ['@a', '@b', '@c', '@d']
+      expect(serverBody.namespaces.sort()).toEqual(expected)
+      expect(workerBody.namespaces.sort()).toEqual(expected)
+    })
+  })
 })

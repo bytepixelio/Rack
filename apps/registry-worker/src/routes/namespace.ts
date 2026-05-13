@@ -21,11 +21,24 @@ export async function handleNamespaces(
   adminToken: string | undefined,
   request: Request
 ): Promise<Response> {
-  const listed = await bucket.list({ delimiter: '/' })
-  const all = (listed.delimitedPrefixes ?? [])
-    .map((p) => p.replace(/\/$/, ''))
-    .filter((p) => p.startsWith('@'))
-    .sort()
+  // R2 list is a paged API: a single call only returns up to `list-limit`
+  // results plus a `cursor` for the next page. `handleNamespaceRegistries`
+  // already paginates via `toRegistryStore()`; this entrypoint silently
+  // dropped every namespace past the first page (§6.18), so once a bucket
+  // grew past ~1000 top-level prefixes `rk list` would stop seeing the
+  // tail. Walk the cursor until R2 reports `truncated: false`.
+  const collected = new Set<string>()
+  let cursor: string | undefined
+  do {
+    const page = await bucket.list({ delimiter: '/', cursor })
+    for (const prefix of page.delimitedPrefixes ?? []) {
+      const trimmed = prefix.replace(/\/$/, '')
+      if (trimmed.startsWith('@')) collected.add(trimmed)
+    }
+    cursor = page.truncated ? page.cursor : undefined
+  } while (cursor)
+
+  const all = [...collected].sort()
 
   const config = await loadAuthConfig(bucket)
   const token = extractToken(

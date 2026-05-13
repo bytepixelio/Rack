@@ -78,6 +78,73 @@ describe('GET /namespaces', () => {
     expect(body.namespaces).toEqual([])
   })
 
+  it('paginates R2 list until truncated=false (§6.18)', async () => {
+    // Pre-fix, handleNamespaces called bucket.list once with no cursor
+    // loop and silently dropped every namespace past the first page.
+    // Force the mock bucket to return 2 entries per page so the 4
+    // namespace prefixes (`@a/`–`@d/`) plus the `.auth/` prefix split
+    // across multiple truncated pages, then assert all four namespaces
+    // appear in the response.
+    const bucket = createMockBucket(
+      {
+        '@a/lib/versions.json': { versions: ['1.0.0'] },
+        '@b/lib/versions.json': { versions: ['1.0.0'] },
+        '@c/lib/versions.json': { versions: ['1.0.0'] },
+        '@d/lib/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        listPageSize: 2,
+        authConfig: { '@a': [], '@b': [], '@c': [], '@d': [] }
+      }
+    )
+    const listSpy = vi.spyOn(bucket, 'list')
+
+    const res = await handleNamespaces(bucket, undefined, mockRequest())
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { namespaces: string[] }
+    expect(body.namespaces).toEqual(['@a', '@b', '@c', '@d'])
+    // The handler must walk the cursor at least twice — a single list
+    // call could not have surfaced all four namespaces given the page
+    // cap of 2. Subsequent calls all carry a cursor string forwarded
+    // from the previous page.
+    expect(listSpy.mock.calls.length).toBeGreaterThanOrEqual(2)
+    for (const call of listSpy.mock.calls.slice(1)) {
+      expect(call[0]).toMatchObject({ cursor: expect.any(String) })
+    }
+  })
+
+  it('keeps auth filtering correct across paginated pages (§6.18)', async () => {
+    // Authentication must apply *after* the full namespace set has been
+    // collected, otherwise a secret namespace that only appears on
+    // page 2 could leak when the caller has no token.
+    const bucket = createMockBucket(
+      {
+        '@a/lib/versions.json': { versions: ['1.0.0'] },
+        '@b/lib/versions.json': { versions: ['1.0.0'] },
+        '@c/lib/versions.json': { versions: ['1.0.0'] },
+        '@secret/x/versions.json': { versions: ['1.0.0'] }
+      },
+      {
+        listPageSize: 2,
+        authConfig: {
+          '@a': [],
+          '@b': [],
+          '@c': [],
+          '@secret': [{ token: 'tok-s' }]
+        }
+      }
+    )
+
+    const anon = await handleNamespaces(bucket, undefined, mockRequest())
+    const anonBody = (await anon.json()) as { namespaces: string[] }
+    expect(anonBody.namespaces).toEqual(['@a', '@b', '@c'])
+
+    const auth = await handleNamespaces(bucket, undefined, mockRequest('tok-s'))
+    const authBody = (await auth.json()) as { namespaces: string[] }
+    expect(authBody.namespaces).toContain('@secret')
+  })
+
   it('reuses the shared TTL cache instead of re-reading .auth/auth.json', async () => {
     const bucket = createMockBucket(
       { '@rack/runtimes/node/versions.json': { versions: ['1.0.0'] } },

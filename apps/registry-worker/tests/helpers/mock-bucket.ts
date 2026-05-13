@@ -28,6 +28,15 @@ interface MockR2Object {
 interface CreateMockBucketOptions {
   /** Override `.auth/auth.json` contents. `null` removes the default seed. */
   authConfig?: RawAuthConfig | null
+  /**
+   * Force R2-style pagination by capping each `list()` response at this
+   * many results (objects + delimited prefixes). When unset, every call
+   * returns the entire result set in one go.
+   *
+   * Required by the §6.18 fix to exercise `truncated: true` + `cursor`
+   * paths in the namespace handler.
+   */
+  listPageSize?: number
 }
 
 const DEFAULT_AUTH_CONFIG: RawAuthConfig = { '@rack': [] }
@@ -55,12 +64,14 @@ function toHeadObject(key: string, data: string): MockR2Object {
 
 export function createMockBucket(
   files: Record<string, unknown>,
-  options: CreateMockBucketOptions = {}
+  bucketOptions: CreateMockBucketOptions = {}
 ): R2Bucket {
   const store = new Map<string, string>()
 
   const authConfig =
-    options.authConfig === undefined ? DEFAULT_AUTH_CONFIG : options.authConfig
+    bucketOptions.authConfig === undefined
+      ? DEFAULT_AUTH_CONFIG
+      : bucketOptions.authConfig
   if (authConfig !== null) {
     store.set('.auth/auth.json', JSON.stringify(authConfig))
   }
@@ -68,6 +79,8 @@ export function createMockBucket(
   for (const [key, value] of Object.entries(files)) {
     store.set(key, typeof value === 'string' ? value : JSON.stringify(value))
   }
+
+  const pageSize = bucketOptions.listPageSize
 
   return {
     get: async (key: string) => {
@@ -85,7 +98,8 @@ export function createMockBucket(
       const delimiter = options?.delimiter ?? ''
 
       const objects: MockR2Object[] = []
-      const prefixes = new Set<string>()
+      const prefixes: string[] = []
+      const seen = new Set<string>()
 
       for (const [key, data] of store) {
         if (!key.startsWith(prefix)) continue
@@ -94,7 +108,11 @@ export function createMockBucket(
           const rest = key.slice(prefix.length)
           const idx = rest.indexOf(delimiter)
           if (idx !== -1) {
-            prefixes.add(prefix + rest.slice(0, idx + 1))
+            const p = prefix + rest.slice(0, idx + 1)
+            if (!seen.has(p)) {
+              seen.add(p)
+              prefixes.push(p)
+            }
             continue
           }
         }
@@ -102,10 +120,34 @@ export function createMockBucket(
         objects.push(toHeadObject(key, data))
       }
 
+      // R2 returns results in lexicographic key order. Sort both lists so
+      // pagination cursors are deterministic — the namespace handler now
+      // depends on walking `truncated: true` pages until exhausted.
+      prefixes.sort()
+      objects.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+
+      const items: Array<{ kind: 'object' | 'prefix'; value: unknown }> = [
+        ...prefixes.map((p) => ({ kind: 'prefix' as const, value: p })),
+        ...objects.map((o) => ({ kind: 'object' as const, value: o }))
+      ]
+
+      const cursor = options?.cursor
+      const start = cursor ? Number.parseInt(cursor, 10) : 0
+      const end = pageSize
+        ? Math.min(items.length, start + pageSize)
+        : items.length
+      const slice = items.slice(start, end)
+      const truncated = end < items.length
+
       return {
-        objects,
-        truncated: false,
-        delimitedPrefixes: [...prefixes]
+        objects: slice
+          .filter((item) => item.kind === 'object')
+          .map((item) => item.value as MockR2Object),
+        truncated,
+        delimitedPrefixes: slice
+          .filter((item) => item.kind === 'prefix')
+          .map((item) => item.value as string),
+        cursor: truncated ? String(end) : undefined
       } as unknown as R2Objects
     },
 
