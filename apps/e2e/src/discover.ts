@@ -93,6 +93,12 @@ async function walk(
 
 /**
  * Discover every preset under `{storageRoot}/presets/<name>/preset.json`.
+ *
+ * Throws if any discovered preset file fails to parse or violates the
+ * documented shape (`registries` must be a non-empty array of strings).
+ * The storage-integrity Vitest suite in `apps/registry-server` is the
+ * full `preset.json` schema check; this shape guard exists so that a
+ * malformed preset cannot silently fall out of the e2e suite (§6.15).
  */
 export async function discoverPresets(storageRoot: string): Promise<Preset[]> {
   const presetsDir = path.join(storageRoot, 'presets')
@@ -107,10 +113,28 @@ export async function discoverPresets(storageRoot: string): Promise<Preset[]> {
     if (!(await exists(presetJsonPath))) continue
 
     const raw = await readFile(presetJsonPath, 'utf8')
-    const parsed = JSON.parse(raw) as { registries?: unknown }
-    const registries = Array.isArray(parsed.registries)
-      ? parsed.registries.filter((r): r is string => typeof r === 'string')
-      : []
+    let parsed: { registries?: unknown }
+    try {
+      parsed = JSON.parse(raw) as { registries?: unknown }
+    } catch (err) {
+      throw new Error(
+        `Failed to parse preset.json at ${presetJsonPath}: ${(err as Error).message}`
+      )
+    }
+    if (!Array.isArray(parsed.registries)) {
+      throw new Error(
+        `Invalid preset at ${presetJsonPath}: "registries" must be an array of strings`
+      )
+    }
+    const registries: string[] = []
+    for (const r of parsed.registries) {
+      if (typeof r !== 'string') {
+        throw new Error(
+          `Invalid preset at ${presetJsonPath}: "registries" entries must be strings`
+        )
+      }
+      registries.push(r)
+    }
 
     out.push({
       registries,

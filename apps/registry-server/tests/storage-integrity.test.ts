@@ -6,6 +6,10 @@
  *     the Ajv draft-2020 dialect + `ajv-formats`.
  *  2. Every `registry.json` shipped under `packages/storage/@*` passes
  *     that real schema.
+ *  3. The real `packages/storage/schema/preset.json` compiles the same
+ *     way and every `packages/storage/presets/*\/preset.json` validates
+ *     against it (§6.15). `sync-storage.yml` mirrors these files
+ *     straight to R2, so drift here ships to Worker users.
  *
  * This catches drift between the server's validator, the schema, and the
  * sample data — which unit tests with fake schemas miss entirely.
@@ -65,6 +69,41 @@ describe('storage integrity', () => {
     const validate = ajv.compile(schema)
 
     const files = await findRegistryJsons(resolve(storageDir, '@rack'))
+    expect(files.length).toBeGreaterThan(0)
+
+    const failures: { file: string; errors: unknown }[] = []
+    for (const file of files) {
+      const data = JSON.parse(await readFile(file, 'utf-8'))
+      if (!validate(data)) {
+        failures.push({ file, errors: validate.errors })
+      }
+    }
+
+    expect(failures).toEqual([])
+  })
+
+  it('real preset schema compiles with draft 2020-12 + formats', async () => {
+    const ajv = new Ajv({ allErrors: true })
+    addFormats(ajv)
+    const schema = JSON.parse(
+      await readFile(resolve(storageDir, 'schema', 'preset.json'), 'utf-8')
+    )
+    expect(() => ajv.compile(schema)).not.toThrow()
+  })
+
+  it('every shipped preset.json conforms to the real preset schema', async () => {
+    const ajv = new Ajv({ allErrors: true })
+    addFormats(ajv)
+    const schema = JSON.parse(
+      await readFile(resolve(storageDir, 'schema', 'preset.json'), 'utf-8')
+    )
+    const validate = ajv.compile(schema)
+
+    const presetsRoot = resolve(storageDir, 'presets')
+    const entries = await readdir(presetsRoot, { withFileTypes: true })
+    const files = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join(presetsRoot, entry.name, 'preset.json'))
     expect(files.length).toBeGreaterThan(0)
 
     const failures: { file: string; errors: unknown }[] = []
