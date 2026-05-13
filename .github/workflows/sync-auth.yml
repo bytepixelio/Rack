@@ -39,19 +39,24 @@ jobs:
       # source TS directly because auth-core is consumed as workspace
       # source (no published build artifact).
       - name: Validate config/auth.json with @rack/auth-core
+        # `tsx -e` emits CJS, which forbids top-level await. Wrap the
+        # async logic in an IIFE so the inline script is valid CJS
+        # while still reading the file via `fs/promises`.
         run: |
           pnpm dlx tsx -e "
             import { readFile } from 'node:fs/promises';
             import { parseAuthConfig } from './packages/auth-core/src/index.ts';
 
-            const raw = JSON.parse(await readFile('./config/auth.json', 'utf8'));
-            const cfg = parseAuthConfig(raw);
-            if (cfg.errors.length > 0) {
-              console.error('auth.json validation failed:');
-              for (const e of cfg.errors) console.error('  -', e.namespace, '->', e.reason);
-              process.exit(1);
-            }
-            console.log('auth.json OK: namespaces =', [...cfg.allowedNamespaces].sort().join(', '));
+            (async () => {
+              const raw = JSON.parse(await readFile('./config/auth.json', 'utf8'));
+              const cfg = parseAuthConfig(raw);
+              if (cfg.errors.length > 0) {
+                console.error('auth.json validation failed:');
+                for (const e of cfg.errors) console.error('  -', e.namespace, '->', e.reason);
+                process.exit(1);
+              }
+              console.log('auth.json OK: namespaces =', [...cfg.allowedNamespaces].sort().join(', '));
+            })();
           "
 
       # The bucket name, account, and post-sync URL come from secrets /
