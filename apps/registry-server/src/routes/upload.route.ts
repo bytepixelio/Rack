@@ -21,6 +21,23 @@ export default async function uploadRoute(app: FastifyInstance): Promise<void> {
       let tempTarPath: string | undefined
       let tempExtractDir: string | undefined
 
+      // 0. Reject anonymous uploads before reading the multipart body.
+      // Pre-§6.20, every upload — including ones with no Authorization /
+      // X-Registry-Token header — flowed through saveToTemp + checksum +
+      // extractTarGz before namespace auth ran. That meant an
+      // unauthenticated caller could burn 100MB of disk + tar/gz CPU per
+      // request and then receive a 401. There is no successful upload
+      // path without a token (anonymous namespaces forbid publishing
+      // outright; the protected path requires `publish: true`), so a
+      // token-less request can be rejected immediately.
+      if (request.getAuthToken() === null) {
+        throw new AppError(
+          'UNAUTHORIZED',
+          'Authentication required for upload. Provide a namespace token or admin token via Authorization or X-Registry-Token.',
+          401
+        )
+      }
+
       try {
         // 1. Get uploaded file
         const data = await request.file()
